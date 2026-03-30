@@ -79,7 +79,8 @@ let dragStartTime = 0;
 document.getElementById('best-val').innerText = best;
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
 let shapes = [], dragging = null, dragOff = {x:0, y:0};
-// --- ХИРУРГИЧЕСКАЯ ДОБАВКА: ЧАСТИЦЫ ДЛЯ ШЛЕЙФА ---
+
+// --- ОБНОВЛЕННЫЙ ШЛЕЙФ: ЭЛИТНЫЕ ЧАСТИЦЫ ---
 let dragTrails = []; 
 
 const COLORS = { r: ["#ff7f7f", "#ff4d4d"], g: ["#86efac", "#4ade80"], b: ["#7dd3fc", "#3b82f6"], y: ["#fef08a", "#facc15"], p: ["#d8b4fe", "#a855f7"], c: ["#a5f3fc", "#22d3ee"], o: ["#fdba74", "#fb923c"] };
@@ -87,7 +88,6 @@ const COLORS = { r: ["#ff7f7f", "#ff4d4d"], g: ["#86efac", "#4ade80"], b: ["#7dd
 function drawBlock(x, y, size, colorKey, alpha = 1, special = null) {
     ctx.save(); ctx.globalAlpha = alpha;
     if(special==='hint'){ ctx.shadowBlur=15; ctx.shadowColor="#ffd700"; ctx.fillStyle="rgba(255,215,0,0.4)"; }
-    // --- ХИРУРГИЧЕСКАЯ ДОБАВКА: ЭФФЕКТ GRID HIT (ВСПЫШКА ПРИ УДАРЕ) ---
     else if(special==='grid-hit'){ ctx.shadowBlur=20; ctx.shadowColor=COLORS[colorKey][1]; ctx.fillStyle="rgba(255, 255, 255, 0.6)"; }
     else { 
         let grad = ctx.createLinearGradient(x, y, x + size, y + size); grad.addColorStop(0, COLORS[colorKey][0]); grad.addColorStop(1, COLORS[colorKey][1]);
@@ -123,20 +123,41 @@ function draw() {
 
     let idlePulse = 1 + Math.sin(Date.now() / 1000) * 0.02;
 
-    // --- ХИРУРГИЧЕСКАЯ ДОБАВКА: ОТРИСОВКА ШЛЕЙФА ---
-    dragTrails.forEach((t, i) => {
-        ctx.fillStyle = `rgba(255, 215, 0, ${t.a})`; // Золотистый шлейф
-        ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill();
-        t.a -= 0.03; t.x += t.vx; t.y += t.vy;
+    // --- ОТРИСОВКА ЭЛИТНОГО ШЛЕЙФА ---
+    dragTrails.forEach((t) => {
+        ctx.save();
+        ctx.globalAlpha = t.a;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = t.color;
+        ctx.fillStyle = t.color;
+        ctx.beginPath(); 
+        // Частица уменьшается в размере по мере жизни
+        let currentR = t.r * (t.a / 0.6); 
+        ctx.arc(t.x, t.y, currentR > 0 ? currentR : 0, 0, Math.PI * 2); 
+        ctx.fill();
+        ctx.restore();
+        t.a -= 0.025; // Скорость затухания
+        t.x += t.vx; t.y += t.vy;
     });
     dragTrails = dragTrails.filter(t => t.a > 0);
 
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
         
-        // --- ХИРУРГИЧЕСКАЯ ДОБАВКА: ГЕНЕРАЦИЯ ЧАСТИЦ ШЛЕЙФА ПРИ ТАЩЕНИИ ---
-        for(let i=0; i<2; i++) {
-            dragTrails.push({ x: dragging.x + (dragging.m[0].length*(CELL)/2) + (Math.random()-0.5)*20, y: dragging.y + (dragging.m.length*(CELL)/2) + (Math.random()-0.5)*20, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, r: Math.random()*3+2, a: 0.5 });
+        // --- ГЕНЕРАЦИЯ ЭЛИТНОГО ШЛЕЙФА ПРИ ТАЩЕНИИ ---
+        // Создаем частицы в центре таскиваемой фигуры
+        let centerX = dragging.x + (dragging.m[0].length * (CELL) / 2);
+        let centerY = dragging.y + (dragging.m.length * (CELL) / 2);
+        for(let i=0; i<3; i++) {
+            dragTrails.push({ 
+                x: centerX + (Math.random()-0.5)*30, 
+                y: centerY + (Math.random()-0.5)*30, 
+                vx: (Math.random()-0.5)*1.5, 
+                vy: (Math.random()-0.5)*1.5, 
+                r: Math.random()*4 + 2, 
+                a: 0.6,
+                color: COLORS[dragging.c][0] // Цвет шлейфа под цвет блока
+            });
         }
 
         if(Date.now() - dragStartTime > 1500) {
@@ -176,8 +197,6 @@ window.addEventListener('touchmove', e => { if(dragging){ e.preventDefault(); le
 window.addEventListener('touchend', () => {
     if(!dragging) return; let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
     if(canPlace(dragging, gx, gy)) {
-        
-        // --- ХИРУРГИЧЕСКАЯ ДОБАВКА: ЭФФЕКТ GRID HIT ПРИ УСТАНОВКЕ ---
         dragging.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) { board[gy+r][gx+c]=dragging.c; drawBlock(BOARD_PAD+(gx+c)*(CELL+GAP), BOARD_PAD+(gy+r)*(CELL+GAP), CELL, dragging.c, 1, 'grid-hit'); } }));
         AudioEngine.play('place'); if(navigator.vibrate) navigator.vibrate(20); score+=20; updateS(); shapes=shapes.filter(s=>s!==dragging); if(shapes.length===0) spawn(); checkL(); checkGameOver();
     } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; } dragging=null;
@@ -198,7 +217,6 @@ function updateS() {
 function checkL() {
     let rc=[], cc=[]; const comboText = document.getElementById('combo-popup');
     for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rc.push(r); for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cc.push(c);
-    
     let clearedLines = rc.length + cc.length;
     if(clearedLines > 0) {
         feverStreak++; triggerShake();
