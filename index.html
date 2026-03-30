@@ -3,107 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Block Blast: Smooth & Ambient</title>
+    <title>Block Blast: Audio & Haptic</title>
     <style>
         :root { --bg: #050509; --panel: rgba(11, 11, 20, 0.8); --violet: #a78bfa; }
-        body { 
-            background: var(--bg); 
-            color: white; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            font-family: -apple-system, system-ui, sans-serif; 
-            margin: 0; 
-            overflow: hidden; 
-            touch-action: none; 
-            height: 100vh;
-            position: relative;
-        }
-        
-        /* Динамический фон */
-        #ambient-bg {
-            position: absolute; inset: 0; z-index: -1;
-            background: 
-                radial-gradient(circle at 20% 30%, rgba(109, 40, 217, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 80% 70%, rgba(34, 211, 238, 0.1) 0%, transparent 40%);
-            filter: blur(60px);
-            animation: moveBg 15s infinite alternate ease-in-out;
-        }
-        @keyframes moveBg {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.2) translate(5%, 5%); }
-        }
-
+        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow: hidden; touch-action: none; height: 100vh; position: relative; }
+        #ambient-bg { position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 20% 30%, rgba(109, 40, 217, 0.15) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(34, 211, 238, 0.1) 0%, transparent 40%); filter: blur(60px); animation: moveBg 15s infinite alternate ease-in-out; }
+        @keyframes moveBg { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.2) translate(5%, 5%); } }
         #header { margin-top: env(safe-area-inset-top, 40px); text-align: center; z-index: 10; width: 100%; }
         #score { font-size: 72px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin: 0; }
         #level-bar-wrap { width: 180px; height: 4px; background: rgba(255,255,255,0.1); margin: 8px auto; border-radius: 2px; }
         #level-bar-fill { width: 0%; height: 100%; background: var(--violet); box-shadow: 0 0 10px var(--violet); transition: 0.3s; }
-        
-        canvas { 
-            background: var(--panel); 
-            border-radius: 24px; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.6); 
-            border: 1px solid rgba(255,255,255,0.05); 
-            max-width: 92vw; 
-            margin-top: 10px;
-            backdrop-filter: blur(10px);
-        }
-        
+        canvas { background: var(--panel); border-radius: 24px; box-shadow: 0 0 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05); max-width: 92vw; margin-top: 10px; backdrop-filter: blur(10px); }
         #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(20px); }
         .btn { background: #6d28d9; border: none; padding: 16px 45px; color: white; font-size: 18px; border-radius: 30px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div id="ambient-bg"></div>
-
     <div id="header">
         <div id="score">0</div>
         <div id="level-bar-wrap"><div id="level-bar-fill"></div></div>
         <div id="best" style="font-size: 12px; opacity: 0.5;">BEST: 0</div>
     </div>
-
     <canvas id="gameCanvas"></canvas>
-    <div style="height: calc(env(safe-area-inset-bottom, 20px) + 125px);"></div>
-
     <div id="game-over">
-        <h1 style="color: #f87171;">НЕТ МЕСТА</h1>
+        <h1 style="color: #f87171;">ФИНИШ</h1>
         <div id="final-score" style="font-size: 48px; font-weight: 900;">0</div>
         <button class="btn" onclick="resetGame()">ЗАНОВО</button>
     </div>
 
 <script>
+// --- ЗВУКОВОЙ ДВИЖОК ---
+const AudioEngine = {
+    ctx: null,
+    init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    play(type) {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        
+        const now = this.ctx.currentTime;
+        if (type === 'pick') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+            gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.1);
+            osc.start(); osc.stop(now + 0.1);
+        } else if (type === 'place') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+            gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.15);
+            osc.start(); osc.stop(now + 0.15);
+        } else if (type === 'clear') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(1760, now + 0.2);
+            gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+            osc.start(); osc.stop(now + 0.3);
+        }
+    }
+};
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
-const GRID = 8; 
-let CELL = Math.floor(window.innerWidth * 0.11);
+const GRID = 8; let CELL = Math.floor(window.innerWidth * 0.11);
 const GAP = 5, BOARD_PAD = 12;
 canvas.width = (CELL + GAP) * GRID + BOARD_PAD * 2;
 canvas.height = canvas.width + 160;
 
-let score = 0, best = localStorage.getItem('bb_smooth_best') || 0;
+let score = 0, best = localStorage.getItem('bb_audio_best') || 0;
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
-let shapes = [], particles = [], waves = [];
+let shapes = [], particles = [];
 let dragging = null, dragOff = {x:0, y:0};
 
 const COLORS = { r: "#ff4d4d", g: "#4ade80", b: "#3b82f6", y: "#facc15", p: "#a855f7", c: "#22d3ee", o: "#fb923c" };
-const GLOWS = { r: "rgba(255,77,77,0.4)", g: "rgba(74,222,128,0.4)", b: "rgba(59,130,246,0.4)", y: "rgba(250,204,21,0.4)", p: "rgba(168,85,247,0.4)", c: "rgba(34,211,238,0.4)", o: "rgba(251,146,60,0.4)" };
 
-function drawBlock(x, y, size, colorKey, alpha = 1, glow = false) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    if(glow) { ctx.shadowBlur = 15; ctx.shadowColor = GLOWS[colorKey]; }
-    ctx.fillStyle = COLORS[colorKey];
-    ctx.beginPath(); ctx.roundRect(x, y, size, size, 8); ctx.fill();
-    ctx.restore();
+function vibrate(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+function drawBlock(x, y, size, colorKey, alpha = 1) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = COLORS[colorKey];
+    ctx.beginPath(); ctx.roundRect(x, y, size, size, 8); ctx.fill(); ctx.restore();
 }
 
 function spawn() {
     shapes = []; const step = canvas.width / 3;
-    const defs = [
-        {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
-        {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}
-    ];
+    const defs = [{m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'}, {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}];
     for(let i=0; i<3; i++) {
         let p = defs[Math.floor(Math.random()*defs.length)];
         let w = p.m[0].length*(CELL*0.5);
@@ -114,45 +97,30 @@ function spawn() {
 
 function draw() {
     ctx.clearRect(0,0,canvas.width, canvas.height);
-    
-    // Сетка
     for(let r=0; r<GRID; r++){
         for(let c=0; c<GRID; c++){
             let bx=BOARD_PAD+c*(CELL+GAP), by=BOARD_PAD+r*(CELL+GAP);
-            if(board[r][c]) drawBlock(bx, by, CELL, board[r][c], 1, true);
+            if(board[r][c]) drawBlock(bx, by, CELL, board[r][c], 1);
             else { ctx.fillStyle = "rgba(255,255,255,0.03)"; ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 10); ctx.fill(); }
         }
     }
-
-    // Магнитное притяжение (Snap) и Тень
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
-        let canPlaceNow = canPlace(dragging, gx, gy);
-        
-        if(canPlaceNow) {
-            // Визуальное притяжение тени
+        if(canPlace(dragging, gx, gy)) {
             dragging.m.forEach((row, ri)=>row.forEach((v, ci)=>{
                 if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.3);
             }));
         }
     }
-
-    // Частицы
     particles.forEach((p, i) => { 
-        p.x+=p.vx; p.y+=p.vy; p.l-=0.02; 
-        ctx.fillStyle=`rgba(255,255,255,${p.l})`; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, 7); ctx.fill();
-        if(p.l<=0) particles.splice(i,1);
+        p.x+=p.vx; p.y+=p.vy; p.l-=0.02; ctx.fillStyle=`rgba(255,255,255,${p.l})`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, 7); ctx.fill(); if(p.l<=0) particles.splice(i,1);
     });
-
-    // Фигуры снизу
     shapes.forEach(s => {
         s.scale += (s.targetScale - s.scale) * 0.2;
         let sz=CELL*s.scale, g=GAP*s.scale;
-        s.m.forEach((row, ri)=>row.forEach((v, ci)=>{
-            if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c);
-        }));
+        s.m.forEach((row, ri)=>row.forEach((v, ci)=>{ if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c); }));
     });
-
     requestAnimationFrame(draw);
 }
 
@@ -170,7 +138,10 @@ const getPos = e => {
 canvas.addEventListener('touchstart', e => {
     let p=getPos(e);
     shapes.forEach(s => {
-        if(p.x>s.x-20 && p.x<s.x+80 && p.y>s.y-20 && p.y<s.y+100) { dragging=s; s.targetScale=1.0; dragOff={x:p.x-s.x, y:p.y-s.y}; }
+        if(p.x>s.x-20 && p.x<s.x+80 && p.y>s.y-20 && p.y<s.y+100) { 
+            dragging=s; s.targetScale=1.0; dragOff={x:p.x-s.x, y:p.y-s.y}; 
+            AudioEngine.play('pick'); vibrate(10);
+        }
     });
 });
 
@@ -179,18 +150,11 @@ window.addEventListener('touchmove', e => {
         if(e.cancelable) e.preventDefault();
         let p=getPos(e);
         let tx = p.x-dragOff.x, ty = p.y-dragOff.y;
-        
-        // Логика мягкого "магнитного" притяжения при движении
         let gx=Math.round((tx-BOARD_PAD)/(CELL+GAP)), gy=Math.round((ty-BOARD_PAD)/(CELL+GAP));
         if(canPlace(dragging, gx, gy)) {
-            let snapX = BOARD_PAD + gx*(CELL+GAP);
-            let snapY = BOARD_PAD + gy*(CELL+GAP);
-            // Плавное притяжение к сетке (интерполяция 30%)
-            dragging.x += (snapX - dragging.x) * 0.3;
-            dragging.y += (snapY - dragging.y) * 0.3;
-        } else {
-            dragging.x = tx; dragging.y = ty;
-        }
+            dragging.x += (BOARD_PAD + gx*(CELL+GAP) - dragging.x) * 0.3;
+            dragging.y += (BOARD_PAD + gy*(CELL+GAP) - dragging.y) * 0.3;
+        } else { dragging.x = tx; dragging.y = ty; }
     }
 }, {passive:false});
 
@@ -199,13 +163,11 @@ window.addEventListener('touchend', () => {
     let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
     if(canPlace(dragging, gx, gy)) {
         dragging.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) board[gy+r][gx+c]=dragging.c; }));
+        AudioEngine.play('place'); vibrate(30);
         score+=20; updateScore();
         shapes=shapes.filter(s=>s!==dragging); if(shapes.length===0) spawn();
         checkLines(); checkGameOver();
-    } else { 
-        // Плавный возврат (уже реализован через интерполяцию scale и координат)
-        dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; 
-    }
+    } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; }
     dragging=null;
 });
 
@@ -214,6 +176,7 @@ function checkLines() {
     for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rc.push(r);
     for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cc.push(c);
     if(rc.length || cc.length) {
+        AudioEngine.play('clear'); vibrate([50, 30, 50]);
         rc.forEach(r => { for(let c=0; c<GRID; c++){ board[r][c]=null; explode(c,r); } });
         cc.forEach(c => { for(let r=0; r<GRID; r++){ if(board[r][c]){ board[r][c]=null; explode(c,r); } } });
         score += (rc.length + cc.length) * 150; updateScore();
@@ -226,13 +189,10 @@ function explode(gx, gy) {
 function updateScore() {
     document.getElementById('score').innerText = score;
     document.getElementById('level-bar-fill').style.width = (score % 1000 / 10) + "%";
-    if(score > best) { best = score; localStorage.setItem('bb_smooth_best', best); document.getElementById('best').innerText = `BEST: ${best}`; }
+    if(score > best) { best = score; localStorage.setItem('bb_audio_best', best); document.getElementById('best').innerText = `BEST: ${best}`; }
 }
 function checkGameOver() {
-    const ok = shapes.some(s => {
-        for(let r=0; r<=GRID-s.m.length; r++) for(let c=0; c<=GRID-s.m[0].length; c++) if(canPlace(s, c, r)) return true;
-        return false;
-    });
+    const ok = shapes.some(s => { for(let r=0; r<=GRID-s.m.length; r++) for(let c=0; c<=GRID-s.m[0].length; c++) if(canPlace(s, c, r)) return true; return false; });
     if(!ok && shapes.length>0) document.getElementById('game-over').style.display='flex';
 }
 function resetGame() { board=board.map(r=>r.fill(null)); score=0; updateScore(); document.getElementById('game-over').style.display='none'; spawn(); }
