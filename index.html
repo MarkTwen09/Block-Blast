@@ -70,7 +70,7 @@ let shapes = [], dragging = null, dragOff = {x:0, y:0};
 
 const COLORS = { r: ["#ff7f7f", "#ff4d4d"], g: ["#86efac", "#4ade80"], b: ["#7dd3fc", "#3b82f6"], y: ["#fef08a", "#facc15"], p: ["#d8b4fe", "#a855f7"], c: ["#a5f3fc", "#22d3ee"], o: ["#fdba74", "#fb923c"] };
 
-// УЛУЧШЕННЫЙ drawBlock С НЕОНОВЫМ ЭФФЕКТОМ
+// УЛУЧШЕННЫЙ drawBlock С НЕОНОВЫМ ЭФФЕКТОМ И СЛЕГОНЦА СВЕЧЕНИЕМ
 function drawBlock(x, y, size, colorKey, alpha = 1, special = null) {
     ctx.save(); ctx.globalAlpha = alpha;
     if(special==='hint'){ ctx.shadowBlur=15; ctx.shadowColor="#ffd700"; ctx.fillStyle="rgba(255,215,0,0.4)"; }
@@ -78,7 +78,18 @@ function drawBlock(x, y, size, colorKey, alpha = 1, special = null) {
         let grad = ctx.createLinearGradient(x, y, x + size, y + size); grad.addColorStop(0, COLORS[colorKey][0]); grad.addColorStop(1, COLORS[colorKey][1]);
         ctx.shadowBlur = 10; ctx.shadowColor = COLORS[colorKey][1]; ctx.fillStyle = grad;
     }
-    ctx.beginPath(); ctx.roundRect(x, y, size, size, 8); ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.roundRect(x, y, size, size, 8); ctx.fill(); 
+
+    // --- ХИРУРГИЧЕСКОЕ ОБНОВЛЕНИЕ: СЛЕГОНЦА СВЕЧЕНИЕ (GLARE) ---
+    if(special !== 'hint' && special !== 'danger') {
+        let glarePos = (Date.now() / 1500) % 2; // Плавное движение
+        if(glarePos > 1) glarePos = 2 - glarePos; // Туда-сюда
+        ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.beginPath(); ctx.roundRect(x + (size * 0.2), y + (size * glarePos), size * 0.6, size * 0.1, 8); ctx.fill();
+    }
+    // --------------------------------------------------------
+
+    ctx.restore();
 }
 
 function spawn() {
@@ -98,8 +109,8 @@ function draw() {
         else { ctx.fillStyle="rgba(255,255,255,0.03)"; ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 8); ctx.fill(); }
     }
 
-    // --- ХИРУРГИЧЕСКОЕ ОБНОВЛЕНИЕ: ВЫЧИСЛЯЕМ 'ДЫХАНИЕ' ---
-    let idlePulse = 1 + Math.sin(Date.now() / 500) * 0.025; // Амплитуда 2.5%, период 1 сек
+    // --- ХИРУРГИЧЕСКОЕ ОБНОВЛЕНИЕ: СВЕРХПЛАВНОЕ ДЫХАНИЕ ---
+    let idlePulse = 1 + Math.sin(Date.now() / 1000) * 0.02; // Амплитуда 2%, период 2 сек (более плавно)
 
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
@@ -113,9 +124,9 @@ function draw() {
 
     shapes.forEach(s => { 
         if(s!==dragging) {
-            // Применяем пугающий эффект 'дыхания' только к не перетаскиваемым фигурам внизу
+            // Применяем плавный пульс только к не перетаскиваемым фигурам внизу
             s.scale+=(s.targetScale-s.scale)*0.2; 
-            // --- ПРИМЕНЯЕМ PULSE ---
+            // --- ПРИМЕНЯЕМ ULTRA-SMOOTH PULSE ---
             let sz=(CELL*s.scale) * (s.scale < 0.6 ? idlePulse : 1); 
             let g=(GAP*s.scale); 
             s.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c); })); 
