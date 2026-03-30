@@ -3,59 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Block Blast: Gilded & Pro Edition</title>
+    <title>Block Blast: Master Edition</title>
     <style>
-        :root { --bg: #050509; --panel: #0f0f17; --border: #1f1f2e; --accent: #ffd700; --score-gradient: linear-gradient(to bottom, #fff, #a78bfa); }
+        :root { --bg: #050509; --panel: #0f0f17; --border: #1f1f2e; --accent: #ffd700; }
         body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; height: 100vh; }
         
-        #header { margin-top: env(safe-area-inset-top, 40px); text-align: center; z-index: 10; pointer-events: none; position: relative; }
-        #score-container { position: relative; }
-        #score { font-size: 80px; font-weight: 900; background: var(--score-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 15px rgba(167,139,250,0.5)); font-variant-numeric: tabular-nums; line-height: 1; }
+        #header { margin-top: env(safe-area-inset-top, 40px); text-align: center; z-index: 10; position: relative; }
+        #score { font-size: 80px; font-weight: 900; background: linear-gradient(#fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 15px rgba(167,139,250,0.4)); line-height: 1; margin: 0; }
         #best { font-size: 18px; color: #6b7280; font-weight: bold; margin-top: 5px; }
         
-        /* Золотой баннер рекорда из v4.0 */
         #new-record-banner {
             position: absolute; top: 110%; left: 50%; transform: translateX(-50%) scale(0);
-            font-size: 24px; font-weight: bold; white-space: nowrap;
+            font-size: 22px; font-weight: bold; white-space: nowrap;
             background: linear-gradient(45deg, var(--accent), #fff, var(--accent));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 10px var(--accent));
             transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0;
         }
-        #new-record-banner.show { transform: translateX(-50%) scale(1); opacity: 1; animation: pulseGlow 1.8s infinite; }
+        #new-record-banner.show { transform: translateX(-50%) scale(1); opacity: 1; animation: pulse 1.5s infinite; }
 
-        canvas { background: var(--panel); border-radius: 24px; box-shadow: 0 0 60px rgba(0,0,0,0.9); margin-top: 20px; border: 2px solid var(--border); cursor: grab; max-width: 95vw; }
-        canvas:active { cursor: grabbing; }
+        canvas { background: var(--panel); border-radius: 24px; box-shadow: 0 0 50px rgba(0,0,0,0.8); margin-top: 20px; border: 2px solid var(--border); max-width: 95vw; }
 
-        /* Отступ для iPhone под фигуры */
-        #footer-spacer { height: calc(env(safe-area-inset-bottom, 20px) + 120px); width: 100%; }
+        #game-over { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 100; backdrop-filter: blur(20px); animation: fadeIn 0.5s;
+        }
+        .btn { 
+            background: linear-gradient(135deg, #6d28d9, #c084fc); border: none; padding: 18px 60px; 
+            color: white; font-size: 22px; border-radius: 50px; cursor: pointer; font-weight: bold; 
+            box-shadow: 0 10px 25px rgba(109,40,217,0.4); margin-top: 20px;
+        }
 
-        #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(15px); }
-        .btn { background: linear-gradient(135deg, #6d28d9, #c084fc); border: none; padding: 18px 60px; color: white; font-size: 22px; border-radius: 50px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 10px 25px rgba(109,40,217,0.5); }
-        .btn:hover { transform: scale(1.05); }
-
-        @keyframes pulseGlow { 0%, 100% { filter: drop-shadow(0 0 10px var(--accent)); } 50% { filter: drop-shadow(0 0 20px #fff); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div id="score-container">
-            <div id="score">0</div>
-            <div id="new-record-banner">НОВЫЙ РЕКОРД!</div>
-        </div>
+        <div id="score">0</div>
+        <div id="new-record-banner">НОВЫЙ РЕКОРД!</div>
         <div id="best">BEST: 0</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
     
-    <div id="footer-spacer"></div>
+    <div style="height: calc(env(safe-area-inset-bottom, 20px) + 120px);"></div>
 
     <div id="game-over">
-        <h1 style="font-size: 60px; background: linear-gradient(to right, #ef4444, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">FINISH</h1>
-        <p id="final-score" style="font-size: 28px; margin: 25px 0; color: #a1a1aa;">0</p>
-        <button class="btn" onclick="resetGame()">PLAY AGAIN</button>
+        <h1 style="font-size: 50px; margin: 0; background: linear-gradient(#f87171, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">НЕТ МЕСТА!</h1>
+        <p style="color: #94a3b8; font-size: 20px; margin: 10px 0;">Твой результат:</p>
+        <div id="final-score" style="font-size: 60px; font-weight: 900;">0</div>
+        <button class="btn" onclick="resetGame()">ПОПРОБОВАТЬ СНОВА</button>
     </div>
 
 <script>
@@ -63,7 +64,6 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const recordBanner = document.getElementById('new-record-banner');
 
-// --- НАСТРОЙКИ (iPhone 17 Pro Fit) ---
 const GRID = 8; 
 let CELL = Math.floor(window.innerWidth * 0.11);
 const GAP = 5;
@@ -71,12 +71,10 @@ const BOARD_PAD = 12;
 canvas.width = (CELL + GAP) * GRID + BOARD_PAD * 2;
 canvas.height = canvas.width + 160;
 
-// --- СОСТОЯНИЕ ---
 let score = 0, best = parseInt(localStorage.getItem('bb_gp_best')) || 0;
 let isNewRecord = false, dragging = null, board = Array(GRID).fill().map(() => Array(GRID).fill(null));
-let shapes = [], particles = [], trailParticles = [], dragOff = {x:0, y:0};
+let shapes = [], particles = [], dragOff = {x:0, y:0};
 
-// --- ЦВЕТА (Gilded Style) ---
 const COLORS = {
     r: { m: "#ff4d4d", g: "rgba(255, 77, 77, 0.6)" },
     g: { m: "#4ade80", g: "rgba(74, 222, 128, 0.6)" },
@@ -90,138 +88,113 @@ const COLORS = {
 const SHAPES_LIB = [
     {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
     {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'},
-    {m:[[1,1],[1,0],[1,0]], c:'y'}
+    {m:[[1,1],[1,0],[1,0]], c:'y'}, {m:[[1,1,1],[1,0,0]], c:'b'}
 ];
 
-// --- КЛАССЫ ЭФФЕКТОВ ---
 class Particle {
-    constructor(x, y, color, type = 'spark') {
-        this.x = x; this.y = y; this.color = color; this.type = type;
-        this.life = 1.0; this.decay = Math.random()*0.02 + 0.015;
-        this.size = Math.random()*3 + 1;
-        this.vx = (Math.random() - 0.5) * 12; this.vy = (Math.random() - 0.5) * 12 - 3;
-        this.grav = 0.25;
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        this.life = 1.0; this.decay = 0.02;
+        this.vx = (Math.random() - 0.5) * 10; this.vy = (Math.random() - 0.5) * 10;
     }
-    update() { this.x += this.vx; this.y += this.vy; this.vy += this.grav; this.life -= this.decay; }
-    draw() {
-        ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.beginPath();
-        if(this.type === 'spark') { // Искры с хвостами
-            ctx.moveTo(this.x, this.y); ctx.lineTo(this.x - this.vx, this.y - this.vy); ctx.lineWidth = this.size; ctx.strokeStyle = this.color; ctx.stroke();
-        } else { ctx.arc(this.x, this.y, this.size, 0, 7); ctx.fill(); }
-        ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
+    draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+}
+
+// ПРОВЕРКА КОНЦА ИГРЫ
+function checkGameOver() {
+    // Если на поле нет места ни для ОДНОЙ из текущих фигур внизу
+    const canPlaceAny = shapes.some(shape => {
+        for (let r = 0; r <= GRID - shape.m.length; r++) {
+            for (let c = 0; c <= GRID - shape.m[0].length; c++) {
+                if (canPlace(shape, c, r)) return true;
+            }
+        }
+        return false;
+    });
+
+    if (!canPlaceAny && shapes.length > 0) {
+        setTimeout(() => {
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('game-over').style.display = 'flex';
+        }, 500);
     }
 }
 
-// --- УМНАЯ ГЕНЕРАЦИЯ ---
 function spawn() {
     shapes = []; const step = canvas.width / 3;
     for(let i=0; i<3; i++) {
-        let proto = null;
-        for(let attempt=0; attempt<15; attempt++) {
-            let s = SHAPES_LIB[Math.floor(Math.random()*SHAPES_LIB.length)];
-            if(canFitAnywhere(s)) { proto = s; break; }
-            if(attempt===14) proto = s;
-        }
+        let proto = SHAPES_LIB[Math.floor(Math.random()*SHAPES_LIB.length)];
         let w = proto.m[0].length*(CELL*0.5);
         shapes.push({ ...proto, x:(step*i)+(step-w)/2, y:canvas.height-125, ox:(step*i)+(step-w)/2, oy:canvas.height-125, scale:0.5, targetScale:0.5 });
     }
-    if (shapes.every(s => !canFitAnywhere(s))) showGameOver();
+    checkGameOver(); // Проверяем сразу после спавна новых
 }
 
-function canFitAnywhere(s) {
-    for(let r=0; r<=GRID-s.m.length; r++) for(let c=0; c<=GRID-s.m[0].length; c++) if(canPlace(s, c, r)) return true;
-    return false;
-}
 function canPlace(shape, gx, gy) {
     if(gx<0 || gy<0 || gx+shape.m[0].length>GRID || gy+shape.m.length>GRID) return false;
     for(let r=0; r<shape.m.length; r++) for(let c=0; c<shape.m[0].length; c++) if(shape.m[r][c] && board[gy+r][gx+c]) return false;
     return true;
 }
 
-// --- ОТРИСОВКА ---
 function draw() {
     ctx.clearRect(0,0,canvas.width, canvas.height);
-
-    // Gild Overlay (Золотой дождь из v4.0)
-    if (isNewRecord && Math.random() < 0.1) particles.push(new Particle(Math.random()*canvas.width, -10, "#ffd700", 'gild'));
-
-    // Сетка + Блоки (Glow из v4.0)
     for(let r=0; r<GRID; r++){
         for(let c=0; c<GRID; c++){
             let bx=BOARD_PAD+c*(CELL+GAP), by=BOARD_PAD+r*(CELL+GAP);
-            if(board[r][c]) {
-                ctx.fillStyle = COLORS[board[r][c]].m; ctx.shadowBlur = 18; ctx.shadowColor = COLORS[board[r][c]].g;
-            } else { ctx.fillStyle = "#161621"; ctx.shadowBlur = 0; }
-            
-            // Золочение сетки при рекорде
-            ctx.strokeStyle = isNewRecord ? "rgba(255, 215, 0, 0.25)" : "#232336";
-            
-            ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 10); ctx.fill(); ctx.stroke();
-            if(board[r][c]) { ctx.fillStyle="rgba(255,255,255,0.1)"; ctx.shadowBlur=0; ctx.fillRect(bx+5, by+5, CELL-10, CELL/3); }
+            ctx.fillStyle = board[r][c] ? COLORS[board[r][c]].m : "#161621";
+            if(board[r][c]) { ctx.shadowBlur = 15; ctx.shadowColor = COLORS[board[r][c]].g; }
+            ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 10); ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = isNewRecord ? "rgba(255,215,0,0.2)" : "#232336"; ctx.stroke();
         }
     }
-    ctx.shadowBlur = 0;
-
-    // Улучшенный Ghost Block (Светлый контур)
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
         if(canPlace(dragging, gx, gy)) {
-            ctx.fillStyle = "rgba(255,255,255,0.08)";
-            ctx.strokeStyle = "rgba(255,255,255,0.4)"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+            ctx.fillStyle = "rgba(255,255,255,0.1)";
             dragging.m.forEach((row, ri)=>row.forEach((v, ci)=>{
-                if(v) { let bx=BOARD_PAD+(gx+ci)*(CELL+GAP), by=BOARD_PAD+(gy+ri)*(CELL+GAP); ctx.beginPath(); ctx.roundRect(bx,by,CELL,CELL,10); ctx.fill(); ctx.stroke(); }
+                if(v) { ctx.beginPath(); ctx.roundRect(BOARD_PAD+(gx+ci)*(CELL+GAP),BOARD_PAD+(gy+ri)*(CELL+GAP),CELL,CELL,10); ctx.fill(); }
             }));
-            ctx.setLineDash([]); ctx.lineWidth = 1;
         }
     }
-
-    // Фигуры (Spring Animation)
     shapes.forEach(s => {
-        s.scale += (s.targetScale - s.scale) * 0.22; // Плавное изменение размера
+        s.scale += (s.targetScale - s.scale) * 0.2;
         ctx.fillStyle = COLORS[s.c].m; let sz=CELL*s.scale, g=GAP*s.scale;
         s.m.forEach((row, ri)=>row.forEach((v, ci)=>{
             if(v) { ctx.beginPath(); ctx.roundRect(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, sz, 8); ctx.fill(); }
         }));
     });
-
-    // Частицы уничтожения
     particles = particles.filter(p => p.life > 0);
     particles.forEach(p => { p.update(); p.draw(); });
-
     requestAnimationFrame(draw);
 }
 
-// --- ЛОГИКА ОЧКОВ И КОМБО ---
 function checkLines() {
     let rc=[], cc=[];
     for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rc.push(r);
     for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cc.push(c);
-
     if(rc.length || cc.length) {
-        let lines = rc.length+cc.length;
-        // Эффект вспышки перед исчезновением
-        rc.forEach(r => { for(let c=0; c<GRID; c++) { let col=COLORS[board[r][c]].m; board[r][c]=null; explode(c, r, col); } });
-        cc.forEach(c => { for(let r=0; r<GRID; r++) { if(board[r][c]) { let col=COLORS[board[r][c]].m; board[r][c]=null; explode(c, r, col); } } });
-        score += lines*lines*100; updateScore();
+        rc.forEach(r => { for(let c=0; c<GRID; c++){ let col=COLORS[board[r][c]].m; board[r][c]=null; createExplode(c,r,col); } });
+        cc.forEach(c => { for(let r=0; r<GRID; r++){ if(board[r][c]){ let col=COLORS[board[r][c]].m; board[r][c]=null; createExplode(c,r,col); } } });
+        score += (rc.length + cc.length) * 100; updateScore();
     }
 }
 
-function explode(gx, gy, col) {
+function createExplode(gx, gy, col) {
     let px=BOARD_PAD+gx*(CELL+GAP)+CELL/2, py=BOARD_PAD+gy*(CELL+GAP)+CELL/2;
-    for(let i=0; i<15; i++) particles.push(new Particle(px, py, col));
-    for(let i=0; i<10; i++) particles.push(new Particle(px, py, "#fff", 'fire')); // Белая вспышка
+    for(let i=0; i<10; i++) particles.push(new Particle(px, py, col));
 }
 
 function updateScore() {
     document.getElementById('score').innerText = score;
     if(score > best) {
-        if(!isNewRecord && best>0) recordBanner.classList.add('show');
+        if(!isNewRecord && best > 0) recordBanner.classList.add('show');
         isNewRecord = true; best = score; localStorage.setItem('bb_gp_best', best);
         document.getElementById('best').innerText = `BEST: ${best}`;
     }
 }
 
-// --- УПРАВЛЕНИЕ (Touch) ---
 const getPos = e => {
     let r=canvas.getBoundingClientRect(); let cx=e.touches?e.touches[0].clientX:e.clientX, cy=e.touches?e.touches[0].clientY:e.clientY;
     return { x:(cx-r.left)*(canvas.width/r.width), y:(cy-r.top)*(canvas.height/r.height) };
@@ -230,10 +203,7 @@ const getPos = e => {
 canvas.addEventListener('touchstart', e => {
     let p=getPos(e);
     shapes.forEach(s => {
-        if(p.x>s.x-15 && p.x<s.x+85 && p.y>s.y-15 && p.y<s.y+100) {
-            dragging=s; s.targetScale=1.1; // Spring Up
-            dragOff.x=p.x-s.x; dragOff.y=p.y-s.y;
-        }
+        if(p.x>s.x-20 && p.x<s.x+80 && p.y>s.y-20 && p.y<s.y+100) { dragging=s; s.targetScale=1.1; dragOff={x:p.x-s.x, y:p.y-s.y}; }
     });
 });
 
@@ -244,26 +214,15 @@ window.addEventListener('touchend', () => {
     let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
     if(canPlace(dragging, gx, gy)) {
         dragging.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) board[gy+r][gx+c]=dragging.c; }));
-        // Place Animation (эффект всплеска при установке)
-        createPlaceParticles(gx, gy, dragging, COLORS[dragging.c].m);
-        score += dragging.m.flat().filter(v=>v).length*10; updateScore();
-        shapes = shapes.filter(s => s !== dragging); if(shapes.length === 0) spawn(); checkLines();
-    } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; } // Return with Snap back
+        score += 10; updateScore();
+        shapes = shapes.filter(s => s !== dragging); 
+        if(shapes.length === 0) spawn(); 
+        else { checkLines(); checkGameOver(); } // Проверка после каждого хода
+    } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; }
     dragging=null;
 });
 
-function createPlaceParticles(gx, gy, s, col) {
-    s.m.forEach((row, ri) => row.forEach((v, ci) => {
-        if(v) {
-            let px=BOARD_PAD+(gx+ci)*(CELL+GAP)+CELL/2, py=BOARD_PAD+(gy+ri)*(CELL+GAP)+CELL/2;
-            for(let i=0; i<6; i++) particles.push(new Particle(px, py, col, 'place'));
-        }
-    }));
-}
-
-// Утилиты
 function resetGame() { board=Array(GRID).fill().map(()=>Array(GRID).fill(null)); score=0; isNewRecord=false; updateScore(); recordBanner.classList.remove('show'); document.getElementById('game-over').style.display='none'; spawn(); }
-function showGameOver() { document.getElementById('final-score').innerText=score; document.getElementById('game-over').style.display='flex'; }
 
 document.getElementById('best').innerText = `BEST: ${best}`;
 spawn(); draw();
