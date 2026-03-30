@@ -12,6 +12,18 @@
             overflow: hidden; touch-action: none; height: 100vh; width: 100vw;
         }
 
+        /* --- ЭФФЕКТ ТРЯСКИ ЭКРАНА --- */
+        .shake {
+            animation: shakeAnim 0.2s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+        }
+        @keyframes shakeAnim {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-3px, -1px, 0); }
+            40%, 60% { transform: translate3d(3px, 1px, 0); }
+        }
+
         /* --- ЗАСТАВКА --- */
         #splash {
             position: fixed; inset: 0; background: var(--bg);
@@ -27,23 +39,13 @@
         .splash-title { margin-top: 30px; font-size: 28px; font-weight: 900; letter-spacing: 5px; color: var(--gold); text-transform: uppercase; }
         @keyframes iconFloat { 0%, 100% { transform: scale(1) translateY(0); } 50% { transform: scale(1.1) translateY(-15px); } }
 
-        /* --- ЭФФЕКТЫ ЧАСТИЦ (ФЕЙЕРВЕРК) --- */
-        .particle {
-            position: absolute; width: 5px; height: 5px;
-            background: var(--gold); border-radius: 50%;
-            pointer-events: none; z-index: 10;
-        }
-
-        /* --- РАДУЖНОЕ СИЯНИЕ --- */
+        /* --- ЭФФЕКТЫ --- */
+        .particle { position: absolute; width: 5px; height: 5px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 10; }
         .grid-clear-line { position: fixed; pointer-events: none; z-index: 4; }
-        .grid-clear-line::after {
-            content: ''; position: absolute; inset: -10px;
-            background: var(--rainbow); filter: blur(20px); opacity: 0;
-        }
+        .grid-clear-line::after { content: ''; position: absolute; inset: -10px; background: var(--rainbow); filter: blur(20px); opacity: 0; }
         .grid-clear-line.active::after { animation: rainbowFade 0.5s forwards; }
         @keyframes rainbowFade { 0% { opacity: 0.7; } 100% { opacity: 0; } }
 
-        /* --- КОМБО --- */
         #combo-popup {
             position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
             font-size: 48px; font-weight: 900; background: var(--rainbow);
@@ -88,7 +90,7 @@ const AudioEngine = {
     }
 };
 
-// ВЕРНУЛИ ФЕЙЕРВЕРК
+// ФЕЙЕРВЕРК
 function createFirework(x, y) {
     for (let i = 0; i < 6; i++) {
         const p = document.createElement('div'); p.className = 'particle'; document.body.appendChild(p);
@@ -109,7 +111,6 @@ let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
 let shapes = [], dragging = null, dragOff = {x:0, y:0}, dragStartTime = 0, bestMove = null;
 
 const COLORS = { r: "#ff4d4d", g: "#4ade80", b: "#3b82f6", y: "#facc15", p: "#a855f7", c: "#22d3ee", o: "#fb923c" };
-
 const clearLineEffect = document.createElement('div'); clearLineEffect.className = 'grid-clear-line'; document.body.appendChild(clearLineEffect);
 
 function drawBlock(x, y, size, colorKey, alpha = 1, special = null) {
@@ -185,13 +186,26 @@ window.addEventListener('touchend', () => {
     } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; } dragging=null;
 });
 
+function triggerShake() {
+    canvas.classList.remove('shake');
+    void canvas.offsetWidth; // Магия для перезапуска анимации
+    canvas.classList.add('shake');
+    setTimeout(() => canvas.classList.remove('shake'), 200);
+}
+
 function checkL() {
     let rc=[], cc=[]; const comboText = document.getElementById('combo-popup');
     for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rc.push(r); for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cc.push(c);
     
-    if(rc.length + cc.length > 1) { comboText.innerText = `COMBO x${rc.length + cc.length}`; comboText.classList.add('active'); setTimeout(() => comboText.classList.remove('active'), 600); if(navigator.vibrate) navigator.vibrate([70, 40, 70]); }
+    if(rc.length + cc.length > 0) {
+        triggerShake(); // ТРЯСКА ПРИ УДАЛЕНИИ
+        if(rc.length + cc.length > 1) { 
+            comboText.innerText = `COMBO x${rc.length + cc.length}`; 
+            comboText.classList.add('active'); 
+            setTimeout(() => comboText.classList.remove('active'), 600); 
+            if(navigator.vibrate) navigator.vibrate([70, 40, 70]); 
+        }
 
-    if(rc.length || cc.length) {
         AudioEngine.play('clear'); const rect = canvas.getBoundingClientRect();
         rc.forEach(r => {
             const by = rect.top + BOARD_PAD + r*(CELL+GAP); clearLineEffect.style.left = rect.left+'px'; clearLineEffect.style.top = by+'px'; clearLineEffect.style.width = rect.width+'px'; clearLineEffect.style.height = CELL+'px';
