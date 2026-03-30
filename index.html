@@ -34,9 +34,45 @@
         #ambient-bg { position: absolute; inset: 0; z-index: -1; transition: background 2s ease; background: radial-gradient(circle at 50% 50%, rgba(109, 40, 217, 0.2), transparent 70%); }
         #header { margin-top: env(safe-area-inset-top, 20px); text-align: center; width: 100%; z-index: 5; }
         #score { font-size: 64px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+        
         canvas { background: var(--panel); border-radius: 20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); max-width: 95vw; margin-top: 5px; transition: all 0.3s; transform-origin: center center; }
-        #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(15px); }
-        .btn { background: #6d28d9; border: none; padding: 15px 40px; color: white; font-size: 18px; border-radius: 30px; font-weight: bold; }
+
+        /* --- ОБНОВЛЕННЫЙ ЭКРАН ПОРАЖЕНИЯ --- */
+        #game-over { 
+            position: fixed; inset: 0; 
+            background: rgba(5, 5, 9, 0.8); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 500; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .go-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px; border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center; width: 80%; max-width: 320px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .go-title { 
+            color: #ff4d4d; font-size: 42px; font-weight: 900; margin: 0; 
+            text-shadow: 0 0 20px rgba(255, 77, 77, 0.5); letter-spacing: 2px;
+        }
+        #final-score { 
+            font-size: 72px; font-weight: 900; margin: 10px 0;
+            background: linear-gradient(#fff, #ccc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .go-best { font-size: 14px; color: var(--gold); opacity: 0.8; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .btn-restart { 
+            background: linear-gradient(135deg, #6d28d9, #a78bfa); 
+            border: none; padding: 18px 50px; color: white; font-size: 20px; 
+            border-radius: 50px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(109, 40, 217, 0.4);
+            transition: transform 0.2s; animation: btnPulse 2s infinite;
+        }
+        .btn-restart:active { transform: scale(0.95); }
+        @keyframes btnPulse { 0% { box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(109, 40, 217, 0); } 100% { box-shadow: 0 0 0 0 rgba(109, 40, 217, 0); } }
     </style>
 </head>
 <body>
@@ -45,7 +81,15 @@
     <div id="ambient-bg"></div>
     <div id="header"><div id="score">0</div><div style="font-size: 12px; opacity: 0.4;">BEST: <span id="best-val">0</span></div></div>
     <canvas id="gameCanvas"></canvas>
-    <div id="game-over"><h1 style="color: #ff4d4d;">ФИНИШ</h1><div id="final-score" style="font-size: 48px; font-weight: 900; margin-bottom: 20px;">0</div><button class="btn" onclick="resetGame()">ЗАНОВО</button></div>
+
+    <div id="game-over">
+        <div class="go-card">
+            <h1 class="go-title">ФИНИШ</h1>
+            <div id="final-score">0</div>
+            <div class="go-best">РЕКОРД: <span id="go-best-val">0</span></div>
+            <button class="btn-restart" onclick="resetGame()">ЗАНОВО</button>
+        </div>
+    </div>
 
 <script>
 window.addEventListener('load', () => { setTimeout(() => { const s = document.getElementById('splash'); s.style.opacity = '0'; setTimeout(() => s.style.visibility = 'hidden', 800); }, 2000); });
@@ -74,14 +118,10 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
 let CELL = Math.floor(window.innerWidth * 0.11); const GAP = 5, BOARD_PAD = 10; canvas.width = (CELL + GAP) * GRID + BOARD_PAD * 2; canvas.height = canvas.width + 150;
 
 let score = 0, best = localStorage.getItem('bb_apk_best') || 0;
-let feverStreak = 0;
-let dragStartTime = 0;
+let feverStreak = 0, dragStartTime = 0, dragTrails = []; 
 document.getElementById('best-val').innerText = best;
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
 let shapes = [], dragging = null, dragOff = {x:0, y:0};
-
-// --- ОБНОВЛЕННЫЙ ШЛЕЙФ: ЭЛИТНЫЕ ЧАСТИЦЫ ---
-let dragTrails = []; 
 
 const COLORS = { r: ["#ff7f7f", "#ff4d4d"], g: ["#86efac", "#4ade80"], b: ["#7dd3fc", "#3b82f6"], y: ["#fef08a", "#facc15"], p: ["#d8b4fe", "#a855f7"], c: ["#a5f3fc", "#22d3ee"], o: ["#fdba74", "#fb923c"] };
 
@@ -120,46 +160,20 @@ function draw() {
         if(board[r][c]) drawBlock(bx, by, CELL, board[r][c]);
         else { ctx.fillStyle="rgba(255,255,255,0.03)"; ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 8); ctx.fill(); }
     }
-
     let idlePulse = 1 + Math.sin(Date.now() / 1000) * 0.02;
 
-    // --- ОТРИСОВКА ЭЛИТНОГО ШЛЕЙФА ---
     dragTrails.forEach((t) => {
-        ctx.save();
-        ctx.globalAlpha = t.a;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = t.color;
-        ctx.fillStyle = t.color;
-        ctx.beginPath(); 
-        // Частица уменьшается в размере по мере жизни
-        let currentR = t.r * (t.a / 0.6); 
-        ctx.arc(t.x, t.y, currentR > 0 ? currentR : 0, 0, Math.PI * 2); 
-        ctx.fill();
-        ctx.restore();
-        t.a -= 0.025; // Скорость затухания
-        t.x += t.vx; t.y += t.vy;
+        ctx.save(); ctx.globalAlpha = t.a; ctx.shadowBlur = 8; ctx.shadowColor = t.color; ctx.fillStyle = t.color;
+        ctx.beginPath(); let currentR = t.r * (t.a / 0.6); ctx.arc(t.x, t.y, currentR > 0 ? currentR : 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        t.a -= 0.025; t.x += t.vx; t.y += t.vy;
     });
     dragTrails = dragTrails.filter(t => t.a > 0);
 
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
-        
-        // --- ГЕНЕРАЦИЯ ЭЛИТНОГО ШЛЕЙФА ПРИ ТАЩЕНИИ ---
-        // Создаем частицы в центре таскиваемой фигуры
         let centerX = dragging.x + (dragging.m[0].length * (CELL) / 2);
         let centerY = dragging.y + (dragging.m.length * (CELL) / 2);
-        for(let i=0; i<3; i++) {
-            dragTrails.push({ 
-                x: centerX + (Math.random()-0.5)*30, 
-                y: centerY + (Math.random()-0.5)*30, 
-                vx: (Math.random()-0.5)*1.5, 
-                vy: (Math.random()-0.5)*1.5, 
-                r: Math.random()*4 + 2, 
-                a: 0.6,
-                color: COLORS[dragging.c][0] // Цвет шлейфа под цвет блока
-            });
-        }
-
+        for(let i=0; i<3; i++) { dragTrails.push({ x: centerX + (Math.random()-0.5)*30, y: centerY + (Math.random()-0.5)*30, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, r: Math.random()*4 + 2, a: 0.6, color: COLORS[dragging.c][0] }); }
         if(Date.now() - dragStartTime > 1500) {
             let canBe = false; for(let r=0; r<=GRID-dragging.m.length; r++) { for(let c=0; c<=GRID-dragging.m[0].length; c++) { if(canPlace(dragging,c,r)) canBe = true; } }
             if(canBe) { dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(dragging.x+ci*(CELL+GAP), dragging.y+ri*(CELL+GAP), CELL, dragging.c, 0.4, 'hint'); })); }
@@ -171,8 +185,7 @@ function draw() {
     shapes.forEach(s => { 
         if(s!==dragging) {
             s.scale+=(s.targetScale-s.scale)*0.2; 
-            let sz=(CELL*s.scale) * (s.scale < 0.6 ? idlePulse : 1); 
-            let g=(GAP*s.scale); 
+            let sz=(CELL*s.scale) * (s.scale < 0.6 ? idlePulse : 1); let g=(GAP*s.scale); 
             s.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c); })); 
         }
     });
@@ -207,11 +220,6 @@ function triggerShake() { canvas.classList.remove('shake'); void canvas.offsetWi
 function updateS() {
     document.getElementById('score').innerText=score;
     if(score>best){ best=score; localStorage.setItem('bb_apk_best', best); document.getElementById('best-val').innerText=best; }
-    const bg = document.getElementById('ambient-bg');
-    if(score < 1000) bg.style.background = "radial-gradient(circle at 50% 50%, rgba(109, 40, 217, 0.2), transparent 70%)";
-    else if(score < 3000) bg.style.background = "radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.3), transparent 70%)";
-    else if(score < 5000) bg.style.background = "radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.3), transparent 70%)";
-    else bg.style.background = "radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.4), transparent 70%)";
 }
 
 function checkL() {
@@ -222,11 +230,7 @@ function checkL() {
         feverStreak++; triggerShake();
         if(clearedLines >= 2 || feverStreak >= 3) { showPraise(clearedLines, feverStreak); }
         if(feverStreak >= 3) { canvas.classList.add('fever-active'); }
-        if(clearedLines > 1 || feverStreak > 1) {
-            comboText.innerText = feverStreak >= 3 ? `FEVER x${feverStreak}!` : `COMBO x${clearedLines}`;
-            comboText.classList.add('active');
-            setTimeout(() => comboText.classList.remove('active'), 600);
-        }
+        if(clearedLines > 1 || feverStreak > 1) { comboText.innerText = feverStreak >= 3 ? `FEVER x${feverStreak}!` : `COMBO x${clearedLines}`; comboText.classList.add('active'); setTimeout(() => comboText.classList.remove('active'), 600); }
         AudioEngine.play('clear'); const rect = canvas.getBoundingClientRect();
         let points = clearedLines * 150; if(feverStreak >= 3) points *= 2; 
         rc.forEach(r => { const by = rect.top + BOARD_PAD + r*(CELL+GAP); for(let c=0; c<GRID; c++) createFirework(rect.left + BOARD_PAD + c*(CELL+GAP) + CELL/2, by + CELL/2); showFloatingScore(`+${points}`, rect.left + rect.width/2, by); board[r].fill(null); });
@@ -238,7 +242,11 @@ function checkL() {
 function checkGameOver() {
     let canMove = false; if(shapes.length === 0) return;
     shapes.forEach(sh => { for(let r=0; r<=GRID-sh.m.length; r++) { for(let c=0; c<=GRID-sh.m[0].length; c++) { if(canPlace(sh, c, r)) canMove = true; } } });
-    if(!canMove) document.getElementById('game-over').style.display='flex';
+    if(!canMove) {
+        document.getElementById('final-score').innerText = score;
+        document.getElementById('go-best-val').innerText = best;
+        document.getElementById('game-over').style.display = 'flex';
+    }
 }
 
 function resetGame() { board=board.map(r=>r.fill(null)); score=0; feverStreak=0; canvas.classList.remove('fever-active'); updateS(); document.getElementById('game-over').style.display='none'; spawn(); }
