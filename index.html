@@ -2,73 +2,104 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block Blast: Gilded Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Block Blast: iPhone 17 Pro Edition</title>
     <style>
-        body { background: #050509; color: white; display: flex; flex-direction: column; align-items: center; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; }
-        #ui { position: absolute; top: 20px; text-align: center; z-index: 10; pointer-events: none; }
-        #score-container { position: relative; }
-        #score { font-size: 72px; font-weight: 900; background: linear-gradient(to bottom, #fff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 15px rgba(167,139,250,0.5)); font-variant-numeric: tabular-nums; }
-        #best { font-size: 18px; color: #6b7280; font-weight: bold; margin-top: -10px; }
-        
-        /* Стили для надписи "Новый Рекорд" */
-        #new-record-banner {
-            position: absolute; top: 110%; left: 50%; transform: translateX(-50%) scale(0);
-            font-size: 24px; font-weight: bold; white-space: nowrap;
-            background: linear-gradient(45deg, #ffd700, #fff, #ffd700);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px #ffd700);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            opacity: 0;
+        :root {
+            --bg: #050509;
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
         }
-        #new-record-banner.show { transform: translateX(-50%) scale(1); opacity: 1; animation: pulseGlow 1.5s infinite; }
+        body { 
+            background: var(--bg); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            height: 100vh; /* Занимаем ровно высоту экрана */
+            overflow: hidden; 
+            touch-action: none; 
+            user-select: none;
+        }
 
-        canvas { background: #0f0f17; border-radius: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.9); margin-top: 150px; border: 2px solid #1f1f2e; cursor: grab; }
-        canvas:active { cursor: grabbing; }
+        #header {
+            margin-top: env(safe-area-inset-top, 40px);
+            text-align: center;
+        }
 
-        #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(10px); }
-        .btn { background: linear-gradient(135deg, #6d28d9, #c084fc); border: none; padding: 18px 60px; color: white; font-size: 22px; border-radius: 50px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 10px 25px rgba(109,40,217,0.5); }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 15px 35px rgba(109,40,217,0.7); }
+        #score { 
+            font-size: 80px; 
+            font-weight: 900; 
+            background: linear-gradient(to bottom, #fff, #a78bfa); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
 
-        @keyframes pulseGlow { 0%, 100% { filter: drop-shadow(0 0 10px #ffd700); } 50% { filter: drop-shadow(0 0 20px #fff); } }
+        #best { font-size: 18px; color: #6b7280; font-weight: bold; margin-top: 5px; }
+
+        canvas { 
+            background: #0f0f17; 
+            border-radius: 24px; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.8); 
+            border: 2px solid #1f1f2e;
+            max-width: 95vw;
+            max-height: 70vh; /* Чтобы оставалось место под фигуры */
+        }
+
+        /* Контейнер для отступа снизу */
+        #footer-spacer {
+            height: calc(var(--safe-bottom) + 120px); /* Поднимаем фигуры над системной полосой */
+            width: 100%;
+        }
+
+        #game-over { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+            display: none; flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 100; backdrop-filter: blur(10px); 
+        }
+
+        #new-record-label {
+            position: absolute; width: 100%; text-align: center; top: 130px;
+            font-weight: bold; color: #ffd700; opacity: 0; transition: 0.5s;
+            text-shadow: 0 0 10px #ffd700;
+        }
+        #new-record-label.show { opacity: 1; transform: scale(1.2); }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="score-container">
-            <div id="score">0</div>
-            <div id="new-record-banner">НОВЫЙ РЕКОРД!</div>
-        </div>
+    <div id="header">
+        <div id="score">0</div>
+        <div id="new-record-label">НОВЫЙ РЕКОРД!</div>
         <div id="best">BEST: 0</div>
-    </div>
-
-    <div id="game-over">
-        <h1 style="font-size: 60px; margin: 0; background: linear-gradient(to right, #ef4444, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GAME OVER</h1>
-        <p id="final-score" style="font-size: 28px; margin: 25px 0; color: #a1a1aa;">Твой счёт: 0</p>
-        <button class="btn" onclick="resetGame()">ИГРАТЬ СНОВА</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
+    <div id="footer-spacer"></div>
+
+    <div id="game-over">
+        <h1 style="color: #ef4444; font-size: 40px;">GAME OVER</h1>
+        <p id="final-score" style="font-size: 24px;">0</p>
+        <button style="padding: 15px 40px; border-radius: 30px; border: none; background: #6d28d9; color: white; font-weight: bold;" onclick="resetGame()">RESTART</button>
+    </div>
+
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const recordBanner = document.getElementById('new-record-banner');
 
-// --- НАСТРОЙКИ ПОЛЯ 7x7 ---
-const GRID = 7; 
-const CELL = 50;
-const GAP = 6;
-const BOARD_X = 20;
-const BOARD_Y = 25;
-canvas.width = (CELL + GAP) * GRID + BOARD_X * 2;
-canvas.height = canvas.width + 190;
+// Адаптация под iPhone: Сетка 8x8, но компактная
+const GRID = 8;
+let CELL = Math.floor(window.innerWidth * 0.11); // Динамический размер ячейки
+const GAP = 4;
+canvas.width = (CELL + GAP) * GRID + 20;
+canvas.height = canvas.width + 150; // Высота холста учитывает зону фигур
 
-// --- СОСТОЯНИЕ ИГРЫ ---
 let score = 0;
-let best = parseInt(localStorage.getItem('bb_gilded_best')) || 0;
-let isNewRecord = false;
+let best = parseInt(localStorage.getItem('bb_best')) || 0;
 document.getElementById('best').innerText = `BEST: ${best}`;
 
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
@@ -77,301 +108,157 @@ let dragging = null;
 let particles = [];
 let dragOffsetX, dragOffsetY;
 
-// --- ЦВЕТА И ФИГУРЫ ---
 const COLORS = {
-    r: { main: "#ff4d4d", glow: "rgba(255, 77, 77, 0.5)" },
-    g: { main: "#4ade80", glow: "rgba(74, 222, 128, 0.5)" },
-    b: { main: "#3b82f6", glow: "rgba(59, 130, 246, 0.5)" },
-    y: { main: "#facc15", glow: "rgba(250, 204, 21, 0.5)" },
-    p: { main: "#a855f7", glow: "rgba(168, 85, 247, 0.5)" },
-    c: { main: "#22d3ee", glow: "rgba(34, 211, 238, 0.5)" },
-    o: { main: "#fb923c", glow: "rgba(251, 146, 60, 0.5)" }
+    r: "#ff4d4d", g: "#4ade80", b: "#3b82f6", y: "#facc15", p: "#a855f7", c: "#22d3ee", o: "#fb923c"
 };
 
-const SHAPES_DEF = [
-    {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
-    {m:[[1,0],[1,0],[1,1]], c:'y'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'},
-    {m:[[1,1],[1,0],[1,0]], c:'r'}
+const SHAPES_LIB = [
+    {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, 
+    {m:[[1,1,1]], c:'c'}, {m:[[1,1],[1,0],[1,0]], c:'y'}, 
+    {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}
 ];
 
-// --- КЛАССЫ ЧАСТИЦ ---
 class Particle {
-    constructor(x, y, color, type = 'firework') {
-        this.x = x; this.y = y; this.color = color; this.type = type;
-        this.life = 1.0;
-        
-        if (type === 'place') { // Короткий всплеск при установке
-            this.vx = (Math.random() - 0.5) * 4;
-            this.vy = (Math.random() - 0.5) * 4;
-            this.decay = 0.04; this.size = 3; this.grav = 0;
-        } else if (type === 'gild') { // Золотой дождь
-            this.vx = (Math.random() - 0.5) * 2;
-            this.vy = Math.random() * 3 + 1;
-            this.decay = 0.01; this.size = 2; this.grav = 0.01;
-        } else { // Обычный взрыв линий
-            this.vx = (Math.random() - 0.5) * 10;
-            this.vy = (Math.random() - 0.5) * 10 - 2;
-            this.decay = 0.02; this.size = 4; this.grav = 0.2;
-        }
-    }
-    update() {
-        this.x += this.vx; this.y += this.vy; this.vy += this.grav;
-        this.life -= this.decay;
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.life = 1;
     }
     draw() {
         ctx.globalAlpha = this.life;
         ctx.fillStyle = this.color;
-        if (this.type === 'gild') {
-            ctx.shadowBlur = 5; ctx.shadowColor = "#ffd700";
-        }
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-        ctx.fill();
-        ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+        ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, 7); ctx.fill();
+        this.life -= 0.03;
     }
 }
 
-// --- ОСНОВНАЯ ЛОГИКА ---
 function spawn() {
     shapes = [];
-    const positions = [canvas.width * 0.2, canvas.width * 0.5, canvas.width * 0.8];
+    const step = canvas.width / 3;
     for(let i=0; i<3; i++) {
-        let proto = SHAPES_DEF[Math.floor(Math.random()*SHAPES_DEF.length)];
-        let w = proto.m[0].length * (CELL * 0.5);
+        let s = SHAPES_LIB[Math.floor(Math.random()*SHAPES_LIB.length)];
         shapes.push({
-            ...proto, 
-            x: positions[i] - w/2, y: canvas.height - 130,
-            ox: positions[i] - w/2, oy: canvas.height - 130,
+            ...s, x: (step * i) + (step - s.m[0].length*CELL*0.5)/2, 
+            y: canvas.height - 110,
+            ox: (step * i) + (step - s.m[0].length*CELL*0.5)/2, 
+            oy: canvas.height - 110,
             scale: 0.5, targetScale: 0.5
         });
     }
-    if (shapes.every(s => !canFit(s))) showGameOver();
 }
 
-function checkLines() {
-    let rClear = [], cClear = [];
-    for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rClear.push(r);
-    for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cClear.push(c);
-
-    rClear.forEach(r => {
-        for(let c=0; c<GRID; c++) explode(c, r, COLORS[board[r][c]].main);
-        board[r].fill(null);
-    });
-    cClear.forEach(c => {
-        for(let r=0; r<GRID; r++) {
-            if(board[r][c]) {
-                explode(c, r, COLORS[board[r][c]].main);
-                board[r][c] = null;
-            }
-        }
-    });
-
-    if(rClear.length || cClear.length) {
-        let lines = rClear.length + cClear.length;
-        score += lines * lines * 100; // Экспоненциальные очки
-        updateScore();
-    }
-}
-
-// Эффекты
-function explode(gx, gy, color) {
-    let px = BOARD_X + gx*(CELL+GAP) + CELL/2;
-    let py = BOARD_Y + gy*(CELL+GAP) + CELL/2;
-    for(let i=0; i<12; i++) particles.push(new Particle(px, py, color));
-}
-
-function createPlaceEffect(gx, gy, shape, color) {
-    shape.m.forEach((row, ri) => row.forEach((v, ci) => {
-        if(v) {
-            let px = BOARD_X + (gx+ci)*(CELL+GAP) + CELL/2;
-            let py = BOARD_Y + (gy+ri)*(CELL+GAP) + CELL/2;
-            for(let i=0; i<4; i++) particles.push(new Particle(px, py, color, 'place'));
-        }
-    }));
-}
-
-function updateScore() {
-    document.getElementById('score').innerText = score;
-    if(score > best) {
-        if (!isNewRecord && best > 0) {
-            isNewRecord = true;
-            recordBanner.classList.add('show');
-        }
-        best = score;
-        localStorage.setItem('bb_gilded_best', best);
-        document.getElementById('best').innerText = `BEST: ${best}`;
-    }
-}
-
-// --- ОТРИСОВКА ---
 function draw() {
     ctx.clearRect(0,0,canvas.width, canvas.height);
 
-    // Gild Overlay: Золотой дождь при рекорде
-    if (isNewRecord) {
-        if (Math.random() < 0.1) particles.push(new Particle(Math.random()*canvas.width, -10, "#ffd700", 'gild'));
-    }
-
-    // Отрисовка сетки и блоков на поле
-    for(let r=0; r<GRID; r++){
-        for(let c=0; c<GRID; c++){
-            let bx = BOARD_X + c*(CELL+GAP);
-            let by = BOARD_Y + r*(CELL+GAP);
-            
-            if (board[r][c]) {
-                let col = COLORS[board[r][c]];
-                ctx.fillStyle = col.main;
-                // Scale & Glow effect
-                ctx.shadowBlur = 15; ctx.shadowColor = col.glow;
-            } else {
-                ctx.fillStyle = "#181825";
-                ctx.shadowBlur = 0;
-            }
-
-            // Gild Overlay: Золочение поля
-            if (isNewRecord) {
-                ctx.strokeStyle = "rgba(255, 215, 0, 0.3)"; ctx.lineWidth = 1;
-            } else {
-                ctx.strokeStyle = "#232336"; ctx.lineWidth = 1;
-            }
-
+    // Сетка
+    for(let r=0; r<GRID; r++) {
+        for(let c=0; c<GRID; c++) {
+            ctx.fillStyle = board[r][c] ? COLORS[board[r][c]] : "#1e1e2e";
+            if(board[r][c]) { ctx.shadowBlur = 10; ctx.shadowColor = COLORS[board[r][c]]; }
             ctx.beginPath();
-            ctx.roundRect(bx, by, CELL, CELL, 10);
+            ctx.roundRect(10 + c*(CELL+GAP), 10 + r*(CELL+GAP), CELL, CELL, 8);
             ctx.fill();
-            ctx.stroke();
-            
-            // Блик
-            if(board[r][c]) {
-                ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.shadowBlur = 0;
-                ctx.fillRect(bx+5, by+5, CELL-10, CELL/3);
-            }
+            ctx.shadowBlur = 0;
         }
     }
-    ctx.shadowBlur = 0; // Сброс свечения
 
-    // Перетаскиваемая фигура (Pre-render Glow)
-    if (dragging) {
-        ctx.save();
-        ctx.shadowBlur = 30; ctx.shadowColor = COLORS[dragging.c].glow;
-    }
-
-    // Отрисовка фигур внизу
+    // Фигуры
     shapes.forEach(s => {
-        s.scale += (s.targetScale - s.scale) * 0.25; // Плавный Scale
-        ctx.fillStyle = COLORS[s.c].main;
+        s.scale += (s.targetScale - s.scale) * 0.2;
+        ctx.fillStyle = COLORS[s.c];
         let sz = CELL * s.scale;
         let g = GAP * s.scale;
         s.m.forEach((row, ri) => row.forEach((v, ci) => {
             if(v) {
                 ctx.beginPath();
-                ctx.roundRect(s.x + ci*(sz+g), s.y + ri*(sz+g), sz, sz, 8);
+                ctx.roundRect(s.x + ci*(sz+g), s.y + ri*(sz+g), sz, sz, 6);
                 ctx.fill();
             }
         }));
     });
-    if (dragging) ctx.restore();
 
-    // Частицы
     particles = particles.filter(p => p.life > 0);
-    particles.forEach(p => { p.update(); p.draw(); });
+    particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.draw(); });
 
     requestAnimationFrame(draw);
 }
 
-// --- УПРАВЛЕНИЕ ---
-const getEventPos = (e) => {
-    let rect = canvas.getBoundingClientRect();
-    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+// Управление
+const getPos = (e) => {
+    let r = canvas.getBoundingClientRect();
+    let cx = e.touches ? e.touches[0].clientX : e.clientX;
+    let cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
 };
 
-const handleDown = (e) => {
-    let pos = getEventPos(e);
+canvas.addEventListener('touchstart', (e) => {
+    let p = getPos(e);
     shapes.forEach(s => {
-        // Упрощенная проверка попадания
-        if(pos.x > s.x - 20 && pos.x < s.x + 100 && pos.y > s.y - 20 && pos.y < s.y + 100) {
+        if(p.x > s.x-20 && p.x < s.x+80 && p.y > s.y-20 && p.y < s.y+100) {
             dragging = s;
-            s.targetScale = 1.0; // Scale Up
-            dragOffsetX = pos.x - s.x; dragOffsetY = pos.y - s.y;
+            s.targetScale = 1.0;
+            dragOffsetX = p.x - s.x; dragOffsetY = p.y - s.y;
         }
     });
-};
+});
 
-const handleMove = (e) => {
+window.addEventListener('touchmove', (e) => {
     if(!dragging) return;
-    if(e.cancelable) e.preventDefault();
-    let pos = getEventPos(e);
-    dragging.x = pos.x - dragOffsetX;
-    dragging.y = pos.y - dragOffsetY;
-};
+    let p = getPos(e);
+    dragging.x = p.x - dragOffsetX;
+    dragging.y = p.y - dragOffsetY;
+}, {passive: false});
 
-const handleUp = () => {
+window.addEventListener('touchend', () => {
     if(!dragging) return;
-    let gx = Math.round((dragging.x - BOARD_X) / (CELL+GAP));
-    let gy = Math.round((dragging.y - BOARD_Y) / (CELL+GAP));
+    let gx = Math.round((dragging.x - 10) / (CELL+GAP));
+    let gy = Math.round((dragging.y - 10) / (CELL+GAP));
 
-    let can = true;
-    if(gx >= 0 && gy >= 0 && gx + dragging.m[0].length <= GRID && gy + dragging.m.length <= GRID) {
-        dragging.m.forEach((row, r) => row.forEach((v, c) => {
-            if(v && board[gy+r][gx+c]) can = false;
-        }));
-    } else can = false;
+    let ok = gx>=0 && gy>=0 && gx+dragging.m[0].length<=GRID && gy+dragging.m.length<=GRID;
+    if(ok) {
+        dragging.m.forEach((row, r) => row.forEach((v, c) => { if(v && board[gy+r][gx+c]) ok = false; }));
+    }
 
-    if(can) {
-        dragging.m.forEach((row, r) => row.forEach((v, c) => {
-            if(v) board[gy+r][gx+c] = dragging.c;
-        }));
-        createPlaceEffect(gx, gy, dragging, COLORS[dragging.c].main); // Place Particles
-        score += dragging.m.flat().filter(v=>v).length * 10;
-        updateScore();
+    if(ok) {
+        dragging.m.forEach((row, r) => row.forEach((v, c) => { if(v) board[gy+r][gx+c] = dragging.c; }));
+        score += 10; updateScore();
         shapes = shapes.filter(s => s !== dragging);
         if(shapes.length === 0) spawn();
         checkLines();
     } else {
-        // Возврат на место
         dragging.x = dragging.ox; dragging.y = dragging.oy; dragging.targetScale = 0.5;
     }
     dragging = null;
-};
+});
 
-// Вспомогательные функции
-function canFit(s) {
-    for(let r=0; r<=GRID-s.m.length; r++) {
-        for(let c=0; c<=GRID-s.m[0].length; c++) {
-            let ok = true;
-            s.m.forEach((row, ri) => row.forEach((v, ci) => {
-                if(v && board[r+ri][c+ci]) ok = false;
-            }));
-            if(ok) return true;
-        }
-    }
-    return false;
+function checkLines() {
+    let rc = [], cc = [];
+    for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rc.push(r);
+    for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cc.push(c);
+    
+    rc.forEach(r => { board[r].fill(null); score += 100; });
+    cc.forEach(c => { board.forEach(r => r[c] = null); score += 100; });
+    if(rc.length || cc.length) updateScore();
 }
 
-function showGameOver() {
-    document.getElementById('final-score').innerText = `Твой счёт: ${score}`;
-    document.getElementById('game-over').style.display = 'flex';
+function updateScore() {
+    document.getElementById('score').innerText = score;
+    if(score > best) {
+        if(best > 0) document.getElementById('new-record-label').classList.add('show');
+        best = score;
+        localStorage.setItem('bb_best', best);
+        document.getElementById('best').innerText = `BEST: ${best}`;
+    }
 }
 
 function resetGame() {
     board = Array(GRID).fill().map(() => Array(GRID).fill(null));
-    score = 0; isNewRecord = false;
-    document.getElementById('score').innerText = 0;
-    recordBanner.classList.remove('show');
+    score = 0; updateScore();
     document.getElementById('game-over').style.display = 'none';
     spawn();
 }
 
-// Слушатели событий
-canvas.addEventListener('mousedown', handleDown);
-window.addEventListener('mousemove', handleMove);
-window.addEventListener('mouseup', handleUp);
-canvas.addEventListener('touchstart', handleDown, {passive: false});
-window.addEventListener('touchmove', handleMove, {passive: false});
-window.addEventListener('touchend', handleUp);
-
-// Старт
 spawn();
 draw();
 </script>
