@@ -1,1 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Block Blast — полная версия с эффектами</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
 
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1e2a3a 0%, #0f1a24 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
+            padding: 16px;
+            position: relative;
+        }
+
+        .game-wrapper {
+            background: #1a2a33;
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            width: 100%;
+            max-width: 1100px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .board-section {
+            background: #0f1a1f;
+            border-radius: 32px;
+            padding: 16px;
+            box-shadow: inset 0 0 0 1px #2d4a5a, 0 8px 20px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        canvas#boardCanvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 20px;
+            background: #1c2c34;
+            box-shadow: 0 0 0 2px #ffcf6e, 0 5px 15px black;
+            cursor: crosshair;
+            width: 100%;
+            height: auto;
+        }
+
+        .info-panel {
+            background: #111e24dd;
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 20px 18px;
+            min-width: 180px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.1s;
+            box-shadow: 0 2px 5px black;
+        }
+        .sound-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            text-align: center;
+            background: #0a1219;
+            border-radius: 60px;
+            padding: 12px 16px;
+            margin-top: 8px;
+        }
+        .stats .score-label {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            color: #ffdd99;
+        }
+        .stats .score-value {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #ffcc66;
+            text-shadow: 0 2px 5px #ff8800;
+        }
+        .stats .highscore-label {
+            font-size: 0.7rem;
+            color: #ffbb88;
+            margin-top: 5px;
+        }
+        .stats .highscore-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffaa66;
+        }
+
+        .blocks-panel {
+            background: #071018aa;
+            border-radius: 36px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+        .blocks-panel h3 {
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            color: #ffe1a0;
+            font-weight: normal;
+        }
+        .blocks-row {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+        .block-card {
+            background: #2a3a48;
+            border-radius: 28px;
+            padding: 10px;
+            cursor: grab;
+            transition: transform 0.05s linear;
+            box-shadow: 0 6px 0 #1a2a2f;
+            border: 1px solid #ffbb66;
+            width: fit-content;
+            touch-action: none;
+            animation: cardAppear 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
+            transform-origin: center;
+        }
+        @keyframes cardAppear {
+            0% { transform: scale(0.5) rotate(-5deg); opacity: 0; filter: blur(2px); }
+            50% { transform: scale(1.05) rotate(1deg); opacity: 0.8; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; filter: blur(0); }
+        }
+        .block-card:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+        .block-card.return {
+            animation: returnCard 0.15s ease-out;
+        }
+        @keyframes returnCard {
+            0% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .block-canvas {
+            display: block;
+            background: #1c2c30;
+            border-radius: 16px;
+            margin: 0 auto;
+            box-shadow: inset 0 0 0 1px #ffcc77;
+        }
+        .block-name {
+            margin-top: 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #ffcf9a;
+        }
+
+        button#resetButton {
+            background: linear-gradient(135deg, #ffaa44, #e07c2c);
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            padding: 12px 20px;
+            border-radius: 60px;
+            color: #2a1e0c;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 0 #8b4b00;
+            transition: 0.05s linear;
+            font-family: inherit;
+            touch-action: manipulation;
+        }
+        button#resetButton:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #8b4b00;
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 12px; }
+            .game-wrapper { padding: 12px; }
+            .board-section { padding: 10px; }
+            .stats .score-value { font-size: 2rem; }
+            .block-card { padding: 6px; }
+            .info-panel { min-width: 140px; padding: 15px 12px; }
+            .blocks-panel h3 { font-size: 0.8rem; }
+            .block-name { font-size: 0.6rem; }
+            button#resetButton { font-size: 0.9rem; padding: 10px; }
+            .sound-toggle { width: 32px; height: 32px; font-size: 1rem; top: 12px; right: 12px; }
+        }
+
+        @media (max-width: 550px) {
+            .game-container { gap: 16px; }
+            .info-panel { min-width: 130px; }
+            .stats .score-value { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-wrapper">
+    <div class="game-container">
+        <div class="board-section">
+            <canvas id="boardCanvas" width="400" height="400"></canvas>
+        </div>
+        <div class="info-panel">
+            <button class="sound-toggle" id="soundToggle">🔊</button>
+            <div class="stats">
+                <div class="score-label">✨ ОЧКИ ✨</div>
+                <div class="score-value" id="scoreDisplay">0</div>
+                <div class="highscore-label">🏆 РЕКОРД</div>
+                <div class="highscore-value" id="highScoreDisplay">0</div>
+            </div>
+            <div class="blocks-panel">
+                <h3>📦 ПЕРЕТАЩИ ФИГУРУ</h3>
+                <div class="blocks-row" id="blocksContainer"></div>
+            </div>
+            <button id="resetButton">🔄 НОВАЯ ИГРА</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- НАСТРОЙКИ ----------
+        const BOARD_SIZE = 8;
+        const CELL_SIZE = 50;
+        let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+        let currentScore = 0;
+        let highScore = localStorage.getItem('blockBlastHigh') ? parseInt(localStorage.getItem('blockBlastHigh')) : 0;
+        let gameActive = true;
+        let animating = false;
+
+        // Библиотека фигур
+        const SHAPES_LIB = [
+            { name: "2x2", shape: [[1,1],[1,1]] },
+            { name: "I 3", shape: [[1,1,1]] },
+            { name: "I 2", shape: [[1,1]] },
+            { name: "I 1", shape: [[1]] },
+            { name: "L-угол", shape: [[1,0],[1,1]] },
+            { name: "Г-угол", shape: [[0,1],[1,1]] },
+            { name: "Зигзаг", shape: [[1,1,0],[0,1,1]] },
+            { name: "Зигзаг зерк", shape: [[0,1,1],[1,1,0]] },
+            { name: "T-образный", shape: [[1,1,1],[0,1,0]] },
+            { name: "Крестовина", shape: [[0,1,0],[1,1,1],[0,1,0]] }
+        ];
+
+        let currentBlocks = [];
+
+        // Drag & drop
+        let dragActive = false;
+        let dragBlockIndex = null;
+        let dragShape = null;
+        let ghostX = 0, ghostY = 0;
+        let dragStartElement = null;
+        let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        // Анимации (оптимизированные)
+        let particles = [];
+        let flashCells = [];
+        let clearAnimation = null;
+        let scoreAnimFrame = null;
+        let currentScoreDisplay = 0;
+        let targetScore = 0;
+        
+        // Новые эффекты
+        let waveEffect = null;            // { x, y, radius, maxRadius, alpha }
+        let confetti = [];                // { x, y, vx, vy, life, color, size }
+        let soundEnabled = true;
+        let audioCtx = null;
+        let soundToggleBtn = document.getElementById('soundToggle');
+
+        let recordEffectActive = false;
+        let recordEffectTimer = 0;
+        let recordTextActive = false;
+        let recordTextLife = 0;
+
+        const MAX_PARTICLES = isMobile ? 50 : 100;
+        const MAX_CONFETTI = isMobile ? 60 : 100;
+
+        const boardCanvas = document.getElementById('boardCanvas');
+        const ctx = boardCanvas.getContext('2d');
+        const scoreSpan = document.getElementById('scoreDisplay');
+        const highScoreSpan = document.getElementById('highScoreDisplay');
+        const blocksContainer = document.getElementById('blocksContainer');
+        const resetBtn = document.getElementById('resetButton');
+
+        highScoreSpan.innerText = highScore;
+
+        // ---------- ЗВУКИ (Web Audio) ----------
+        function initAudio() {
+            if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            // возобновляем, если suspended
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            if (type === 'place') {
+                osc.frequency.value = 523.25; // C5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'clear') {
+                osc.frequency.value = 784.0; // G5
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'record') {
+                // два коротких звука
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc.frequency.value = 659.25; // E5
+                osc2.frequency.value = 880.0; // A5
+                gain.gain.setValueAtTime(0.12, now);
+                gain2.gain.setValueAtTime(0.12, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                osc.start(now);
+                osc2.start(now + 0.05);
+                osc.stop(now + 0.25);
+                osc2.stop(now + 0.25);
+            }
+        }
+
+        function vibrate(duration) {
+            if (!soundEnabled) return;
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(duration);
+            }
+        }
+
+        // ---------- ЭФФЕКТЫ ----------
+        function addWave(x, y) {
+            waveEffect = { x: x, y: y, radius: 10, maxRadius: 70, alpha: 0.8 };
+        }
+
+        function addConfettiBurst(x, y) {
+            const count = isMobile ? 40 : 70;
+            for (let i = 0; i < count && confetti.length < MAX_CONFETTI; i++) {
+                confetti.push({
+                    x: x + (Math.random() - 0.5) * 80,
+                    y: y + (Math.random() - 0.5) * 60,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 2 - 2,
+                    life: 0.9 + Math.random() * 0.5,
+                    color: `hsl(${Math.random() * 360}, 80%, 65%)`,
+                    size: 3 + Math.random() * 5
+                });
+            }
+        }
+
+        function updateConfetti() {
+            for (let i = 0; i < confetti.length; i++) {
+                const c = confetti[i];
+                c.x += c.vx;
+                c.y += c.vy;
+                c.vy += 0.12; // гравитация
+                c.life -= 0.012;
+                if (c.life <= 0 || c.y > 450) confetti.splice(i--,1);
+            }
+        }
+
+        // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+        function getRandomShape() {
+            const idx = Math.floor(Math.random() * SHAPES_LIB.length);
+            const original = SHAPES_LIB[idx];
+            const shapeCopy = original.shape.map(row => [...row]);
+            return { name: original.name, shape: shapeCopy };
+        }
+
+        function consumeBlock(index) {
+            if(index >= 0 && index < currentBlocks.length) {
+                currentBlocks.splice(index, 1);
+                currentBlocks.push(getRandomShape());
+            }
+            renderBlocksUI();
+        }
+
+        function canPlace(shape, row, col) {
+            const rows = shape.length, cols = shape[0].length;
+            if(row + rows > BOARD_SIZE || col + cols > BOARD_SIZE) return false;
+            for(let r = 0; r < rows; r++)
+                for(let c = 0; c < cols; c++)
+                    if(shape[r][c] === 1 && board[row + r][col + c] === 1) return false;
+            return true;
+        }
+
+        function commitBlock(shape, row, col) {
+            for(let r = 0; r < shape.length; r++)
+                for(let c = 0; c < shape[0].length; c++)
+                    if(shape[r][c] === 1) board[row + r][col + c] = 1;
+        }
+
+        function getLinesToClear() {
+            let rowsToClear = [], colsToClear = [];
+            for(let i = 0; i < BOARD_SIZE; i++) {
+                if(board[i].every(v => v === 1)) rowsToClear.push(i);
+            }
+            for(let j = 0; j < BOARD_SIZE; j++) {
+                let full = true;
+                for(let i = 0; i < BOARD_SIZE; i++) if(board[i][j] === 0) { full = false; break; }
+                if(full) colsToClear.push(j);
+            }
+            let cells = [];
+            for(let r of rowsToClear)
+                for(let c = 0; c < BOARD_SIZE; c++) cells.push({row: r, col: c});
+            for(let c of colsToClear)
+                for(let r = 0; r < BOARD_SIZE; r++) cells.push({row: r, col: c});
+            const unique = [];
+            const keySet = new Set();
+            for(let cell of cells) {
+                const key = `${cell.row},${cell.col}`;
+                if(!keySet.has(key)) {
+                    keySet.add(key);
+                    unique.push(cell);
+                }
+            }
+            return { cells: unique, rows: rowsToClear, cols: colsToClear };
+        }
+
+        function startClearAnimation(cells, onComplete) {
+            if(cells.length === 0) { onComplete(); return; }
+            clearAnimation = { 
+                cells: cells, 
+                progress: 0, 
+                duration: 100, 
+                startTime: performance.now() 
+            };
+            for(let cell of cells) {
+                const x = cell.col * CELL_SIZE + CELL_SIZE/2;
+                const y = cell.row * CELL_SIZE + CELL_SIZE/2;
+                for(let i = 0; i < (isMobile ? 3 : 5); i++) addParticle(x, y, 2, true);
+            }
+            drawBoard();
+            function step(now) {
+                if(!clearAnimation) return;
+                const elapsed = now - clearAnimation.startTime;
+                clearAnimation.progress = Math.min(1, elapsed / clearAnimation.duration);
+                drawBoard();
+                if(clearAnimation.progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    for(let cell of clearAnimation.cells) {
+                        board[cell.row][cell.col] = 0;
+                    }
+                    clearAnimation = null;
+                    onComplete();
+                    drawBoard();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function calculateLineScore(rowsCount, colsCount) {
+            const total = rowsCount + colsCount;
+            let points = total * 50;
+            if(total >= 3) points += 40;
+            if(total >= 5) points += 80;
+            return points;
+        }
+
+        function addParticle(x, y, size = 2, isExplosion = false) {
+            if(particles.length > MAX_PARTICLES) return;
+            const count = isExplosion ? (isMobile ? 3 : 5) : (isMobile ? 1 : 2);
+            for(let i = 0; i < count; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 3.8,
+                    vy: (Math.random() - 0.5) * 3.8 - 1.5,
+                    life: 0.6 + Math.random() * 0.3,
+                    size: size + Math.random() * 2.5,
+                    color: `hsl(${35 + Math.random() * 40}, 85%, 65%)`
+                });
+            }
+        }
+
+        function addFlash(cells, intensity = 1.0) {
+            for(let cell of cells) {
+                flashCells.push({ row: cell.row, col: cell.col, timer: 0.28, intensity: intensity });
+            }
+        }
+
+        function animateScore(newScore) {
+            targetScore = newScore;
+            if(scoreAnimFrame) cancelAnimationFrame(scoreAnimFrame);
+            const start = currentScoreDisplay;
+            const startTime = performance.now();
+            function step(now) {
+                const t = Math.min(1, (now - startTime) / 150);
+                currentScoreDisplay = Math.floor(start + (targetScore - start) * t);
+                scoreSpan.innerText = currentScoreDisplay;
+                if(t < 0.95) {
+                    scoreSpan.style.transform = 'scale(1.12)';
+                    scoreSpan.style.textShadow = '0 0 12px #ffaa55';
+                } else {
+                    scoreSpan.style.transform = '';
+                    scoreSpan.style.textShadow = '';
+                }
+                if(t < 1) scoreAnimFrame = requestAnimationFrame(step);
+                else scoreAnimFrame = null;
+            }
+            scoreAnimFrame = requestAnimationFrame(step);
+        }
+
+        function checkAndUpdateHighScore(score) {
+            if(score > highScore) {
+                highScore = score;
+                localStorage.setItem('blockBlastHigh', highScore);
+                highScoreSpan.innerText = highScore;
+                triggerRecordEffect();
+                return true;
+            }
+            return false;
+        }
+
+        function triggerRecordEffect() {
+            if(recordEffectActive) return;
+            recordEffectActive = true;
+            recordEffectTimer = 0.8;
+            recordTextActive = true;
+            recordTextLife = 1.0;
+            // конфетти по всему полю
+            for(let i = 0; i < (isMobile ? 50 : 90); i++) {
+                confetti.push({
+                    x: Math.random() * 400,
+                    y: Math.random() * 200,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 3 - 2,
+                    life: 1.0,
+                    color: `hsl(${Math.random() * 360}, 85%, 65%)`,
+                    size: 3 + Math.random() * 6
+                });
+            }
+            const highEl = document.getElementById('highScoreDisplay');
+            highEl.classList.add('record-glow');
+            setTimeout(() => highEl.classList.remove('record-glow'), 600);
+            playSound('record');
+            vibrate(200);
+        }
+
+        // Основной ход
+        function tryPlaceBlockWithEffects(index, row, col) {
+            if(!gameActive || animating) return false;
+            const block = currentBlocks[index];
+            if(!block) return false;
+            const shape = block.shape;
+            if(!canPlace(shape, row, col)) return false;
+
+            animating = true;
+
+            commitBlock(shape, row, col);
+            
+            const blockCells = [];
+            for(let r = 0; r < shape.length; r++)
+                for(let c = 0; c < shape[0].length; c++)
+                    if(shape[r][c] === 1) blockCells.push({row: row + r, col: col + c});
+            
+            addFlash(blockCells, 1.0);
+            // центр блока для волны
+            const centerX = (col + shape[0].length/2) * CELL_SIZE;
+            const centerY = (row + shape.length/2) * CELL_SIZE;
+            addWave(centerX, centerY);
+            for(let cell of blockCells) {
+                const x = cell.col * CELL_SIZE + CELL_SIZE/2;
+                const y = cell.row * CELL_SIZE + CELL_SIZE/2;
+                for(let i = 0; i < (isMobile ? 4 : 6); i++) addParticle(x, y, 2, true);
+            }
+            
+            playSound('place');
+            vibrate(50);
+            
+            const basePoints = 5;
+            const newScoreAfterBase = currentScore + basePoints;
+            animateScore(newScoreAfterBase);
+            currentScore = newScoreAfterBase;
+            
+            const { cells: linesToClear, rows, cols } = getLinesToClear();
+            if(linesToClear.length > 0) {
+                addFlash(linesToClear, 0.9);
+                const linePoints = calculateLineScore(rows.length, cols.length);
+                const newScoreAfterLines = currentScore + linePoints;
+                animateScore(newScoreAfterLines);
+                currentScore = newScoreAfterLines;
+                if (linePoints > 0) {
+                    playSound('clear');
+                    vibrate(80);
+                }
+                startClearAnimation(linesToClear, () => {
+                    checkAndUpdateHighScore(currentScore);
+                    consumeBlock(index);
+                    if(!hasAnyValidMove()) {
+                        gameActive = false;
+                        drawBoard();
+                        setTimeout(() => alert("💥 ИГРА ЗАВЕРШЕНА!\nВаши очки: " + currentScore), 50);
+                    }
+                    animating = false;
+                    drawBoard();
+                });
+            } else {
+                consumeBlock(index);
+                checkAndUpdateHighScore(currentScore);
+                if(!hasAnyValidMove()) {
+                    gameActive = false;
+                    drawBoard();
+                    setTimeout(() => alert("💥 ИГРА ЗАВЕРШЕНА!\nВаши очки: " + currentScore), 50);
+                }
+                animating = false;
+                drawBoard();
+            }
+            return true;
+        }
+
+        function hasAnyValidMove() {
+            for(let b of currentBlocks) {
+                const shape = b.shape;
+                const rows = shape.length, cols = shape[0].length;
+                for(let i = 0; i <= BOARD_SIZE - rows; i++)
+                    for(let j = 0; j <= BOARD_SIZE - cols; j++)
+                        if(canPlace(shape, i, j)) return true;
+            }
+            return false;
+        }
+
+        // ---------- ОТРИСОВКА ----------
+        function drawBoard() {
+            ctx.clearRect(0, 0, 400, 400);
+            // Клетки
+            for(let i = 0; i < BOARD_SIZE; i++) {
+                for(let j = 0; j < BOARD_SIZE; j++) {
+                    const x = j * CELL_SIZE;
+                    const y = i * CELL_SIZE;
+                    let clearingScale = 1;
+                    if(clearAnimation) {
+                        const cell = clearAnimation.cells.find(c => c.row === i && c.col === j);
+                        if(cell) clearingScale = 1 - clearAnimation.progress;
+                    }
+                    if(board[i][j] === 1 && clearingScale === 1) {
+                        ctx.fillStyle = "#ffbb66";
+                        ctx.fillRect(x, y, CELL_SIZE-1, CELL_SIZE-1);
+                        ctx.fillStyle = "#e5982c";
+                        ctx.fillRect(x+2, y+2, CELL_SIZE-5, CELL_SIZE-5);
+                        ctx.fillStyle = "#ffd58c";
+                        ctx.fillRect(x+4, y+4, CELL_SIZE-9, CELL_SIZE-9);
+                    } else if(board[i][j] === 1 && clearingScale < 1) {
+                        const offset = (1 - clearingScale) * CELL_SIZE/2;
+                        ctx.save();
+                        ctx.globalAlpha = clearingScale;
+                        ctx.fillStyle = "#ffbb66";
+                        ctx.fillRect(x + offset, y + offset, (CELL_SIZE-1) * clearingScale, (CELL_SIZE-1) * clearingScale);
+                        ctx.restore();
+                    } else {
+                        ctx.fillStyle = "#1e2f3c";
+                        ctx.fillRect(x, y, CELL_SIZE-1, CELL_SIZE-1);
+                        ctx.fillStyle = "#2a4050";
+                        ctx.fillRect(x+1, y+1, CELL_SIZE-3, CELL_SIZE-3);
+                    }
+                    ctx.strokeStyle = "#3f6a80";
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+            }
+
+            // Вспышки
+            for(let i = 0; i < flashCells.length; i++) {
+                const f = flashCells[i];
+                const x = f.col * CELL_SIZE;
+                const y = f.row * CELL_SIZE;
+                const alpha = Math.sin(f.timer * Math.PI * 6) * f.intensity * (1 - f.timer);
+                ctx.fillStyle = `rgba(255, 240, 150, ${alpha * 0.9})`;
+                ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                f.timer -= 0.03;
+                if(f.timer <= 0) flashCells.splice(i--,1);
+            }
+
+            // Волна
+            if(waveEffect) {
+                const w = waveEffect;
+                ctx.beginPath();
+                ctx.arc(w.x, w.y, w.radius, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(255, 255, 180, ${w.alpha * 0.5})`;
+                ctx.fill();
+                w.radius += 6;
+                w.alpha -= 0.03;
+                if(w.radius > w.maxRadius || w.alpha <= 0) waveEffect = null;
+            }
+
+            // Частицы
+            for(let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if(p.life <= 0) particles.splice(i--,1);
+            }
+
+            // Конфетти
+            updateConfetti();
+            for(let c of confetti) {
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.size * c.life, 0, Math.PI*2);
+                ctx.fillStyle = c.color;
+                ctx.fill();
+            }
+
+            // Эффект рекорда
+            if(recordEffectActive) {
+                recordEffectTimer -= 0.02;
+                if(recordEffectTimer <= 0) recordEffectActive = false;
+                const alpha = Math.min(0.5, recordEffectTimer * 1.2);
+                ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.4})`;
+                ctx.fillRect(0, 0, 400, 400);
+            }
+            if(recordTextActive) {
+                recordTextLife -= 0.02;
+                if(recordTextLife <= 0) recordTextActive = false;
+                const yOffset = (1 - recordTextLife) * 15;
+                ctx.font = `bold ${Math.floor(26 + (1-recordTextLife)*8)}px "Segoe UI"`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = "gold";
+                ctx.fillStyle = `rgba(255, 215, 0, ${recordTextLife})`;
+                ctx.fillText("🏆 NEW RECORD! 🏆", 90, 150 - yOffset);
+                ctx.font = "14px monospace";
+                ctx.fillStyle = `rgba(255, 200, 100, ${recordTextLife})`;
+                ctx.fillText("✦ ✦ ✦", 180, 188 - yOffset);
+                ctx.shadowBlur = 0;
+            }
+
+            // Призрак
+            if(dragActive && dragShape && !animating) {
+                const shape = dragShape;
+                const rows = shape.length, cols = shape[0].length;
+                const isOverBoard = (ghostX >= 0 && ghostX <= 400 && ghostY >= 0 && ghostY <= 400);
+                let targetRow = -1, targetCol = -1;
+                if(isOverBoard) {
+                    targetCol = Math.floor(ghostX / CELL_SIZE);
+                    targetRow = Math.floor(ghostY / CELL_SIZE);
+                    const canPlaceHere = canPlace(shape, targetRow, targetCol);
+                    if(targetRow >= 0 && targetCol >= 0 && targetRow + rows <= BOARD_SIZE && targetCol + cols <= BOARD_SIZE) {
+                        for(let r = 0; r < rows; r++) {
+                            for(let c = 0; c < cols; c++) {
+                                if(shape[r][c] === 1) {
+                                    const x = (targetCol + c) * CELL_SIZE;
+                                    const y = (targetRow + r) * CELL_SIZE;
+                                    ctx.fillStyle = canPlaceHere ? "rgba(100,255,100,0.5)" : "rgba(255,80,80,0.5)";
+                                    ctx.fillRect(x, y, CELL_SIZE-1, CELL_SIZE-1);
+                                }
+                            }
+                        }
+                    }
+                }
+                const shapeWidth = cols * CELL_SIZE;
+                const shapeHeight = rows * CELL_SIZE;
+                const drawX = ghostX - shapeWidth/2;
+                const drawY = ghostY - shapeHeight/2;
+                ctx.save();
+                ctx.globalAlpha = 0.85;
+                for(let r = 0; r < rows; r++) {
+                    for(let c = 0; c < cols; c++) {
+                        if(shape[r][c] === 1) {
+                            const x = drawX + c * CELL_SIZE;
+                            const y = drawY + r * CELL_SIZE;
+                            ctx.fillStyle = "#ffaa55";
+                            ctx.fillRect(x, y, CELL_SIZE-2, CELL_SIZE-2);
+                            ctx.fillStyle = "#ffdd99";
+                            ctx.fillRect(x+2, y+2, CELL_SIZE-6, CELL_SIZE-6);
+                        }
+                    }
+                }
+                ctx.restore();
+            }
+
+            if(!gameActive && !animating) {
+                ctx.fillStyle = "rgba(0,0,0,0.8)";
+                ctx.fillRect(0, 0, 400, 400);
+                ctx.font = "bold 26px 'Segoe UI'";
+                ctx.fillStyle = "#ffcc99";
+                ctx.fillText("GAME OVER", 110, 210);
+            }
+        }
+
+        // UI блоков с анимацией появления
+        function renderBlocksUI() {
+            blocksContainer.innerHTML = '';
+            for(let idx = 0; idx < currentBlocks.length; idx++) {
+                const block = currentBlocks[idx];
+                const shape = block.shape;
+                const rows = shape.length, cols = shape[0].length;
+                const maxDim = 80;
+                const cellW = maxDim / cols;
+                const cellH = maxDim / rows;
+                const scale = Math.min(cellW, cellH);
+                const canvasW = cols * scale;
+                const canvasH = rows * scale;
+                const miniCanvas = document.createElement('canvas');
+                miniCanvas.width = canvasW;
+                miniCanvas.height = canvasH;
+                miniCanvas.classList.add('block-canvas');
+                const miniCtx = miniCanvas.getContext('2d');
+                miniCtx.clearRect(0, 0, canvasW, canvasH);
+                const cellWReal = canvasW / cols;
+                const cellHReal = canvasH / rows;
+                for(let r=0; r<rows; r++) {
+                    for(let c=0; c<cols; c++) {
+                        if(shape[r][c] === 1) {
+                            miniCtx.fillStyle = "#ffaa55";
+                            miniCtx.fillRect(c*cellWReal, r*cellHReal, cellWReal-1, cellHReal-1);
+                            miniCtx.fillStyle = "#ffdd99";
+                            miniCtx.fillRect(c*cellWReal+2, r*cellHReal+2, cellWReal-5, cellHReal-5);
+                        } else {
+                            miniCtx.fillStyle = "#2c4a58";
+                            miniCtx.fillRect(c*cellWReal, r*cellHReal, cellWReal-1, cellHReal-1);
+                        }
+                    }
+                }
+                const card = document.createElement('div');
+                card.className = 'block-card';
+                card.setAttribute('data-index', idx);
+                card.appendChild(miniCanvas);
+                const nameSpan = document.createElement('div');
+                nameSpan.className = 'block-name';
+                nameSpan.innerText = block.name;
+                card.appendChild(nameSpan);
+                
+                const startDrag = (clientX, clientY) => {
+                    if(!gameActive || animating) return;
+                    dragBlockIndex = parseInt(card.getAttribute('data-index'));
+                    dragShape = currentBlocks[dragBlockIndex].shape.map(row => [...row]);
+                    dragActive = true;
+                    dragStartElement = card;
+                    const rect = boardCanvas.getBoundingClientRect();
+                    const scaleX = boardCanvas.width / rect.width;
+                    const scaleY = boardCanvas.height / rect.height;
+                    let canvasX = (clientX - rect.left) * scaleX;
+                    let canvasY = (clientY - rect.top) * scaleY;
+                    ghostX = canvasX;
+                    ghostY = canvasY;
+                    drawBoard();
+                };
+                
+                card.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    startDrag(e.clientX, e.clientY);
+                });
+                card.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    startDrag(touch.clientX, touch.clientY);
+                });
+                blocksContainer.appendChild(card);
+            }
+        }
+
+        // Глобальные обработчики
+        function handleMove(clientX, clientY) {
+            if(!dragActive || animating) return;
+            const rect = boardCanvas.getBoundingClientRect();
+            const scaleX = boardCanvas.width / rect.width;
+            const scaleY = boardCanvas.height / rect.height;
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            ghostX = canvasX;
+            ghostY = canvasY;
+            drawBoard();
+        }
+
+        function handleDrop(clientX, clientY) {
+            if(!dragActive || animating) {
+                dragActive = false;
+                dragBlockIndex = null;
+                dragShape = null;
+                drawBoard();
+                return;
+            }
+            const rect = boardCanvas.getBoundingClientRect();
+            const scaleX = boardCanvas.width / rect.width;
+            const scaleY = boardCanvas.height / rect.height;
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            const isOverBoard = (canvasX >= 0 && canvasX <= 400 && canvasY >= 0 && canvasY <= 400);
+            
+            if(isOverBoard && dragBlockIndex !== null && dragShape) {
+                const targetCol = Math.floor(canvasX / CELL_SIZE);
+                const targetRow = Math.floor(canvasY / CELL_SIZE);
+                const rows = dragShape.length, cols = dragShape[0].length;
+                if(targetRow >= 0 && targetCol >= 0 && targetRow + rows <= BOARD_SIZE && targetCol + cols <= BOARD_SIZE) {
+                    if(canPlace(dragShape, targetRow, targetCol)) {
+                        tryPlaceBlockWithEffects(dragBlockIndex, targetRow, targetCol);
+                    }
+                }
+            } else if (dragStartElement) {
+                dragStartElement.classList.add('return');
+                setTimeout(() => dragStartElement.classList.remove('return'), 200);
+            }
+            
+            dragActive = false;
+            dragBlockIndex = null;
+            dragShape = null;
+            dragStartElement = null;
+            drawBoard();
+        }
+
+        window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', (e) => handleDrop(e.clientX, e.clientY));
+        window.addEventListener('touchmove', (e) => {
+            if(dragActive && e.touches.length) {
+                e.preventDefault();
+                handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', (e) => {
+            if(dragActive) {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                handleDrop(touch.clientX, touch.clientY);
+            }
+        });
+        window.addEventListener('touchcancel', (e) => {
+            if(dragActive) {
+                dragActive = false;
+                dragBlockIndex = null;
+                dragShape = null;
+                dragStartElement = null;
+                drawBoard();
+            }
+        });
+
+        function resetGame() {
+            if(animating) return;
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+            currentScore = 0;
+            currentScoreDisplay = 0;
+            targetScore = 0;
+            gameActive = true;
+            animateScore(0);
+            currentBlocks = [];
+            for(let i=0; i<3; i++) currentBlocks.push(getRandomShape());
+            renderBlocksUI();
+            dragActive = false;
+            dragBlockIndex = null;
+            dragShape = null;
+            dragStartElement = null;
+            particles = [];
+            flashCells = [];
+            confetti = [];
+            clearAnimation = null;
+            waveEffect = null;
+            recordEffectActive = false;
+            recordTextActive = false;
+            animating = false;
+            drawBoard();
+        }
+
+        // Звук и инициализация
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggleBtn.innerText = soundEnabled ? "🔊" : "🔇";
+            if (soundEnabled && !audioCtx) {
+                initAudio();
+                // пробуем разбудить аудио контекст
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            }
+        });
+        // Инициализация аудио при первом взаимодействии с игрой
+        function initAudioOnFirstInteraction() {
+            initAudio();
+            document.removeEventListener('click', initAudioOnFirstInteraction);
+            document.removeEventListener('touchstart', initAudioOnFirstInteraction);
+        }
+        document.addEventListener('click', initAudioOnFirstInteraction);
+        document.addEventListener('touchstart', initAudioOnFirstInteraction);
+        
+        resetBtn.addEventListener('click', resetGame);
+        resetGame();
+    })();
+</script>
+</body>
+</html>
