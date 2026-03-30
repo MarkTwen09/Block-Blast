@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Block Blast — полная версия с эффектами</title>
+    <title>Block Blast — классическое расположение</title>
     <style>
         * {
             user-select: none;
@@ -20,34 +20,63 @@
             align-items: center;
             font-family: 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
             padding: 16px;
-            position: relative;
-        }
-
-        .game-wrapper {
-            background: #1a2a33;
-            border-radius: 48px;
-            padding: 20px;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-            width: 100%;
-            max-width: 1100px;
-            box-sizing: border-box;
         }
 
         .game-container {
+            background: #1a2a33;
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 550px;
+            box-sizing: border-box;
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
             gap: 20px;
         }
 
+        /* Верхняя панель со счётом и рекордом */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 20px;
+            background: #0a1219;
+            border-radius: 60px;
+            padding: 12px 24px;
+            box-sizing: border-box;
+        }
+        .stat-card {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: #ffdd99;
+        }
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #ffcc66;
+            text-shadow: 0 2px 5px #ff8800;
+        }
+        .highscore-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffaa66;
+        }
+
+        /* Игровое поле */
         .board-section {
             background: #0f1a1f;
             border-radius: 32px;
             padding: 16px;
             box-shadow: inset 0 0 0 1px #2d4a5a, 0 8px 20px rgba(0,0,0,0.3);
-            flex-shrink: 0;
-            position: relative;
+            width: fit-content;
+            margin: 0 auto;
         }
 
         canvas#boardCanvas {
@@ -61,76 +90,14 @@
             height: auto;
         }
 
-        .info-panel {
-            background: #111e24dd;
-            backdrop-filter: blur(8px);
-            border-radius: 40px;
-            padding: 20px 18px;
-            min-width: 180px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-            position: relative;
-        }
-
-        .sound-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.5);
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.1s;
-            box-shadow: 0 2px 5px black;
-        }
-        .sound-toggle:active {
-            transform: scale(0.95);
-        }
-
-        .stats {
-            text-align: center;
-            background: #0a1219;
-            border-radius: 60px;
-            padding: 12px 16px;
-            margin-top: 8px;
-        }
-        .stats .score-label {
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-            color: #ffdd99;
-        }
-        .stats .score-value {
-            font-size: 2.8rem;
-            font-weight: 800;
-            line-height: 1;
-            color: #ffcc66;
-            text-shadow: 0 2px 5px #ff8800;
-        }
-        .stats .highscore-label {
-            font-size: 0.7rem;
-            color: #ffbb88;
-            margin-top: 5px;
-        }
-        .stats .highscore-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #ffaa66;
-        }
-
+        /* Панель фигур (горизонтально) */
         .blocks-panel {
             background: #071018aa;
-            border-radius: 36px;
-            padding: 16px 12px;
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 16px;
+            width: 100%;
+            box-sizing: border-box;
             text-align: center;
         }
         .blocks-panel h3 {
@@ -141,9 +108,10 @@
         }
         .blocks-row {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            justify-content: center;
             gap: 16px;
-            align-items: center;
+            flex-wrap: wrap;
         }
         .block-card {
             background: #2a3a48;
@@ -153,15 +121,11 @@
             transition: transform 0.05s linear;
             box-shadow: 0 6px 0 #1a2a2f;
             border: 1px solid #ffbb66;
-            width: fit-content;
-            touch-action: none;
-            animation: cardAppear 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
-            transform-origin: center;
+            animation: cardAppear 0.2s ease-out;
         }
         @keyframes cardAppear {
-            0% { transform: scale(0.5) rotate(-5deg); opacity: 0; filter: blur(2px); }
-            50% { transform: scale(1.05) rotate(1deg); opacity: 0.8; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; filter: blur(0); }
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
         .block-card:active {
             cursor: grabbing;
@@ -188,71 +152,98 @@
             color: #ffcf9a;
         }
 
+        /* Кнопка сброса */
         button#resetButton {
             background: linear-gradient(135deg, #ffaa44, #e07c2c);
             border: none;
             font-weight: bold;
             font-size: 1rem;
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 60px;
             color: #2a1e0c;
             cursor: pointer;
             width: 100%;
+            max-width: 200px;
             box-shadow: 0 4px 0 #8b4b00;
             transition: 0.05s linear;
             font-family: inherit;
-            touch-action: manipulation;
+            margin-top: 8px;
         }
         button#resetButton:active {
             transform: translateY(3px);
             box-shadow: 0 1px 0 #8b4b00;
         }
 
-        @media (max-width: 720px) {
-            body { padding: 12px; }
-            .game-wrapper { padding: 12px; }
-            .board-section { padding: 10px; }
-            .stats .score-value { font-size: 2rem; }
-            .block-card { padding: 6px; }
-            .info-panel { min-width: 140px; padding: 15px 12px; }
-            .blocks-panel h3 { font-size: 0.8rem; }
-            .block-name { font-size: 0.6rem; }
-            button#resetButton { font-size: 0.9rem; padding: 10px; }
-            .sound-toggle { width: 32px; height: 32px; font-size: 1rem; top: 12px; right: 12px; }
+        /* Кнопка звука */
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            box-shadow: 0 2px 8px black;
+        }
+        .sound-toggle:active {
+            transform: scale(0.95);
         }
 
         @media (max-width: 550px) {
-            .game-container { gap: 16px; }
-            .info-panel { min-width: 130px; }
-            .stats .score-value { font-size: 1.8rem; }
+            .game-container { padding: 16px; gap: 16px; }
+            .stat-value { font-size: 1.8rem; }
+            .highscore-value { font-size: 1.2rem; }
+            .blocks-row { gap: 10px; }
+            .block-card { padding: 6px; }
+            .block-name { font-size: 0.6rem; }
+            button#resetButton { font-size: 0.9rem; padding: 10px; }
         }
     </style>
 </head>
 <body>
-<div class="game-wrapper">
-    <div class="game-container">
-        <div class="board-section">
-            <canvas id="boardCanvas" width="400" height="400"></canvas>
+<div class="game-container">
+    <!-- Верхняя панель: очки и рекорд -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">✨ ОЧКИ ✨</div>
+            <div class="stat-value" id="scoreDisplay">0</div>
         </div>
-        <div class="info-panel">
-            <button class="sound-toggle" id="soundToggle">🔊</button>
-            <div class="stats">
-                <div class="score-label">✨ ОЧКИ ✨</div>
-                <div class="score-value" id="scoreDisplay">0</div>
-                <div class="highscore-label">🏆 РЕКОРД</div>
-                <div class="highscore-value" id="highScoreDisplay">0</div>
-            </div>
-            <div class="blocks-panel">
-                <h3>📦 ПЕРЕТАЩИ ФИГУРУ</h3>
-                <div class="blocks-row" id="blocksContainer"></div>
-            </div>
-            <button id="resetButton">🔄 НОВАЯ ИГРА</button>
+        <div class="stat-card">
+            <div class="stat-label">🏆 РЕКОРД</div>
+            <div class="stat-value highscore-value" id="highScoreDisplay">0</div>
         </div>
     </div>
+
+    <!-- Игровое поле -->
+    <div class="board-section">
+        <canvas id="boardCanvas" width="400" height="400"></canvas>
+    </div>
+
+    <!-- Панель фигур (горизонтально) -->
+    <div class="blocks-panel">
+        <h3>📦 ПЕРЕТАЩИ ФИГУРУ</h3>
+        <div class="blocks-row" id="blocksContainer"></div>
+    </div>
+
+    <button id="resetButton">🔄 НОВАЯ ИГРА</button>
 </div>
+<button class="sound-toggle" id="soundToggle">🔊</button>
 
 <script>
     (function(){
+        // ---------- ОПРЕДЕЛЕНИЕ ПРОИЗВОДИТЕЛЬНОСТИ ----------
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const MAX_PARTICLES = isMobile ? 35 : 80;
+        const MAX_CONFETTI = isMobile ? 45 : 100;
+
         // ---------- НАСТРОЙКИ ----------
         const BOARD_SIZE = 8;
         const CELL_SIZE = 50;
@@ -262,7 +253,6 @@
         let gameActive = true;
         let animating = false;
 
-        // Библиотека фигур
         const SHAPES_LIB = [
             { name: "2x2", shape: [[1,1],[1,1]] },
             { name: "I 3", shape: [[1,1,1]] },
@@ -284,9 +274,8 @@
         let dragShape = null;
         let ghostX = 0, ghostY = 0;
         let dragStartElement = null;
-        let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-        // Анимации (оптимизированные)
+        // Анимации
         let particles = [];
         let flashCells = [];
         let clearAnimation = null;
@@ -294,9 +283,8 @@
         let currentScoreDisplay = 0;
         let targetScore = 0;
         
-        // Новые эффекты
-        let waveEffect = null;            // { x, y, radius, maxRadius, alpha }
-        let confetti = [];                // { x, y, vx, vy, life, color, size }
+        let waveEffect = null;
+        let confetti = [];
         let soundEnabled = true;
         let audioCtx = null;
         let soundToggleBtn = document.getElementById('soundToggle');
@@ -305,9 +293,6 @@
         let recordEffectTimer = 0;
         let recordTextActive = false;
         let recordTextLife = 0;
-
-        const MAX_PARTICLES = isMobile ? 50 : 100;
-        const MAX_CONFETTI = isMobile ? 60 : 100;
 
         const boardCanvas = document.getElementById('boardCanvas');
         const ctx = boardCanvas.getContext('2d');
@@ -318,7 +303,7 @@
 
         highScoreSpan.innerText = highScore;
 
-        // ---------- ЗВУКИ (Web Audio) ----------
+        // ---------- ЗВУКИ ----------
         function initAudio() {
             if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -326,7 +311,6 @@
         }
         function playSound(type) {
             if (!soundEnabled || !audioCtx) return;
-            // возобновляем, если suspended
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
@@ -334,32 +318,31 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             if (type === 'place') {
-                osc.frequency.value = 523.25; // C5
-                gain.gain.setValueAtTime(0.15, now);
+                osc.frequency.value = 523.25;
+                gain.gain.setValueAtTime(0.12, now);
                 gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
                 osc.start(now);
                 osc.stop(now + 0.2);
             } else if (type === 'clear') {
-                osc.frequency.value = 784.0; // G5
-                gain.gain.setValueAtTime(0.12, now);
+                osc.frequency.value = 784.0;
+                gain.gain.setValueAtTime(0.1, now);
                 gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
                 osc.start(now);
                 osc.stop(now + 0.15);
             } else if (type === 'record') {
-                // два коротких звука
+                osc.frequency.value = 659.25;
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
                 const osc2 = audioCtx.createOscillator();
                 const gain2 = audioCtx.createGain();
                 osc2.connect(gain2);
                 gain2.connect(audioCtx.destination);
-                osc.frequency.value = 659.25; // E5
-                osc2.frequency.value = 880.0; // A5
-                gain.gain.setValueAtTime(0.12, now);
+                osc2.frequency.value = 880.0;
                 gain2.gain.setValueAtTime(0.12, now + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
                 gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
-                osc.start(now);
                 osc2.start(now + 0.05);
-                osc.stop(now + 0.25);
                 osc2.stop(now + 0.25);
             }
         }
@@ -373,20 +356,21 @@
 
         // ---------- ЭФФЕКТЫ ----------
         function addWave(x, y) {
-            waveEffect = { x: x, y: y, radius: 10, maxRadius: 70, alpha: 0.8 };
+            if (!isMobile) waveEffect = { x, y, radius: 10, maxRadius: 70, alpha: 0.8 };
+            else waveEffect = { x, y, radius: 10, maxRadius: 50, alpha: 0.6 };
         }
 
         function addConfettiBurst(x, y) {
-            const count = isMobile ? 40 : 70;
+            const count = isMobile ? 25 : 50;
             for (let i = 0; i < count && confetti.length < MAX_CONFETTI; i++) {
                 confetti.push({
                     x: x + (Math.random() - 0.5) * 80,
                     y: y + (Math.random() - 0.5) * 60,
-                    vx: (Math.random() - 0.5) * 3,
-                    vy: (Math.random() - 0.5) * 2 - 2,
-                    life: 0.9 + Math.random() * 0.5,
+                    vx: (Math.random() - 0.5) * 2.5,
+                    vy: (Math.random() - 0.5) * 2 - 1.8,
+                    life: 0.8 + Math.random() * 0.4,
                     color: `hsl(${Math.random() * 360}, 80%, 65%)`,
-                    size: 3 + Math.random() * 5
+                    size: 3 + Math.random() * 4
                 });
             }
         }
@@ -396,13 +380,13 @@
                 const c = confetti[i];
                 c.x += c.vx;
                 c.y += c.vy;
-                c.vy += 0.12; // гравитация
-                c.life -= 0.012;
+                c.vy += 0.1;
+                c.life -= 0.01;
                 if (c.life <= 0 || c.y > 450) confetti.splice(i--,1);
             }
         }
 
-        // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+        // ---------- ИГРОВЫЕ ФУНКЦИИ ----------
         function getRandomShape() {
             const idx = Math.floor(Math.random() * SHAPES_LIB.length);
             const original = SHAPES_LIB[idx];
@@ -471,7 +455,7 @@
             for(let cell of cells) {
                 const x = cell.col * CELL_SIZE + CELL_SIZE/2;
                 const y = cell.row * CELL_SIZE + CELL_SIZE/2;
-                for(let i = 0; i < (isMobile ? 3 : 5); i++) addParticle(x, y, 2, true);
+                for(let i = 0; i < (isMobile ? 2 : 4); i++) addParticle(x, y, 2, true);
             }
             drawBoard();
             function step(now) {
@@ -503,14 +487,14 @@
 
         function addParticle(x, y, size = 2, isExplosion = false) {
             if(particles.length > MAX_PARTICLES) return;
-            const count = isExplosion ? (isMobile ? 3 : 5) : (isMobile ? 1 : 2);
+            const count = isExplosion ? (isMobile ? 2 : 3) : 1;
             for(let i = 0; i < count; i++) {
                 particles.push({
                     x: x, y: y,
-                    vx: (Math.random() - 0.5) * 3.8,
-                    vy: (Math.random() - 0.5) * 3.8 - 1.5,
-                    life: 0.6 + Math.random() * 0.3,
-                    size: size + Math.random() * 2.5,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 3 - 1,
+                    life: 0.5 + Math.random() * 0.3,
+                    size: size + Math.random() * 2,
                     color: `hsl(${35 + Math.random() * 40}, 85%, 65%)`
                 });
             }
@@ -518,7 +502,7 @@
 
         function addFlash(cells, intensity = 1.0) {
             for(let cell of cells) {
-                flashCells.push({ row: cell.row, col: cell.col, timer: 0.28, intensity: intensity });
+                flashCells.push({ row: cell.row, col: cell.col, timer: 0.25, intensity: intensity });
             }
         }
 
@@ -532,8 +516,8 @@
                 currentScoreDisplay = Math.floor(start + (targetScore - start) * t);
                 scoreSpan.innerText = currentScoreDisplay;
                 if(t < 0.95) {
-                    scoreSpan.style.transform = 'scale(1.12)';
-                    scoreSpan.style.textShadow = '0 0 12px #ffaa55';
+                    scoreSpan.style.transform = 'scale(1.08)';
+                    scoreSpan.style.textShadow = '0 0 8px #ffaa55';
                 } else {
                     scoreSpan.style.transform = '';
                     scoreSpan.style.textShadow = '';
@@ -558,26 +542,26 @@
         function triggerRecordEffect() {
             if(recordEffectActive) return;
             recordEffectActive = true;
-            recordEffectTimer = 0.8;
+            recordEffectTimer = 0.7;
             recordTextActive = true;
             recordTextLife = 1.0;
-            // конфетти по всему полю
-            for(let i = 0; i < (isMobile ? 50 : 90); i++) {
+            const count = isMobile ? 30 : 60;
+            for(let i = 0; i < count; i++) {
                 confetti.push({
                     x: Math.random() * 400,
                     y: Math.random() * 200,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 3 - 2,
-                    life: 1.0,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 2 - 1.5,
+                    life: 0.9,
                     color: `hsl(${Math.random() * 360}, 85%, 65%)`,
-                    size: 3 + Math.random() * 6
+                    size: 2 + Math.random() * 5
                 });
             }
             const highEl = document.getElementById('highScoreDisplay');
             highEl.classList.add('record-glow');
             setTimeout(() => highEl.classList.remove('record-glow'), 600);
             playSound('record');
-            vibrate(200);
+            vibrate(150);
         }
 
         // Основной ход
@@ -597,19 +581,18 @@
                 for(let c = 0; c < shape[0].length; c++)
                     if(shape[r][c] === 1) blockCells.push({row: row + r, col: col + c});
             
-            addFlash(blockCells, 1.0);
-            // центр блока для волны
+            addFlash(blockCells, 0.9);
             const centerX = (col + shape[0].length/2) * CELL_SIZE;
             const centerY = (row + shape.length/2) * CELL_SIZE;
             addWave(centerX, centerY);
             for(let cell of blockCells) {
                 const x = cell.col * CELL_SIZE + CELL_SIZE/2;
                 const y = cell.row * CELL_SIZE + CELL_SIZE/2;
-                for(let i = 0; i < (isMobile ? 4 : 6); i++) addParticle(x, y, 2, true);
+                for(let i = 0; i < (isMobile ? 3 : 5); i++) addParticle(x, y, 2, true);
             }
             
             playSound('place');
-            vibrate(50);
+            vibrate(40);
             
             const basePoints = 5;
             const newScoreAfterBase = currentScore + basePoints;
@@ -618,14 +601,14 @@
             
             const { cells: linesToClear, rows, cols } = getLinesToClear();
             if(linesToClear.length > 0) {
-                addFlash(linesToClear, 0.9);
+                addFlash(linesToClear, 0.8);
                 const linePoints = calculateLineScore(rows.length, cols.length);
                 const newScoreAfterLines = currentScore + linePoints;
                 animateScore(newScoreAfterLines);
                 currentScore = newScoreAfterLines;
                 if (linePoints > 0) {
                     playSound('clear');
-                    vibrate(80);
+                    vibrate(60);
                 }
                 startClearAnimation(linesToClear, () => {
                     checkAndUpdateHighScore(currentScore);
@@ -707,7 +690,7 @@
                 const x = f.col * CELL_SIZE;
                 const y = f.row * CELL_SIZE;
                 const alpha = Math.sin(f.timer * Math.PI * 6) * f.intensity * (1 - f.timer);
-                ctx.fillStyle = `rgba(255, 240, 150, ${alpha * 0.9})`;
+                ctx.fillStyle = `rgba(255, 240, 150, ${alpha * 0.8})`;
                 ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
                 f.timer -= 0.03;
                 if(f.timer <= 0) flashCells.splice(i--,1);
@@ -720,8 +703,8 @@
                 ctx.arc(w.x, w.y, w.radius, 0, Math.PI*2);
                 ctx.fillStyle = `rgba(255, 255, 180, ${w.alpha * 0.5})`;
                 ctx.fill();
-                w.radius += 6;
-                w.alpha -= 0.03;
+                w.radius += 5;
+                w.alpha -= 0.04;
                 if(w.radius > w.maxRadius || w.alpha <= 0) waveEffect = null;
             }
 
@@ -747,26 +730,26 @@
                 ctx.fill();
             }
 
-            // Эффект рекорда
+            // Рекорд
             if(recordEffectActive) {
                 recordEffectTimer -= 0.02;
                 if(recordEffectTimer <= 0) recordEffectActive = false;
                 const alpha = Math.min(0.5, recordEffectTimer * 1.2);
-                ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.4})`;
+                ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.3})`;
                 ctx.fillRect(0, 0, 400, 400);
             }
             if(recordTextActive) {
                 recordTextLife -= 0.02;
                 if(recordTextLife <= 0) recordTextActive = false;
-                const yOffset = (1 - recordTextLife) * 15;
-                ctx.font = `bold ${Math.floor(26 + (1-recordTextLife)*8)}px "Segoe UI"`;
-                ctx.shadowBlur = 8;
+                const yOffset = (1 - recordTextLife) * 12;
+                ctx.font = `bold ${Math.floor(24 + (1-recordTextLife)*6)}px "Segoe UI"`;
+                ctx.shadowBlur = 6;
                 ctx.shadowColor = "gold";
                 ctx.fillStyle = `rgba(255, 215, 0, ${recordTextLife})`;
-                ctx.fillText("🏆 NEW RECORD! 🏆", 90, 150 - yOffset);
+                ctx.fillText("🏆 NEW RECORD! 🏆", 95, 155 - yOffset);
                 ctx.font = "14px monospace";
                 ctx.fillStyle = `rgba(255, 200, 100, ${recordTextLife})`;
-                ctx.fillText("✦ ✦ ✦", 180, 188 - yOffset);
+                ctx.fillText("✦ ✦ ✦", 180, 193 - yOffset);
                 ctx.shadowBlur = 0;
             }
 
@@ -786,7 +769,7 @@
                                 if(shape[r][c] === 1) {
                                     const x = (targetCol + c) * CELL_SIZE;
                                     const y = (targetRow + r) * CELL_SIZE;
-                                    ctx.fillStyle = canPlaceHere ? "rgba(100,255,100,0.5)" : "rgba(255,80,80,0.5)";
+                                    ctx.fillStyle = canPlaceHere ? "rgba(100,255,100,0.45)" : "rgba(255,80,80,0.45)";
                                     ctx.fillRect(x, y, CELL_SIZE-1, CELL_SIZE-1);
                                 }
                             }
@@ -798,7 +781,7 @@
                 const drawX = ghostX - shapeWidth/2;
                 const drawY = ghostY - shapeHeight/2;
                 ctx.save();
-                ctx.globalAlpha = 0.85;
+                ctx.globalAlpha = 0.8;
                 for(let r = 0; r < rows; r++) {
                     for(let c = 0; c < cols; c++) {
                         if(shape[r][c] === 1) {
@@ -823,7 +806,7 @@
             }
         }
 
-        // UI блоков с анимацией появления
+        // UI блоков (горизонтальное расположение)
         function renderBlocksUI() {
             blocksContainer.innerHTML = '';
             for(let idx = 0; idx < currentBlocks.length; idx++) {
@@ -895,9 +878,13 @@
             }
         }
 
-        // Глобальные обработчики
+        // Глобальные обработчики с троттлингом
+        let lastMoveTime = 0;
         function handleMove(clientX, clientY) {
             if(!dragActive || animating) return;
+            const now = performance.now();
+            if (now - lastMoveTime < 16) return;
+            lastMoveTime = now;
             const rect = boardCanvas.getBoundingClientRect();
             const scaleX = boardCanvas.width / rect.width;
             const scaleY = boardCanvas.height / rect.height;
@@ -995,17 +982,15 @@
             drawBoard();
         }
 
-        // Звук и инициализация
+        // Звук
         soundToggleBtn.addEventListener('click', () => {
             soundEnabled = !soundEnabled;
             soundToggleBtn.innerText = soundEnabled ? "🔊" : "🔇";
             if (soundEnabled && !audioCtx) {
                 initAudio();
-                // пробуем разбудить аудио контекст
                 if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             }
         });
-        // Инициализация аудио при первом взаимодействии с игрой
         function initAudioOnFirstInteraction() {
             initAudio();
             document.removeEventListener('click', initAudioOnFirstInteraction);
