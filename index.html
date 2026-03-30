@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Block Blast: Elite Edition</title>
+    <title>Block Blast: Elite Edition (Flat Style)</title>
     <style>
         :root { --bg: #050509; --panel: #0b0b14; --violet: #a78bfa; }
         body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow: hidden; touch-action: none; height: 100vh; }
@@ -46,33 +46,37 @@ canvas.height = canvas.width + 160;
 let score = 0, best = localStorage.getItem('bb_elite_best') || 0;
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
 let shapes = [], particles = [], floatingTexts = [], waves = [];
-let dragging = null, dragOff = {x:0, y:0}, shake = 0;
+let dragging = null, dragOff = {x:0, y:0};
 
 const COLORS = {
     r: "#ff4d4d", g: "#4ade80", b: "#3b82f6", y: "#facc15", p: "#a855f7", c: "#22d3ee", o: "#fb923c"
 };
 
-// Функция отрисовки 3D блока
-function drawBlock(x, y, size, colorKey, alpha = 1) {
+const GLOW_COLORS = {
+    r: "rgba(255, 77, 77, 0.5)", g: "rgba(74, 222, 128, 0.5)", b: "rgba(59, 130, 246, 0.5)",
+    y: "rgba(250, 204, 21, 0.5)", p: "rgba(168, 85, 247, 0.5)", c: "rgba(34, 211, 238, 0.5)", o: "rgba(251, 146, 60, 0.5)"
+};
+
+// ОБНОВЛЕННАЯ: Функция отрисовки чистого плоского блока со свечением
+function drawBlock(x, y, size, colorKey, alpha = 1, applyGlow = true) {
     const col = COLORS[colorKey];
     ctx.globalAlpha = alpha;
     
-    // Основное тело
+    if (applyGlow) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = GLOW_COLORS[colorKey];
+    } else {
+        ctx.shadowBlur = 0;
+    }
+    
+    // Основное тело (чистый цвет)
     ctx.fillStyle = col;
-    ctx.beginPath(); ctx.roundRect(x, y, size, size, 8); ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, 8); // Скругление как на скрине
+    ctx.fill();
 
-    // Блик (сверху и слева)
-    ctx.fillStyle = "rgba(255,255,255,0.25)";
-    ctx.beginPath(); ctx.roundRect(x+2, y+2, size-4, size/2.5, 4); ctx.fill();
-    
-    // Грань (Bevel)
-    ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 2;
-    ctx.strokeRect(x+1, y+1, size-2, size-2);
-    
-    // Тень (снизу)
-    ctx.fillStyle = "rgba(0,0,0,0.2)";
-    ctx.fillRect(x+1, y+size-6, size-2, 5);
-
+    // Сброс тени, чтобы не влияла на другие элементы
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 }
 
@@ -90,11 +94,12 @@ function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
 
 function spawn() {
     shapes = []; const step = canvas.width / 3;
+    const shapeDefs = [
+        {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
+        {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}
+    ];
     for(let i=0; i<3; i++) {
-        let proto = [
-            {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
-            {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}
-        ][Math.floor(Math.random()*6)];
+        let proto = shapeDefs[Math.floor(Math.random()*shapeDefs.length)];
         let w = proto.m[0].length*(CELL*0.5);
         shapes.push({ ...proto, x:(step*i)+(step-w)/2, y:canvas.height-125, ox:(step*i)+(step-w)/2, oy:canvas.height-125, scale:0.5, targetScale:0.5 });
     }
@@ -110,7 +115,7 @@ function checkLines() {
         let lines = rc.length + cc.length;
         if(lines >= 2) {
             waves.push(new ScanWave(canvas.width/2, canvas.height/3));
-            vibrate([100, 50, 100]); // Комбо-вибрация
+            vibrate([100, 50, 100]);
         } else { vibrate(40); }
 
         rc.forEach(r => { for(let c=0; c<GRID; c++){ board[r][c]=null; explode(c,r); } });
@@ -139,7 +144,8 @@ function draw() {
         for(let c=0; c<GRID; c++){
             let bx=BOARD_PAD+c*(CELL+GAP), by=BOARD_PAD+r*(CELL+GAP);
             if(board[r][c]) {
-                drawBlock(bx, by, CELL, board[r][c]);
+                // Включить свечение для установленных блоков
+                drawBlock(bx, by, CELL, board[r][c], 1, true);
             } else {
                 ctx.fillStyle = "#141421"; ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 10); ctx.fill();
             }
@@ -151,7 +157,8 @@ function draw() {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
         if(canPlace(dragging, gx, gy)) {
             dragging.m.forEach((row, ri)=>row.forEach((v, ci)=>{
-                if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.2);
+                // Тень без свечения
+                if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.2, false);
             }));
         }
     }
@@ -169,7 +176,8 @@ function draw() {
         s.scale += (s.targetScale - s.scale) * 0.2;
         let sz=CELL*s.scale, g=GAP*s.scale;
         s.m.forEach((row, ri)=>row.forEach((v, ci)=>{
-            if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c);
+            // Фигуры снизу без свечения, чтобы не тормозило
+            if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c, 1, false);
         }));
     });
 
