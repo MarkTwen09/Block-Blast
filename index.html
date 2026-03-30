@@ -3,29 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Block Blast Pro Clone</title>
+    <title>Block Blast Ultimate</title>
     <style>
-        body { background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow: hidden; touch-action: none; }
-        #ui { position: absolute; top: 20px; text-align: center; pointer-events: none; z-index: 10; }
-        #score { font-size: 48px; font-weight: 900; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        #best { font-size: 18px; color: #94a3b8; margin-top: -5px; }
-        canvas { background: #1e293b; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-top: 100px; cursor: pointer; }
-        #game-over { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .btn { background: #3b82f6; border: none; padding: 15px 40px; color: white; font-size: 20px; border-radius: 50px; cursor: pointer; margin-top: 20px; font-weight: bold; transition: 0.2s; }
-        .btn:hover { background: #2563eb; transform: scale(1.1); }
+        body { background: #0a0a0f; color: white; display: flex; flex-direction: column; align-items: center; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; touch-action: none; }
+        #ui { position: absolute; top: 30px; text-align: center; z-index: 10; }
+        #score { font-size: 60px; font-weight: 900; background: linear-gradient(to bottom, #fff, #7dd3fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(125,211,252,0.4)); }
+        canvas { background: #16161e; border-radius: 16px; box-shadow: 0 0 40px rgba(0,0,0,0.8); margin-top: 130px; border: 2px solid #23232e; }
+        #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(10px); }
+        .btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; padding: 18px 50px; color: white; font-size: 22px; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 10px 20px rgba(59,130,246,0.3); }
+        .btn:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 15px 25px rgba(59,130,246,0.5); }
     </style>
 </head>
 <body>
 
     <div id="ui">
         <div id="score">0</div>
-        <div id="best">РЕКОРД: 0</div>
+        <div id="best" style="color: #64748b; font-weight: bold;">BEST: 0</div>
     </div>
 
     <div id="game-over">
-        <h1 style="font-size: 48px; margin-bottom: 10px;">GAME OVER</h1>
-        <div id="final-score" style="font-size: 24px;">Счёт: 0</div>
-        <button class="btn" onclick="resetGame()">ИГРАТЬ ЕЩЕ</button>
+        <h1 style="font-size: 50px; margin: 0; background: linear-gradient(to right, #f87171, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ФИНИШ!</h1>
+        <p id="final-score" style="font-size: 24px; margin: 20px 0;">Счёт: 0</p>
+        <button class="btn" onclick="resetGame()">ЕЩЁ РАЗ</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -33,260 +32,227 @@
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
-const bestEl = document.getElementById('best');
-const gameOverScreen = document.getElementById('game-over');
 
-// --- НАСТРОЙКИ ---
-const GRID = 8;
-const CELL = 45;
-const GAP = 4;
-const OFFSET_Y = 80;
-canvas.width = (CELL + GAP) * GRID + 20;
-canvas.height = canvas.width + 200;
+// Константы
+const GRID = 7; 
+const CELL = 48;
+const GAP = 5;
+const BOARD_X = 15;
+const BOARD_Y = 20;
+canvas.width = (CELL + GAP) * GRID + BOARD_X * 2;
+canvas.height = canvas.width + 180;
 
 let score = 0;
-let bestScore = localStorage.getItem('blockBlastBest') || 0;
-bestEl.innerText = `РЕКОРД: ${bestScore}`;
+let best = localStorage.getItem('bb_best') || 0;
+document.getElementById('best').innerText = `BEST: ${best}`;
 
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
 let shapes = [];
-let particles = [];
-let floatingTexts = [];
 let dragging = null;
-let dragX = 0, dragY = 0;
+let particles = [];
+let animations = []; // Для эффектов "всплытия" очков
 
 const COLORS = {
-    orange: "#fb923c", blue: "#3b82f6", green: "#4ade80", 
-    yellow: "#facc15", purple: "#a855f7", cyan: "#22d3ee", red: "#f87171"
+    r: "#ff4d4d", g: "#4ade80", b: "#3b82f6", y: "#facc15", p: "#a855f7", c: "#22d3ee", o: "#fb923c"
 };
 
-const SHAPES_DATA = [
-    { m: [[1,1],[1,1]], c: 'orange' }, // Квадрат
-    { m: [[1,1,1,1]], c: 'blue' },    // Линия 4
-    { m: [[1],[1],[1]], c: 'cyan' },  // Линия 3 верт
-    { m: [[1,1,1]], c: 'cyan' },      // Линия 3 гор
-    { m: [[1,1,0],[0,1,1]], c: 'red' },
-    { m: [[1,0],[1,1],[0,1]], c: 'green' },
-    { m: [[1,1,1],[0,1,0]], c: 'purple' },
-    { m: [[1,0],[1,0],[1,1]], c: 'yellow' },
-    { m: [[1]], c: 'green' }          // Точка
+const SHAPES = [
+    {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1]], c:'b'}, {m:[[1],[1],[1]], c:'c'},
+    {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}
 ];
 
-// --- КЛАССЫ ---
 class Particle {
     constructor(x, y, color) {
         this.x = x; this.y = y; this.color = color;
-        this.vx = (Math.random() - 0.5) * 10;
-        this.vy = (Math.random() - 0.5) * 10;
-        this.alpha = 1;
+        this.vx = (Math.random() - 0.5) * 12;
+        this.vy = (Math.random() - 0.5) * 12 - 3;
+        this.life = 1.0;
+        this.gravity = 0.25;
     }
-    update() { this.x += this.vx; this.y += this.vy; this.alpha -= 0.03; }
+    update() {
+        this.x += this.vx; this.y += this.vy; this.vy += this.gravity;
+        this.life -= 0.02;
+    }
     draw() {
-        ctx.globalAlpha = this.alpha;
+        ctx.globalAlpha = this.life;
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, 6, 6);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 4, 0, Math.PI*2);
+        ctx.fill();
         ctx.globalAlpha = 1;
     }
 }
 
-// --- ЛОГИКА ---
-function spawnShapes() {
+function spawn() {
     shapes = [];
-    for (let i = 0; i < 3; i++) {
-        const data = SHAPES_DATA[Math.floor(Math.random() * SHAPES_DATA.length)];
+    for(let i=0; i<3; i++) {
+        let s = SHAPES[Math.floor(Math.random()*SHAPES.length)];
         shapes.push({
-            ...data,
-            x: 40 + i * (canvas.width / 3),
-            y: canvas.height - 100,
-            origX: 40 + i * (canvas.width / 3),
-            origY: canvas.height - 100,
-            scale: 0.6
+            ...s, x: 30 + i*110, y: canvas.height - 120,
+            ox: 30 + i*110, oy: canvas.height - 120,
+            scale: 0.5, targetScale: 0.5
         });
     }
-    if (checkGameOver()) showGameOver();
 }
 
-function checkGameOver() {
-    return shapes.length > 0 && shapes.every(shape => !canPlace(shape));
-}
+function checkLines() {
+    let rClear = [], cClear = [];
+    for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rClear.push(r);
+    for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cClear.push(c);
 
-function canPlace(shape, gridX, gridY) {
-    if (gridX === undefined) { // Проверка возможности хода вообще
-        for (let r = 0; r <= GRID - shape.m.length; r++) {
-            for (let c = 0; c <= GRID - shape.m[0].length; c++) {
-                if (canPlace(shape, c, r)) return true;
-            }
-        }
-        return false;
-    }
-    // Проверка конкретной позиции
-    for (let r = 0; r < shape.m.length; r++) {
-        for (let c = 0; c < shape.m[0].length; c++) {
-            if (shape.m[r][c] && (board[gridY + r]?.[gridX + c] !== null)) return false;
-        }
-    }
-    return true;
-}
-
-function clearLines() {
-    let rows = [], cols = [];
-    for (let r = 0; r < GRID; r++) if (board[r].every(c => c !== null)) rows.push(r);
-    for (let c = 0; c < GRID; c++) if (board.every(r => r[c] !== null)) cols.push(c);
-
-    rows.forEach(r => {
-        for(let c=0; c<GRID; c++) createExplosion(c, r, board[r][c]);
+    rClear.forEach(r => {
+        for(let c=0; c<GRID; c++) explode(c, r, board[r][c]);
         board[r].fill(null);
     });
-    cols.forEach(c => {
-        for(let r=0; r<GRID; r++) if(board[r][c]) createExplosion(c, r, board[r][c]);
-        for(let r=0; r<GRID; r++) board[r][c] = null;
+    cClear.forEach(c => {
+        for(let r=0; r<GRID; r++) {
+            if(board[r][c]) explode(c, r, board[r][c]);
+            board[r][c] = null;
+        }
     });
 
-    if (rows.length || cols.length) {
-        let combo = rows.length + cols.length;
-        score += combo * 150;
-        if (combo > 1) floatingTexts.push({ x: canvas.width/2, y: 200, text: `COMBO x${combo}`, a: 1 });
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('blockBlastBest', bestScore);
-            bestEl.innerText = `РЕКОРД: ${bestScore}`;
-        }
-        scoreEl.innerText = score;
+    if(rClear.length || cClear.length) {
+        let pts = (rClear.length + cClear.length) * 100;
+        score += pts;
+        updateScore();
     }
 }
 
-function createExplosion(gridX, gridY, color) {
-    const x = 10 + gridX * (CELL + GAP) + CELL/2;
-    const y = OFFSET_Y + gridY * (CELL + GAP) + CELL/2;
-    for (let i = 0; i < 8; i++) particles.push(new Particle(x, y, color));
+function explode(gx, gy, color) {
+    let px = BOARD_X + gx*(CELL+GAP) + CELL/2;
+    let py = BOARD_Y + gy*(CELL+GAP) + CELL/2;
+    for(let i=0; i<15; i++) particles.push(new Particle(px, py, color));
 }
 
-// --- ОТРИСОВКА ---
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function updateScore() {
+    document.getElementById('score').innerText = score;
+    if(score > best) {
+        best = score;
+        localStorage.setItem('bb_best', best);
+        document.getElementById('best').innerText = `BEST: ${best}`;
+    }
+}
 
-    // Сетка (фон)
-    for (let r = 0; r < GRID; r++) {
-        for (let c = 0; c < GRID; c++) {
-            ctx.fillStyle = board[r][c] || "#2d3748";
+function draw() {
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+
+    // Сетка
+    for(let r=0; r<GRID; r++){
+        for(let c=0; c<GRID; c++){
+            ctx.fillStyle = board[r][c] ? COLORS[board[r][c]] : "#1e1e2a";
             ctx.beginPath();
-            ctx.roundRect(10 + c * (CELL + GAP), OFFSET_Y + r * (CELL + GAP), CELL, CELL, 6);
+            ctx.roundRect(BOARD_X + c*(CELL+GAP), BOARD_Y + r*(CELL+GAP), CELL, CELL, 8);
             ctx.fill();
-            // Блик
-            if (board[r][c]) {
-                ctx.fillStyle = "rgba(255,255,255,0.1)";
-                ctx.fillRect(10 + c * (CELL + GAP), OFFSET_Y + r * (CELL + GAP), CELL, CELL/3);
+            if(board[r][c]) {
+                ctx.fillStyle = "rgba(255,255,255,0.15)";
+                ctx.fillRect(BOARD_X + c*(CELL+GAP), BOARD_Y + r*(CELL+GAP), CELL, CELL/3);
             }
         }
     }
 
     // Фигуры
     shapes.forEach(s => {
+        s.scale += (s.targetScale - s.scale) * 0.2;
         ctx.fillStyle = COLORS[s.c];
-        const size = s === dragging ? CELL : CELL * s.scale;
-        const gap = s === dragging ? GAP : GAP * s.scale;
+        let sz = CELL * s.scale;
+        let g = GAP * s.scale;
         s.m.forEach((row, ri) => {
             row.forEach((v, ci) => {
-                if (v) {
+                if(v) {
                     ctx.beginPath();
-                    ctx.roundRect(s.x + ci * (size + gap), s.y + ri * (size + gap), size, size, 4);
+                    ctx.roundRect(s.x + ci*(sz+g), s.y + ri*(sz+g), sz, sz, 6);
                     ctx.fill();
                 }
             });
         });
     });
 
-    // Частицы
-    particles = particles.filter(p => p.alpha > 0);
+    particles = particles.filter(p => p.life > 0);
     particles.forEach(p => { p.update(); p.draw(); });
-
-    // Тексты комбо
-    floatingTexts = floatingTexts.filter(t => t.a > 0);
-    floatingTexts.forEach(t => {
-        ctx.globalAlpha = t.a;
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 40px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(t.text, t.x, t.y);
-        t.y -= 1; t.a -= 0.02;
-        ctx.globalAlpha = 1;
-    });
 
     requestAnimationFrame(draw);
 }
 
-// --- УПРАВЛЕНИЕ ---
-function handleStart(e) {
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-
+// Управление (Touch + Mouse)
+let startX, startY;
+const handleDown = (e) => {
+    let rect = canvas.getBoundingClientRect();
+    let x = (e.clientX || e.touches[0].clientX) - rect.left;
+    let y = (e.clientY || e.touches[0].clientY) - rect.top;
     shapes.forEach(s => {
-        const w = s.m[0].length * CELL * s.scale;
-        const h = s.m.length * CELL * s.scale;
-        if (x > s.x && x < s.x + w && y > s.y && y < s.y + h) {
+        if(x > s.x && x < s.x + 80 && y > s.y && y < s.y + 80) {
             dragging = s;
-            dragX = x - s.x;
-            dragY = y - s.y;
-            s.scale = 1;
+            s.targetScale = 1.0;
+            startX = x - s.x; startY = y - s.y;
         }
     });
-}
+};
 
-function handleMove(e) {
-    if (!dragging) return;
-    const rect = canvas.getBoundingClientRect();
-    dragging.x = (e.clientX || e.touches[0].clientX) - rect.left - dragX;
-    dragging.y = (e.clientY || e.touches[0].clientY) - rect.top - dragY;
-}
+const handleMove = (e) => {
+    if(!dragging) return;
+    let rect = canvas.getBoundingClientRect();
+    dragging.x = (e.clientX || (e.touches ? e.touches[0].clientX : 0)) - rect.left - startX;
+    dragging.y = (e.clientY || (e.touches ? e.touches[0].clientY : 0)) - rect.top - startY;
+};
 
-function handleEnd() {
-    if (!dragging) return;
-    const gx = Math.round((dragging.x - 10) / (CELL + GAP));
-    const gy = Math.round((dragging.y - OFFSET_Y) / (CELL + GAP));
+const handleUp = () => {
+    if(!dragging) return;
+    let gx = Math.round((dragging.x - BOARD_X) / (CELL+GAP));
+    let gy = Math.round((dragging.y - BOARD_Y) / (CELL+GAP));
 
-    if (canPlace(dragging, gx, gy)) {
-        dragging.m.forEach((row, r) => {
-            row.forEach((v, c) => {
-                if (v) board[gy + r][gx + c] = COLORS[dragging.c];
-            });
-        });
-        score += 20;
-        scoreEl.innerText = score;
+    let can = true;
+    if(gx >= 0 && gy >= 0 && gx + dragging.m[0].length <= GRID && gy + dragging.m.length <= GRID) {
+        dragging.m.forEach((row, r) => row.forEach((v, c) => {
+            if(v && board[gy+r][gx+c]) can = false;
+        }));
+    } else can = false;
+
+    if(can) {
+        dragging.m.forEach((row, r) => row.forEach((v, c) => {
+            if(v) board[gy+r][gx+c] = dragging.c;
+        }));
+        score += 10; updateScore();
         shapes = shapes.filter(s => s !== dragging);
-        if (shapes.length === 0) spawnShapes();
-        clearLines();
-        if (checkGameOver()) showGameOver();
+        if(shapes.length === 0) spawn();
+        checkLines();
+        if(shapes.every(s => !canFit(s))) {
+             document.getElementById('game-over').style.display = 'flex';
+             document.getElementById('final-score').innerText = `Счёт: ${score}`;
+        }
     } else {
-        dragging.x = dragging.origX;
-        dragging.y = dragging.origY;
-        dragging.scale = 0.6;
+        dragging.x = dragging.ox; dragging.y = dragging.oy; dragging.targetScale = 0.5;
     }
     dragging = null;
-}
+};
 
-function showGameOver() {
-    document.getElementById('final-score').innerText = `Твой счёт: ${score}`;
-    gameOverScreen.style.display = 'flex';
+function canFit(s) {
+    for(let r=0; r<=GRID-s.m.length; r++) {
+        for(let c=0; c<=GRID-s.m[0].length; c++) {
+            let ok = true;
+            s.m.forEach((row, ri) => row.forEach((v, ci) => {
+                if(v && board[r+ri][c+ci]) ok = false;
+            }));
+            if(ok) return true;
+        }
+    }
+    return false;
 }
 
 function resetGame() {
     board = Array(GRID).fill().map(() => Array(GRID).fill(null));
-    score = 0;
-    scoreEl.innerText = 0;
-    gameOverScreen.style.display = 'none';
-    spawnShapes();
+    score = 0; updateScore();
+    document.getElementById('game-over').style.display = 'none';
+    spawn();
 }
 
-canvas.addEventListener('mousedown', handleStart);
+canvas.addEventListener('mousedown', handleDown);
 window.addEventListener('mousemove', handleMove);
-window.addEventListener('mouseup', handleEnd);
-canvas.addEventListener('touchstart', handleStart);
+window.addEventListener('mouseup', handleUp);
+canvas.addEventListener('touchstart', handleDown);
 window.addEventListener('touchmove', handleMove);
-window.addEventListener('touchend', handleEnd);
+window.addEventListener('touchend', handleUp);
 
-spawnShapes();
+spawn();
 draw();
 </script>
 </body>
