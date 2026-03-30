@@ -3,42 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Block Blast: Juice Edition</title>
+    <title>Block Blast: Elite Edition</title>
     <style>
-        :root { --bg: #050509; --panel: #0f0f17; --accent: #ffd700; --violet: #a78bfa; }
-        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; height: 100vh; }
-        
-        #header { margin-top: env(safe-area-inset-top, 40px); text-align: center; z-index: 10; width: 100%; position: relative; }
-        #score { font-size: 70px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(167,139,250,0.4)); margin: 0; line-height: 1; }
-        
-        /* Прогресс-бар уровня */
-        #level-container { width: 200px; height: 6px; background: #1e1e2e; border-radius: 3px; margin: 10px auto; overflow: hidden; border: 1px solid #2d2d3f; }
-        #level-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--violet), #fff); transition: width 0.3s ease-out; box-shadow: 0 0 10px var(--violet); }
-        #level-text { font-size: 12px; font-weight: bold; color: var(--violet); text-transform: uppercase; letter-spacing: 1px; }
-
-        canvas { background: var(--panel); border-radius: 24px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 2px solid #1f1f2e; max-width: 92vw; margin-top: 10px; }
-
+        :root { --bg: #050509; --panel: #0b0b14; --violet: #a78bfa; }
+        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow: hidden; touch-action: none; height: 100vh; }
+        #header { margin-top: env(safe-area-inset-top, 40px); text-align: center; z-index: 10; width: 100%; }
+        #score { font-size: 72px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin: 0; }
+        #level-bar-wrap { width: 180px; height: 4px; background: #1e1e2e; margin: 8px auto; border-radius: 2px; }
+        #level-bar-fill { width: 0%; height: 100%; background: var(--violet); box-shadow: 0 0 10px var(--violet); transition: 0.3s; }
+        canvas { background: var(--panel); border-radius: 24px; box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 1px solid #1f1f2e; max-width: 92vw; margin-top: 10px; }
         #game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(20px); }
-        .btn { background: linear-gradient(135deg, #6d28d9, #c084fc); border: none; padding: 18px 60px; color: white; font-size: 20px; border-radius: 50px; font-weight: bold; margin-top: 20px; }
+        .btn { background: #6d28d9; border: none; padding: 16px 45px; color: white; font-size: 18px; border-radius: 30px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div id="level-text">LEVEL 1</div>
         <div id="score">0</div>
-        <div id="level-container"><div id="level-bar"></div></div>
-        <div id="best" style="font-size: 14px; opacity: 0.5;">BEST: 0</div>
+        <div id="level-bar-wrap"><div id="level-bar-fill"></div></div>
+        <div id="best" style="font-size: 12px; opacity: 0.5;">BEST: 0</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
-    
-    <div style="height: calc(env(safe-area-inset-bottom, 20px) + 120px);"></div>
+    <div style="height: calc(env(safe-area-inset-bottom, 20px) + 125px);"></div>
 
     <div id="game-over">
-        <h1 style="color: #f87171; font-size: 40px;">НЕТ МЕСТА!</h1>
-        <div id="final-score" style="font-size: 60px; font-weight: 900;">0</div>
-        <button class="btn" onclick="resetGame()">RESTART</button>
+        <h1 style="color: #f87171;">ФИНИШ</h1>
+        <div id="final-score" style="font-size: 48px; font-weight: 900;">0</div>
+        <button class="btn" onclick="resetGame()">ЗАНОВО</button>
     </div>
 
 <script>
@@ -51,57 +43,58 @@ const GAP = 5, BOARD_PAD = 12;
 canvas.width = (CELL + GAP) * GRID + BOARD_PAD * 2;
 canvas.height = canvas.width + 160;
 
-let score = 0, best = localStorage.getItem('bb_juice_best') || 0;
-let level = 1, levelPoints = 0, pointsToNext = 1000;
+let score = 0, best = localStorage.getItem('bb_elite_best') || 0;
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
-let shapes = [], particles = [], floatingTexts = [];
-let dragging = null, dragOff = {x:0, y:0};
-let shakeTime = 0, shakeIntensity = 0;
+let shapes = [], particles = [], floatingTexts = [], waves = [];
+let dragging = null, dragOff = {x:0, y:0}, shake = 0;
 
 const COLORS = {
-    r: { m: "#ff4d4d", g: "rgba(255, 77, 77, 0.5)" },
-    g: { m: "#4ade80", g: "rgba(74, 222, 128, 0.5)" },
-    b: { m: "#3b82f6", g: "rgba(59, 130, 246, 0.5)" },
-    y: { m: "#facc15", g: "rgba(250, 204, 21, 0.5)" },
-    p: { m: "#a855f7", g: "rgba(168, 85, 247, 0.5)" },
-    c: { m: "#22d3ee", g: "rgba(34, 211, 238, 0.5)" },
-    o: { m: "#fb923c", g: "rgba(251, 146, 60, 0.5)" }
+    r: "#ff4d4d", g: "#4ade80", b: "#3b82f6", y: "#facc15", p: "#a855f7", c: "#22d3ee", o: "#fb923c"
 };
 
-const SHAPES_LIB = [
-    {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
-    {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'},
-    {m:[[1,1],[1,0],[1,0]], c:'y'}
-];
+// Функция отрисовки 3D блока
+function drawBlock(x, y, size, colorKey, alpha = 1) {
+    const col = COLORS[colorKey];
+    ctx.globalAlpha = alpha;
+    
+    // Основное тело
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.roundRect(x, y, size, size, 8); ctx.fill();
 
-class Particle {
-    constructor(x, y, color) {
-        this.x = x; this.y = y; this.color = color;
-        this.life = 1.0; this.decay = 0.02 + Math.random()*0.02;
-        this.vx = (Math.random() - 0.5) * 12; this.vy = (Math.random() - 0.5) * 12;
-    }
-    update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
-    draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+    // Блик (сверху и слева)
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.beginPath(); ctx.roundRect(x+2, y+2, size-4, size/2.5, 4); ctx.fill();
+    
+    // Грань (Bevel)
+    ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 2;
+    ctx.strokeRect(x+1, y+1, size-2, size-2);
+    
+    // Тень (снизу)
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.fillRect(x+1, y+size-6, size-2, 5);
+
+    ctx.globalAlpha = 1;
 }
 
-class FloatingText {
-    constructor(x, y, text, color = "#fff") {
-        this.x = x; this.y = y; this.text = text; this.color = color;
-        this.life = 1.0; this.vy = -2;
-    }
-    update() { this.y += this.vy; this.life -= 0.02; }
+class ScanWave {
+    constructor(x, y) { this.x = x; this.y = y; this.r = 0; this.life = 1; }
+    update() { this.r += 10; this.life -= 0.02; }
     draw() {
-        ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.font = "bold 24px system-ui";
-        ctx.textAlign = "center"; ctx.fillText(this.text, this.x, this.y); ctx.globalAlpha = 1;
+        ctx.save(); ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(167, 139, 250, ${this.life})`; ctx.lineWidth = 15;
+        ctx.stroke(); ctx.restore();
     }
 }
 
-function triggerShake(intensity) { shakeTime = 15; shakeIntensity = intensity; }
+function vibrate(ms) { if(navigator.vibrate) navigator.vibrate(ms); }
 
 function spawn() {
     shapes = []; const step = canvas.width / 3;
     for(let i=0; i<3; i++) {
-        let proto = SHAPES_LIB[Math.floor(Math.random()*SHAPES_LIB.length)];
+        let proto = [
+            {m:[[1,1],[1,1]], c:'o'}, {m:[[1,1,1,1]], c:'b'}, {m:[[1,1,1]], c:'c'},
+            {m:[[1,1,0],[0,1,1]], c:'r'}, {m:[[1,1,1],[0,1,0]], c:'p'}, {m:[[1]], c:'g'}
+        ][Math.floor(Math.random()*6)];
         let w = proto.m[0].length*(CELL*0.5);
         shapes.push({ ...proto, x:(step*i)+(step-w)/2, y:canvas.height-125, ox:(step*i)+(step-w)/2, oy:canvas.height-125, scale:0.5, targetScale:0.5 });
     }
@@ -115,121 +108,88 @@ function checkLines() {
 
     if(rc.length || cc.length) {
         let lines = rc.length + cc.length;
-        let bonus = lines * lines * 100;
-        
-        // Позиция для текста (центр взрыва)
-        let tx = canvas.width / 2, ty = BOARD_PAD + (rc.length ? rc[0] : 4) * (CELL+GAP);
-        
         if(lines >= 2) {
-            floatingTexts.push(new FloatingText(tx, ty - 20, lines >= 3 ? "AMAZING!" : "COMBO!", "#ffd700"));
-            triggerShake(lines * 4);
-        }
-        floatingTexts.push(new FloatingText(tx, ty + 20, `+${bonus}`, "#fff"));
+            waves.push(new ScanWave(canvas.width/2, canvas.height/3));
+            vibrate([100, 50, 100]); // Комбо-вибрация
+        } else { vibrate(40); }
 
-        rc.forEach(r => { for(let c=0; c<GRID; c++){ let col=COLORS[board[r][c]].m; board[r][c]=null; explode(c,r,col); } });
-        cc.forEach(c => { for(let r=0; r<GRID; r++){ if(board[r][c]){ let col=COLORS[board[r][c]].m; board[r][c]=null; explode(c,r,col); } } });
+        rc.forEach(r => { for(let c=0; c<GRID; c++){ board[r][c]=null; explode(c,r); } });
+        cc.forEach(c => { for(let r=0; r<GRID; r++){ if(board[r][c]){ board[r][c]=null; explode(c,r); } } });
         
-        addScore(bonus);
+        score += lines * 200; updateScore();
     }
 }
 
-function addScore(pts) {
-    score += pts; levelPoints += pts;
+function updateScore() {
     document.getElementById('score').innerText = score;
-    
-    // Прогресс уровня
-    if(levelPoints >= pointsToNext) {
-        level++; levelPoints = 0; pointsToNext = Math.floor(pointsToNext * 1.5);
-        document.getElementById('level-text').innerText = `LEVEL ${level}`;
-        for(let i=0; i<50; i++) explode(4, 4, "#ffd700"); // Праздничный салют
-    }
-    document.getElementById('level-bar').style.width = (levelPoints / pointsToNext * 100) + "%";
-    
-    if(score > best) {
-        best = score; localStorage.setItem('bb_juice_best', best);
-        document.getElementById('best').innerText = `BEST: ${best}`;
-    }
+    document.getElementById('level-bar-fill').style.width = (score % 1000 / 10) + "%";
+    if(score > best) { best = score; localStorage.setItem('bb_elite_best', best); document.getElementById('best').innerText = `BEST: ${best}`; }
 }
 
-function explode(gx, gy, col) {
+function explode(gx, gy) {
     let px=BOARD_PAD+gx*(CELL+GAP)+CELL/2, py=BOARD_PAD+gy*(CELL+GAP)+CELL/2;
-    for(let i=0; i<12; i++) particles.push(new Particle(px, py, col));
+    for(let i=0; i<8; i++) particles.push({x:px, y:py, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, l:1});
 }
 
 function draw() {
-    ctx.save();
-    // Эффект тряски
-    if(shakeTime > 0) {
-        ctx.translate((Math.random()-0.5)*shakeIntensity, (Math.random()-0.5)*shakeIntensity);
-        shakeTime--;
-    }
-
     ctx.clearRect(0,0,canvas.width, canvas.height);
     
-    // Отрисовка поля
+    // Поле
     for(let r=0; r<GRID; r++){
         for(let c=0; c<GRID; c++){
             let bx=BOARD_PAD+c*(CELL+GAP), by=BOARD_PAD+r*(CELL+GAP);
-            ctx.fillStyle = board[r][c] ? COLORS[board[r][c]].m : "#161621";
-            if(board[r][c]) { ctx.shadowBlur = 15; ctx.shadowColor = COLORS[board[r][c]].g; }
-            ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 10); ctx.fill();
-            ctx.shadowBlur = 0; ctx.strokeStyle = "#232336"; ctx.stroke();
+            if(board[r][c]) {
+                drawBlock(bx, by, CELL, board[r][c]);
+            } else {
+                ctx.fillStyle = "#141421"; ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 10); ctx.fill();
+            }
         }
     }
 
-    // Тень при перетаскивании
+    // Тень (Ghost)
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
         if(canPlace(dragging, gx, gy)) {
-            ctx.fillStyle = "rgba(255,255,255,0.15)";
             dragging.m.forEach((row, ri)=>row.forEach((v, ci)=>{
-                if(v) { ctx.beginPath(); ctx.roundRect(BOARD_PAD+(gx+ci)*(CELL+GAP),BOARD_PAD+(gy+ri)*(CELL+GAP),CELL,CELL,10); ctx.fill(); }
+                if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.2);
             }));
         }
     }
 
+    // Волны и эффекты
+    waves.forEach((w, i) => { w.update(); w.draw(); if(w.life<=0) waves.splice(i,1); });
+    particles.forEach((p, i) => { 
+        p.x+=p.vx; p.y+=p.vy; p.l-=0.03; 
+        ctx.fillStyle=`rgba(255,255,255,${p.l})`; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, 7); ctx.fill();
+        if(p.l<=0) particles.splice(i,1);
+    });
+
     // Фигуры снизу
     shapes.forEach(s => {
         s.scale += (s.targetScale - s.scale) * 0.2;
-        ctx.fillStyle = COLORS[s.c].m; let sz=CELL*s.scale, g=GAP*s.scale;
+        let sz=CELL*s.scale, g=GAP*s.scale;
         s.m.forEach((row, ri)=>row.forEach((v, ci)=>{
-            if(v) { ctx.beginPath(); ctx.roundRect(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, sz, 8); ctx.fill(); }
+            if(v) drawBlock(s.x+ci*(sz+g), s.y+ri*(sz+g), sz, s.c);
         }));
     });
 
-    // Эффекты
-    particles = particles.filter(p => p.life > 0);
-    particles.forEach(p => { p.update(); p.draw(); });
-    
-    floatingTexts = floatingTexts.filter(t => t.life > 0);
-    floatingTexts.forEach(t => { t.update(); t.draw(); });
-
-    ctx.restore();
     requestAnimationFrame(draw);
 }
 
-function canPlace(shape, gx, gy) {
-    if(gx<0 || gy<0 || gx+shape.m[0].length>GRID || gy+shape.m.length>GRID) return false;
-    for(let r=0; r<shape.m.length; r++) for(let c=0; c<shape.m[0].length; c++) if(shape.m[r][c] && board[gy+r][gx+c]) return false;
+function canPlace(sh, gx, gy) {
+    if(gx<0 || gy<0 || gx+sh.m[0].length>GRID || gy+sh.m.length>GRID) return false;
+    for(let r=0; r<sh.m.length; r++) for(let c=0; c<sh.m[0].length; c++) if(sh.m[r][c] && board[gy+r][gx+c]) return false;
     return true;
 }
 
 function checkGameOver() {
-    const canPlaceAny = shapes.some(shape => {
-        for (let r = 0; r <= GRID - shape.m.length; r++) {
-            for (let c = 0; c <= GRID - shape.m[0].length; c++) {
-                if (canPlace(shape, c, r)) return true;
-            }
-        }
+    const ok = shapes.some(s => {
+        for(let r=0; r<=GRID-s.m.length; r++) for(let c=0; c<=GRID-s.m[0].length; c++) if(canPlace(s, c, r)) return true;
         return false;
     });
-    if (!canPlaceAny && shapes.length > 0) {
-        document.getElementById('final-score').innerText = score;
-        document.getElementById('game-over').style.display = 'flex';
-    }
+    if(!ok && shapes.length>0) document.getElementById('game-over').style.display='flex';
 }
 
-// События управления
 const getPos = e => {
     let r=canvas.getBoundingClientRect(); let cx=e.touches?e.touches[0].clientX:e.clientX, cy=e.touches?e.touches[0].clientY:e.clientY;
     return { x:(cx-r.left)*(canvas.width/r.width), y:(cy-r.top)*(canvas.height/r.height) };
@@ -238,7 +198,7 @@ const getPos = e => {
 canvas.addEventListener('touchstart', e => {
     let p=getPos(e);
     shapes.forEach(s => {
-        if(p.x>s.x-20 && p.x<s.x+80 && p.y>s.y-20 && p.y<s.y+100) { dragging=s; s.targetScale=1.1; dragOff={x:p.x-s.x, y:p.y-s.y}; }
+        if(p.x>s.x-20 && p.x<s.x+80 && p.y>s.y-20 && p.y<s.y+100) { dragging=s; s.targetScale=1.0; dragOff={x:p.x-s.x, y:p.y-s.y}; vibrate(15); }
     });
 });
 
@@ -249,21 +209,15 @@ window.addEventListener('touchend', () => {
     let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
     if(canPlace(dragging, gx, gy)) {
         dragging.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) board[gy+r][gx+c]=dragging.c; }));
-        addScore(10); shapes = shapes.filter(s => s !== dragging); 
-        if(shapes.length === 0) spawn(); 
+        vibrate(30); score+=20; updateScore();
+        shapes=shapes.filter(s=>s!==dragging); if(shapes.length===0) spawn();
         checkLines(); checkGameOver();
     } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; }
     dragging=null;
 });
 
-function resetGame() { 
-    board=Array(GRID).fill().map(()=>Array(GRID).fill(null)); 
-    score=0; level=1; levelPoints=0; pointsToNext=1000;
-    document.getElementById('score').innerText=0; document.getElementById('level-bar').style.width="0%";
-    document.getElementById('game-over').style.display='none'; spawn(); 
-}
+function resetGame() { board=board.map(r=>r.fill(null)); score=0; updateScore(); document.getElementById('game-over').style.display='none'; spawn(); }
 
-document.getElementById('best').innerText = `BEST: ${best}`;
 spawn(); draw();
 </script>
 </body>
