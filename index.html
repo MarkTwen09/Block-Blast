@@ -12,14 +12,13 @@
         .shake { animation: shakeAnim 0.2s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shakeAnim { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-3px, -1px, 0); } 40%, 60% { transform: translate3d(3px, 1px, 0); } }
 
-        /* FEVER MODE PULSE & BACKGROUND ANIMATION */
+        /* ANIMATIONS */
         @keyframes bgFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes feverPulse { 0% { box-shadow: 0 0 20px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 60px rgba(167, 139, 250, 0.7); border-color: var(--violet); } 100% { box-shadow: 0 0 20px rgba(167, 139, 250, 0.2); } }
         .fever-active { animation: feverPulse 1.2s infinite ease-in-out !important; }
 
         #splash { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.8s; }
         .icon-main { width: 80px; height: 80px; background: linear-gradient(135deg, #ffd700, #b8860b); border-radius: 18px; box-shadow: 0 0 50px rgba(255, 215, 0, 0.4); animation: iconFloat 2s infinite ease-in-out; }
-        .splash-title { margin-top: 30px; font-size: 28px; font-weight: 900; color: var(--gold); letter-spacing: 5px; }
         @keyframes iconFloat { 0%, 100% { transform: scale(1) translateY(0); } 50% { transform: scale(1.1) translateY(-15px); } }
 
         .particle { position: absolute; width: 5px; height: 5px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 10; }
@@ -32,31 +31,37 @@
         #combo-popup { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(0.5); font-size: 48px; font-weight: 900; background: var(--rainbow); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0; z-index: 200; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #combo-popup.active { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
-        /* ОБНОВЛЕННЫЙ ЖИВОЙ ФОН */
-        #ambient-bg { 
-            position: absolute; inset: 0; z-index: -1; 
-            transition: opacity 1s ease;
-            background: linear-gradient(-45deg, #050509, #0f0720, #050509, #090915);
-            background-size: 400% 400%;
-            animation: bgFlow 15s ease infinite;
-        }
-        
+        #ambient-bg { position: absolute; inset: 0; z-index: -1; background: linear-gradient(-45deg, #050509, #0f0720, #050509, #090915); background-size: 400% 400%; animation: bgFlow 15s ease infinite; }
         #header { margin-top: env(safe-area-inset-top, 20px); text-align: center; width: 100%; z-index: 5; }
         #score { font-size: 64px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
         canvas { background: var(--panel); border-radius: 20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); max-width: 95vw; margin-top: 5px; transition: all 0.3s; transform-origin: center center; }
 
-        #game-over { 
-            position: fixed; inset: 0; background: rgba(5, 5, 9, 0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); animation: fadeIn 0.5s ease-out;
-        }
-        .go-card { background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 80%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .go-title { color: #ff4d4d; font-size: 42px; font-weight: 900; margin: 0; text-shadow: 0 0 20px rgba(255, 77, 77, 0.5); letter-spacing: 2px; }
+        /* ЭКРАН ПОРАЖЕНИЯ */
+        #game-over { position: fixed; inset: 0; background: rgba(5, 5, 9, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .go-card { background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 80%; max-width: 320px; }
+        .go-title { color: #ff4d4d; font-size: 42px; font-weight: 900; margin: 0; text-shadow: 0 0 20px rgba(255, 77, 77, 0.5); }
         #final-score { font-size: 72px; font-weight: 900; margin: 10px 0; background: linear-gradient(#fff, #ccc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .go-best { font-size: 14px; color: var(--gold); opacity: 0.8; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-restart { background: linear-gradient(135deg, #6d28d9, #a78bfa); border: none; padding: 18px 50px; color: white; font-size: 20px; border-radius: 50px; font-weight: 900; cursor: pointer; box-shadow: 0 10px 25px rgba(109, 40, 217, 0.4); transition: transform 0.2s; animation: btnPulse 2s infinite; }
+        .go-best { font-size: 14px; color: var(--gold); opacity: 0.8; margin-bottom: 30px; }
+
+        /* ВОЗВРАЩЕННАЯ ПУЛЬСАЦИЯ КНОПКИ */
+        .btn-restart { 
+            background: linear-gradient(135deg, #6d28d9, #a78bfa); 
+            border: none; padding: 18px 50px; color: white; font-size: 20px; 
+            border-radius: 50px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(109, 40, 217, 0.4);
+            transition: transform 0.2s;
+            animation: btnPulse 2s infinite ease-in-out; 
+        }
+        @keyframes btnPulse { 
+            0% { transform: scale(1); box-shadow: 0 10px 25px rgba(109, 40, 217, 0.4); } 
+            50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(167, 139, 250, 0.6); } 
+            100% { transform: scale(1); box-shadow: 0 10px 25px rgba(109, 40, 217, 0.4); } 
+        }
+        .btn-restart:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
-    <div id="splash"><div class="icon-main"></div><div class="splash-title">Block Snap</div></div>
+    <div id="splash"><div class="icon-main"></div><div style="margin-top:20px; color:var(--gold); font-weight:900; letter-spacing:3px;">BLOCK SNAP</div></div>
     <div id="combo-popup">COMBO!</div>
     <div id="ambient-bg"></div>
     <div id="header"><div id="score">0</div><div style="font-size: 12px; opacity: 0.4;">BEST: <span id="best-val">0</span></div></div>
@@ -67,23 +72,12 @@
 window.addEventListener('load', () => { setTimeout(() => { const s = document.getElementById('splash'); s.style.opacity = '0'; setTimeout(() => s.style.visibility = 'hidden', 800); }, 2000); });
 
 const AudioEngine = {
-    ctx: null,
-    init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    ctx: null, init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
     play(type, multiplier = 1) { 
-        try { 
-            this.init(); const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); 
-            osc.connect(g); g.connect(this.ctx.destination); 
+        try { this.init(); const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.connect(g); g.connect(this.ctx.destination);
             if(type==='pick'){ osc.frequency.setValueAtTime(400,now); g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.1); osc.start(); osc.stop(now+0.1); } 
             if(type==='place'){ osc.type='triangle'; osc.frequency.setValueAtTime(150,now); g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.1); osc.start(); osc.stop(now+0.1); } 
-            if(type==='clear'){ 
-                // --- ХИРУРГИЧЕСКАЯ ДОБАВКА: PITCH SHIFT ---
-                // Тональность растет с множителем комбо
-                const baseFreq = 600;
-                const freq = baseFreq + (multiplier * 100);
-                osc.frequency.setValueAtTime(freq, now); 
-                g.gain.setValueAtTime(0.15, now); g.gain.linearRampToValueAtTime(0, now+0.4); 
-                osc.start(); osc.stop(now+0.4); 
-            } 
+            if(type==='clear'){ const freq = 600 + (multiplier * 80); osc.frequency.setValueAtTime(freq, now); g.gain.setValueAtTime(0.15, now); g.gain.linearRampToValueAtTime(0, now+0.4); osc.start(); osc.stop(now+0.4); } 
         } catch(e){} 
     }
 };
@@ -146,10 +140,6 @@ function draw() {
         let centerX = dragging.x + (dragging.m[0].length * (CELL) / 2);
         let centerY = dragging.y + (dragging.m.length * (CELL) / 2);
         for(let i=0; i<3; i++) { dragTrails.push({ x: centerX + (Math.random()-0.5)*30, y: centerY + (Math.random()-0.5)*30, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, r: Math.random()*4 + 2, a: 0.6, color: COLORS[dragging.c][0] }); }
-        if(Date.now() - dragStartTime > 1500) {
-            let canBe = false; for(let r=0; r<=GRID-dragging.m.length; r++) { for(let c=0; c<=GRID-dragging.m[0].length; c++) { if(canPlace(dragging,c,r)) canBe = true; } }
-            if(canBe) { dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(dragging.x+ci*(CELL+GAP), dragging.y+ri*(CELL+GAP), CELL, dragging.c, 0.4, 'hint'); })); }
-        }
         if(canPlace(dragging, gx, gy)) { dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.3); })); }
         dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(dragging.x+ci*(CELL+GAP), dragging.y+ri*(CELL+GAP), CELL, dragging.c, 1); }));
     }
@@ -190,14 +180,11 @@ function checkL() {
         if(clearedLines >= 2 || feverStreak >= 3) showPraise(clearedLines, feverStreak);
         if(feverStreak >= 3) canvas.classList.add('fever-active');
         if(clearedLines > 1 || feverStreak > 1) { comboText.innerText = feverStreak >= 3 ? `FEVER x${feverStreak}!` : `COMBO x${clearedLines}`; comboText.classList.add('active'); setTimeout(() => comboText.classList.remove('active'), 600); }
-        
-        // Передаем multiplier в AudioEngine для Pitch Shift
         AudioEngine.play('clear', feverStreak + clearedLines); 
-        
         const rect = canvas.getBoundingClientRect();
         let points = clearedLines * 150; if(feverStreak >= 3) points *= 2; 
-        rc.forEach(r => { const by = rect.top + BOARD_PAD + r*(CELL+GAP); for(let c=0; c<GRID; c++) createFirework(rect.left + BOARD_PAD + c*(CELL+GAP) + CELL/2, by + CELL/2); showFloatingScore(`+${points}`, rect.left + rect.width/2, by); board[r].fill(null); });
-        cc.forEach(c => { const bx = rect.left + BOARD_PAD + c*(CELL+GAP); showFloatingScore(`+${points}`, bx + CELL/2, rect.top + rect.height/2); board.forEach((r, ri) => { if(board[ri][c]) createFirework(rect.left + BOARD_PAD + c*(CELL+GAP) + CELL/2, rect.top + BOARD_PAD + ri*(CELL+GAP) + CELL/2); board[ri][c]=null; }); });
+        rc.forEach(r => { board[r].fill(null); });
+        cc.forEach(c => { board.forEach((r, ri) => { board[ri][c]=null; }); });
         score += points; updateS();
     } else { feverStreak = 0; canvas.classList.remove('fever-active'); }
 }
