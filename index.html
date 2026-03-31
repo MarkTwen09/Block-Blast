@@ -6,16 +6,15 @@
     <title>Block Snap Elite</title>
     <style>
         :root { --bg: #050509; --panel: rgba(11, 11, 20, 0.95); --violet: #a78bfa; --gold: #ffd700; --rainbow: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); }
-        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, sans-serif; margin: 0; overflow: hidden; touch-action: none; height: 100vh; width: 100vw; }
+        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: -apple-system, sans-serif; margin: 0; overflow: hidden; touch-action: none; height: 100vh; width: 100vw; transition: background 0.5s ease; }
 
-        /* ТРЯСКА И ВСПЫШКА РЕКОРДА */
+        /* ЭФФЕКТ ВСПЫШКИ РЕКОРДА */
+        .record-flash { background: rgba(255, 215, 0, 0.2) !important; }
+        .best-pop { transform: scale(1.3); color: var(--gold) !important; opacity: 1 !important; text-shadow: 0 0 15px var(--gold); }
+
         .shake { animation: shakeAnim 0.2s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shakeAnim { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-3px, -1px, 0); } 40%, 60% { transform: translate3d(3px, 1px, 0); } }
-        
-        .record-flash { animation: flashAnim 0.6s ease-out; }
-        @keyframes flashAnim { 0% { background: rgba(255, 215, 0, 0); } 50% { background: rgba(255, 215, 0, 0.3); } 100% { background: rgba(255, 215, 0, 0); } }
 
-        /* ANIMATIONS */
         @keyframes bgFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes feverPulse { 0% { box-shadow: 0 0 20px rgba(167, 139, 250, 0.2); } 50% { box-shadow: 0 0 60px rgba(167, 139, 250, 0.7); border-color: var(--violet); } 100% { box-shadow: 0 0 20px rgba(167, 139, 250, 0.2); } }
         .fever-active { animation: feverPulse 1.2s infinite ease-in-out !important; }
@@ -24,23 +23,20 @@
         .icon-main { width: 80px; height: 80px; background: linear-gradient(135deg, #ffd700, #b8860b); border-radius: 18px; box-shadow: 0 0 50px rgba(255, 215, 0, 0.4); animation: iconFloat 2s infinite ease-in-out; }
         @keyframes iconFloat { 0%, 100% { transform: scale(1) translateY(0); } 50% { transform: scale(1.1) translateY(-15px); } }
 
+        .particle { position: absolute; width: 6px; height: 6px; border-radius: 2px; pointer-events: none; z-index: 10; }
         .score-popup { position: fixed; transform: translate(-50%, -100%); font-size: 24px; font-weight: 900; color: var(--gold); pointer-events: none; z-index: 100; animation: scorePop 0.8s forwards; }
         @keyframes scorePop { from { opacity: 1; transform: translate(-50%, -100%) scale(0.5); } to { opacity: 0; transform: translate(-50%, -300%) scale(1.5); } }
 
-        .praise-popup { position: fixed; top: 25%; left: 50%; transform: translateX(-50%); font-size: 42px; font-weight: 900; font-style: italic; text-shadow: 0 0 20px rgba(255,255,255,0.5); pointer-events: none; z-index: 150; animation: praiseAnim 1s ease-out forwards; }
-        @keyframes praiseAnim { 0% { opacity: 0; transform: translate(-50%, 20px) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, 0) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -40px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(0.8); } }
-
-        #ambient-bg { position: absolute; inset: 0; z-index: -1; background: linear-gradient(-45deg, #050509, #0f0720, #050509, #090915); background-size: 400% 400%; animation: bgFlow 15s ease infinite; pointer-events: none; }
-        #header { margin-top: env(safe-area-inset-top, 20px); text-align: center; width: 100%; z-index: 5; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #score { font-size: 64px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
-        #best-container { font-size: 12px; opacity: 0.4; transition: all 0.3s; }
-        .best-hit { color: var(--gold); opacity: 1 !important; transform: scale(1.2); text-shadow: 0 0 10px var(--gold); }
+        #ambient-bg { position: absolute; inset: 0; z-index: -1; background: linear-gradient(-45deg, #050509, #0f0720, #050509, #090915); background-size: 400% 400%; animation: bgFlow 15s ease infinite; }
+        #header { margin-top: env(safe-area-inset-top, 20px); text-align: center; width: 100%; z-index: 5; }
+        #score { font-size: 64px; font-weight: 900; background: linear-gradient(#fff, var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; transition: transform 0.2s; }
+        #best-container { font-size: 12px; opacity: 0.4; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         
         canvas { background: var(--panel); border-radius: 20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); max-width: 95vw; margin-top: 5px; transition: all 0.3s; transform-origin: center center; }
 
         #game-over { position: fixed; inset: 0; background: rgba(5, 5, 9, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 500; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
         .go-card { background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; width: 80%; max-width: 320px; }
-        .btn-restart { background: linear-gradient(135deg, #6d28d9, #a78bfa); border: none; padding: 18px 50px; color: white; font-size: 20px; border-radius: 50px; font-weight: 900; cursor: pointer; animation: btnPulse 2s infinite ease-in-out; }
+        .btn-restart { background: linear-gradient(135deg, #6d28d9, #a78bfa); border: none; padding: 18px 50px; color: white; font-size: 20px; border-radius: 50px; font-weight: 900; cursor: pointer; animation: btnPulse 2s infinite; }
         @keyframes btnPulse { 0%, 100% { transform: scale(1); box-shadow: 0 10px 25px rgba(109, 40, 217, 0.4); } 50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(167, 139, 250, 0.6); } }
     </style>
 </head>
@@ -63,22 +59,29 @@ const AudioEngine = {
         try { this.init(); const now = this.ctx.currentTime; const osc = this.ctx.createOscillator(); const g = this.ctx.createGain(); osc.connect(g); g.connect(this.ctx.destination);
             if(type==='pick'){ osc.frequency.setValueAtTime(400,now); g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.1); osc.start(); osc.stop(now+0.1); } 
             if(type==='place'){ osc.type='triangle'; osc.frequency.setValueAtTime(150,now); g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.1); osc.start(); osc.stop(now+0.1); } 
-            if(type==='clear'){ const freq = 600 + (multiplier * 80); osc.frequency.setValueAtTime(freq, now); g.gain.setValueAtTime(0.15, now); g.gain.linearRampToValueAtTime(0, now+0.4); osc.start(); osc.stop(now+0.4); } 
+            if(type==='clear'){ const freq = 600 + (multiplier * 100); osc.frequency.setValueAtTime(freq, now); g.gain.setValueAtTime(0.15, now); g.gain.linearRampToValueAtTime(0, now+0.4); osc.start(); osc.stop(now+0.4); } 
             if(type==='record'){ osc.type='square'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now+0.2); g.gain.setValueAtTime(0.1, now); g.gain.linearRampToValueAtTime(0, now+0.5); osc.start(); osc.stop(now+0.5); }
         } catch(e){} 
     }
 };
 
-// --- МАССИВ ЧАСТИЦ ДЛЯ РАЗНЫХ ЭФФЕКТОВ ---
-let visualParticles = [];
+// УЛУЧШЕННЫЙ ЭФФЕКТ РАССЫПАНИЯ (DISSOLVE)
 function createDissolve(x, y, color) {
-    for (let i = 0; i < 15; i++) {
-        visualParticles.push({
-            x: x + Math.random() * 40, y: y + Math.random() * 40,
-            vx: (Math.random() - 0.5) * 2, vy: -Math.random() * 5 - 2,
-            life: 1.0, color: color, size: Math.random() * 4 + 2,
-            type: 'dissolve'
-        });
+    for (let i = 0; i < 6; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.background = color;
+        document.body.appendChild(p);
+        const vx = (Math.random() - 0.5) * 6;
+        const vy = -Math.random() * 8 - 2;
+        let px = x, py = y, op = 1;
+        const anim = () => {
+            px += vx; py += vy; op -= 0.02;
+            p.style.left = px + 'px'; p.style.top = py + 'px'; p.style.opacity = op;
+            p.style.transform = `scale(${op})`;
+            if(op > 0) requestAnimationFrame(anim); else p.remove();
+        };
+        requestAnimationFrame(anim);
     }
 }
 
@@ -88,7 +91,7 @@ let CELL = Math.floor(window.innerWidth * 0.11); const GAP = 5, BOARD_PAD = 10; 
 let score = 0, best = localStorage.getItem('bb_apk_best') || 0, hasBrokenRecord = false;
 document.getElementById('best-val').innerText = best;
 let board = Array(GRID).fill().map(() => Array(GRID).fill(null));
-let shapes = [], dragging = null, dragOff = {x:0, y:0}, dragTrails = [], feverStreak = 0;
+let shapes = [], dragging = null, dragOff = {x:0, y:0}, dragStartTime = 0, dragTrails = [];
 
 const COLORS = { r: ["#ff7f7f", "#ff4d4d"], g: ["#86efac", "#4ade80"], b: ["#7dd3fc", "#3b82f6"], y: ["#fef08a", "#facc15"], p: ["#d8b4fe", "#a855f7"], c: ["#a5f3fc", "#22d3ee"], o: ["#fdba74", "#fb923c"] };
 
@@ -109,18 +112,18 @@ function spawn() {
     }
 }
 
-function updateScore() {
+function updateS() {
     document.getElementById('score').innerText = score;
     if (score > best) {
         if (!hasBrokenRecord && best > 0) {
             // ВСПЫШКА РЕКОРДА
             document.body.classList.add('record-flash');
-            document.getElementById('best-container').classList.add('best-hit');
+            document.getElementById('best-container').classList.add('best-pop');
             AudioEngine.play('record');
             setTimeout(() => {
                 document.body.classList.remove('record-flash');
-                document.getElementById('best-container').classList.remove('best-hit');
-            }, 1000);
+                document.getElementById('best-container').classList.remove('best-pop');
+            }, 800);
             hasBrokenRecord = true;
         }
         best = score;
@@ -131,36 +134,23 @@ function updateScore() {
 
 function draw() {
     ctx.clearRect(0,0,canvas.width, canvas.height);
-    
-    // Сетка и установленные блоки
     for(let r=0; r<GRID; r++) for(let c=0; c<GRID; c++) {
         let bx=BOARD_PAD+c*(CELL+GAP), by=BOARD_PAD+r*(CELL+GAP);
         if(board[r][c]) drawBlock(bx, by, CELL, board[r][c]);
         else { ctx.fillStyle="rgba(255,255,255,0.03)"; ctx.beginPath(); ctx.roundRect(bx, by, CELL, CELL, 8); ctx.fill(); }
     }
 
-    // Отрисовка визуальных частиц (Шлейф и Рассыпание)
-    visualParticles.forEach((p, index) => {
-        ctx.save(); ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        if(p.type === 'trail') {
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2); ctx.fill();
-        } else {
-            ctx.fillRect(p.x, p.y, p.size, p.size);
-        }
-        ctx.restore();
-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        if(p.life <= 0) visualParticles.splice(index, 1);
+    dragTrails.forEach((t) => {
+        ctx.save(); ctx.globalAlpha = t.a; ctx.fillStyle = t.color;
+        ctx.beginPath(); ctx.arc(t.x, t.y, t.r * (t.a / 0.6), 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        t.a -= 0.025; t.x += t.vx; t.y += t.vy;
     });
+    dragTrails = dragTrails.filter(t => t.a > 0);
 
     if(dragging) {
         let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
-        // Шлейф
-        visualParticles.push({ x: dragging.x+CELL/2, y: dragging.y+CELL/2, vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, life:0.6, color:COLORS[dragging.c][0], size:4, type:'trail' });
-        
-        if(canPlace(dragging, gx, gy)) {
-            dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.3); }));
-        }
+        for(let i=0; i<2; i++) { dragTrails.push({ x: dragging.x+CELL/2, y: dragging.y+CELL/2, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, r: Math.random()*5+2, a: 0.6, color: COLORS[dragging.c][0] }); }
+        if(canPlace(dragging, gx, gy)) { dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(BOARD_PAD+(gx+ci)*(CELL+GAP), BOARD_PAD+(gy+ri)*(CELL+GAP), CELL, dragging.c, 0.3); })); }
         dragging.m.forEach((row,ri)=>row.forEach((v,ci)=>{ if(v) drawBlock(dragging.x+ci*(CELL+GAP), dragging.y+ri*(CELL+GAP), CELL, dragging.c, 1); }));
     }
 
@@ -182,41 +172,38 @@ window.addEventListener('touchend', () => {
     if(!dragging) return; let gx=Math.round((dragging.x-BOARD_PAD)/(CELL+GAP)), gy=Math.round((dragging.y-BOARD_PAD)/(CELL+GAP));
     if(canPlace(dragging, gx, gy)) {
         dragging.m.forEach((row,r)=>row.forEach((v,c)=>{ if(v) { board[gy+r][gx+c]=dragging.c; drawBlock(BOARD_PAD+(gx+c)*(CELL+GAP), BOARD_PAD+(gy+r)*(CELL+GAP), CELL, dragging.c, 1, 'grid-hit'); } }));
-        AudioEngine.play('place'); score+=20; updateScore(); shapes=shapes.filter(s=>s!==dragging); if(shapes.length===0) spawn(); checkLines(); checkGameOver();
+        AudioEngine.play('place'); score+=20; updateS(); shapes=shapes.filter(s=>s!==dragging); if(shapes.length===0) spawn(); checkL(); checkGameOver();
     } else { dragging.x=dragging.ox; dragging.y=dragging.oy; dragging.targetScale=0.5; } dragging=null;
 });
 
-function checkLines() {
+function checkL() {
     let rc=[], cc=[];
     for(let r=0; r<GRID; r++) if(board[r].every(v=>v)) rc.push(r);
     for(let c=0; c<GRID; c++) if(board.every(r=>r[c])) cc.push(c);
-    
     if(rc.length + cc.length > 0) {
-        feverStreak++; canvas.classList.add('shake'); setTimeout(()=>canvas.classList.remove('shake'), 200);
-        AudioEngine.play('clear', feverStreak);
-        
+        canvas.classList.add('shake'); setTimeout(()=>canvas.classList.remove('shake'), 200);
+        AudioEngine.play('clear', rc.length + cc.length);
+        const rect = canvas.getBoundingClientRect();
         rc.forEach(r => {
             for(let c=0; c<GRID; c++) {
-                // ЭФФЕКТ СГОРАНИЯ
-                createDissolve(BOARD_PAD+c*(CELL+GAP), BOARD_PAD+r*(CELL+GAP), COLORS[board[r][c]][0]);
+                createDissolve(rect.left + BOARD_PAD + c*(CELL+GAP), rect.top + BOARD_PAD + r*(CELL+GAP), COLORS[board[r][c]][0]);
                 board[r][c] = null;
             }
         });
         cc.forEach(c => {
             board.forEach((r, ri) => {
                 if(board[ri][c]) {
-                    createDissolve(BOARD_PAD+c*(CELL+GAP), BOARD_PAD+ri*(CELL+GAP), COLORS[board[ri][c]][0]);
+                    createDissolve(rect.left + BOARD_PAD + c*(CELL+GAP), rect.top + BOARD_PAD + ri*(CELL+GAP), COLORS[board[ri][c]][0]);
                     board[ri][c] = null;
                 }
             });
         });
-        score += (rc.length + cc.length) * 150 * (feverStreak >= 3 ? 2 : 1);
-        updateScore();
-    } else { feverStreak = 0; }
+        score += (rc.length + cc.length) * 150; updateS();
+    }
 }
 
 function checkGameOver() { let canMove = false; shapes.forEach(sh => { for(let r=0; r<=GRID-sh.m.length; r++) { for(let c=0; c<=GRID-sh.m[0].length; c++) { if(canPlace(sh, c, r)) canMove = true; } } }); if(!canMove && shapes.length > 0) { document.getElementById('final-score').innerText = score; document.getElementById('go-best-val').innerText = best; document.getElementById('game-over').style.display = 'flex'; } }
-function resetGame() { board=board.map(r=>r.fill(null)); score=0; feverStreak=0; hasBrokenRecord=false; updateScore(); document.getElementById('game-over').style.display='none'; spawn(); }
+function resetGame() { board=board.map(r=>r.fill(null)); score=0; hasBrokenRecord=false; updateS(); document.getElementById('game-over').style.display='none'; spawn(); }
 spawn(); draw();
 </script>
 </body>
