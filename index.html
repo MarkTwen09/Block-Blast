@@ -3,338 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StarsCase Replica</title>
+    <title>StarsCase Elite</title>
     <style>
         :root {
-            --bg-color: #080a0d;
+            --bg: #080a0d;
             --card-bg: #12161c;
-            --accent-blue: #248bf2;
-            --star-gold: #febd2d;
-            --text-main: #ffffff;
-            --text-hint: #6c7683;
+            --blue: #248bf2;
+            --gold: #febd2d;
+            --text: #ffffff;
+            --hint: #6c7683;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
+            font-family: -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+            overflow: hidden; user-select: none;
         }
 
-        /* --- Header / Profile --- */
+        /* Шапка как в приложении */
         .header {
-            padding: 20px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: url('https://via.placeholder.com/40') center/cover;
-            border: 1px solid #333;
-        }
-
-        .balance-group {
-            display: flex;
+        .balance {
             background: #1a1f26;
-            padding: 5px 12px;
+            padding: 5px 15px;
             border-radius: 20px;
-            gap: 15px;
+            display: flex; gap: 10px;
             font-weight: bold;
             border: 1px solid #2d343d;
         }
 
-        /* --- Case Cards (Main Screen) --- */
-        .section-title {
-            text-align: center;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 2px;
-            color: var(--text-hint);
-            margin: 20px 0;
-        }
-
-        .cases-grid {
-            padding: 0 15px;
-            display: flex;
-            gap: 15px;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-        }
-
+        /* Главная: Сетка кейсов */
+        .container { padding: 20px; height: 80vh; overflow-y: auto; }
+        
         .case-card {
-            min-width: 170px;
             background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 24px;
+            padding: 25px;
             text-align: center;
             border: 1px solid #232a35;
-            scroll-snap-align: center;
-            transition: 0.3s;
+            position: relative;
+            margin-bottom: 20px;
         }
 
         .case-img {
-            width: 120px;
-            filter: drop-shadow(0 0 15px rgba(36, 139, 242, 0.4));
-            margin-bottom: 15px;
+            width: 160px;
+            filter: drop-shadow(0 0 20px rgba(36, 139, 242, 0.5));
         }
 
-        .case-name { font-weight: bold; margin-bottom: 10px; }
-        
-        .price-tag {
+        .case-title { font-size: 18px; font-weight: 800; margin: 15px 0; text-transform: uppercase; }
+
+        .btn-price {
             background: #1a1f26;
-            padding: 6px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            width: 80%;
-            justify-content: center;
-        }
-
-        /* --- Possible Drop Grid (image_7.png Style) --- */
-        .drop-section {
-            margin-top: 40px;
-            padding: 20px;
-            background: rgba(18, 22, 28, 0.5);
-            border-radius: 30px 30px 0 0;
-        }
-
-        .drop-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-
-        .drop-item {
-            background: #1a1f26;
-            border-radius: 18px;
-            padding: 12px;
-            text-align: center;
+            padding: 10px 30px;
+            border-radius: 14px;
+            display: inline-block;
+            font-weight: bold;
             border: 1px solid #2d343d;
-            transition: 0.2s;
         }
 
-        .drop-item:hover { border-color: var(--accent-blue); transform: translateY(-3px); }
-
-        .drop-item img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 8px; }
-        .drop-item .name { font-size: 10px; color: var(--text-hint); text-transform: uppercase; display: block; }
-        .drop-item .val { font-size: 13px; font-weight: bold; color: var(--star-gold); }
-
-        /* --- Roulette UI (ScreenRecording Style) --- */
+        /* Экран открытия (Рулетка) */
         .roulette-overlay {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-color);
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 50px;
+            position: fixed; inset: 0; background: var(--bg);
+            display: none; flex-direction: column; align-items: center;
+            z-index: 100; padding-top: 40px;
         }
 
-        .roulette-container {
-            width: 100%;
-            height: 200px;
-            position: relative;
-            margin: 40px 0;
+        .roulette-view {
+            width: 100%; height: 180px;
+            position: relative; margin: 50px 0;
             overflow: hidden;
         }
 
-        .track-indicators {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 24px;
-            color: var(--accent-blue);
+        .indicator {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 10px solid transparent; border-right: 10px solid transparent;
             z-index: 10;
         }
+        .ind-top { top: 0; border-top: 15px solid var(--blue); }
+        .ind-bottom { bottom: 0; border-bottom: 15px solid var(--blue); }
 
         .track {
-            display: flex;
-            align-items: center;
-            height: 100%;
-            padding-left: 50%;
+            display: flex; align-items: center;
+            padding-left: calc(50% - 70px);
             will-change: transform;
         }
 
-        .track-item {
-            min-width: 130px;
-            height: 130px;
-            background: #1a1f26;
-            margin: 0 10px;
+        .item {
+            min-width: 140px; height: 140px;
+            background: #1a1f26; margin: 0 10px;
             border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: 2px solid #2d343d;
         }
 
-        .track-item.active { border-color: var(--accent-blue); box-shadow: 0 0 20px rgba(36,139,242,0.3); }
-
-        /* --- Navigation --- */
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            height: 70px;
-            background: #0d1117;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid #232a35;
+        /* Карточка продажи (image_1.png) */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: flex-end; z-index: 200;
         }
 
-        .nav-tab { color: var(--text-hint); text-align: center; font-size: 10px; }
-        .nav-tab.active { color: var(--accent-blue); }
+        .modal-content {
+            background: #12161c; width: 100%;
+            border-radius: 30px 30px 0 0;
+            padding: 25px;
+            animation: slideUp 0.3s ease-out;
+        }
 
-        .btn-swipe {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            width: 80%;
-            padding: 18px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            margin-top: 20px;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(36, 139, 242, 0.3);
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .stats-table {
+            width: 100%; border-collapse: collapse; margin: 20px 0;
+        }
+
+        .stats-table td { padding: 12px 0; border-bottom: 1px solid #222; }
+        .s-label { color: var(--hint); font-size: 14px; }
+        .s-val { text-align: right; font-weight: bold; }
+
+        .btn-action {
+            width: 100%; padding: 18px; border-radius: 18px;
+            border: none; font-size: 18px; font-weight: bold;
+            cursor: pointer; transition: 0.2s;
+        }
+
+        .btn-sell { background: #ffffff; color: #000000; }
+        .btn-swipe { background: var(--blue); color: #fff; margin-top: 30px; }
+
+        .nav {
+            position: fixed; bottom: 0; width: 100%; height: 70px;
+            background: #0d1117; display: flex; justify-content: space-around;
+            align-items: center; border-top: 1px solid #222;
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="user-info">
-            <div class="avatar"></div>
-            <span style="font-weight:bold;">Mark</span>
-        </div>
-        <div class="balance-group">
-            <span>0 💎</span>
-            <span><span id="balance">1000</span> <span style="color:var(--star-gold)">⭐️</span></span>
+        <div style="font-weight:bold;">Mark</div>
+        <div class="balance">
+            <span id="bal">1000</span> <span style="color:var(--gold)">⭐️</span>
         </div>
     </div>
 
-    <div id="main-screen">
-        <div class="section-title">Бесплатные</div>
-        <div class="cases-grid">
-            <div class="case-card" onclick="openRoulette('FREE')">
-                <img src="https://img.icons8.com/clouds/200/box.png" class="case-img">
-                <div class="case-name">БЕСПЛАТНЫЙ</div>
-                <div class="price-tag">0 ⭐️</div>
-            </div>
-            <div class="case-card" onclick="openRoulette('PREMIUM')">
-                <img src="https://img.icons8.com/clouds/200/gift.png" class="case-img">
-                <div class="case-name">ЗА ДРУГА</div>
-                <div class="price-tag">0 ⭐️</div>
-            </div>
-        </div>
-
-        <div class="drop-section">
-            <div class="section-title">Возможный дроп</div>
-            <div class="drop-grid" id="drop-preview">
-                </div>
+    <div class="container">
+        <div class="case-card" onclick="openCase()">
+            <img src="https://i.imgur.com/8QG3j8G.png" class="case-img"> <div class="case-title">Премиум Кейс</div>
+            <div class="btn-price">149 ⭐️</div>
         </div>
     </div>
 
-    <div class="roulette-overlay" id="roulette-screen">
-        <div style="width: 90%; display: flex; justify-content: space-between;">
-            <button onclick="closeRoulette()" style="background:none; border:none; color:white; font-size:16px;">← К КЕЙСАМ</button>
-        </div>
-
-        <div class="roulette-container">
-            <div class="track-indicators" style="top: -10px;">▼</div>
-            <div class="track-indicators" style="bottom: -10px;">▲</div>
+    <div class="roulette-overlay" id="roulette">
+        <button onclick="closeRoulette()" style="position:absolute; left:20px; top:20px; background:none; border:none; color:white; font-size:18px;">✕ Закрыть</button>
+        
+        <div class="roulette-view">
+            <div class="indicator ind-top"></div>
+            <div class="indicator ind-bottom"></div>
             <div class="track" id="track"></div>
         </div>
 
-        <button class="btn-swipe" id="spin-btn">СВАЙПНИТЕ ЗА 49 ⭐️</button>
+        <button class="btn-action btn-swipe" id="spin-btn">СВАЙПНИТЕ ЗА 149 ⭐️</button>
     </div>
 
-    <nav class="nav-bar">
-        <div class="nav-tab active">🏠<br>ГЛАВНАЯ</div>
-        <div class="nav-tab">🏆<br>КОНКУРСЫ</div>
-        <div class="nav-tab">👤<br>ПРОФИЛЬ</div>
+    <div class="modal" id="sell-modal">
+        <div class="modal-content">
+            <div style="text-align:center; font-size:80px; margin-bottom:10px;" id="win-icon">🔥</div>
+            <h2 id="win-name" style="text-align:center; margin:0;">Chill Flame</h2>
+            <p style="text-align:center; color:var(--hint);">Los Angeles</p>
+
+            <table class="stats-table">
+                <tr><td class="s-label">Модель</td><td class="s-val">Los Angeles</td></tr>
+                <tr><td class="s-label">Узор</td><td class="s-val">Straw Hat 0.4%</td></tr>
+                <tr><td class="s-label">Фон</td><td class="s-val">Tactical Pine</td></tr>
+            </table>
+
+            <button class="btn-action btn-sell" onclick="sellItem()">Продать за <span id="price-val">381</span> ⭐️</button>
+            <button class="btn-action" style="background:none; color:var(--hint);" onclick="closeModal()">Оставить в инвентаре</button>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <div style="color:var(--blue)">🏠 ГЛАВНАЯ</div>
+        <div>🏆 КОНКУРСЫ</div>
+        <div>👤 ПРОФИЛЬ</div>
     </nav>
 
 <script>
     const ITEMS = [
-        { name: "Jolly Chimp", val: "991 ⭐️", icon: "🐒" },
-        { name: "Ginger Cookie", val: "512 ⭐️", icon: "🍪" },
-        { name: "Tama Gadget", val: "485 ⭐️", icon: "🎮" },
-        { name: "Кубок", val: "100 ⭐️", icon: "🏆" },
-        { name: "Ракета", val: "50 ⭐️", icon: "🚀" },
-        { name: "Роза", val: "25 ⭐️", icon: "🌹" }
+        { name: "Chill Flame", icon: "🔥", price: 381 },
+        { name: "Blue Torch", icon: "💎", price: 500 },
+        { name: "Lava Lamp", icon: "🏮", price: 200 },
+        { name: "Golden Star", icon: "⭐️", price: 1500 }
     ];
 
     let balance = 1000;
+    let currentWin = null;
 
-    // Рендер дропа (как на image_7.png)
-    const dropPreview = document.getElementById('drop-preview');
-    ITEMS.forEach(item => {
-        dropPreview.innerHTML += `
-            <div class="drop-item">
-                <div style="font-size: 30px;">${item.icon}</div>
-                <span class="name">${item.name}</span>
-                <span class="val">${item.val}</span>
-            </div>
-        `;
-    });
-
-    function openRoulette() {
-        document.getElementById('roulette-screen').style.display = 'flex';
+    function openCase() {
+        document.getElementById('roulette').style.display = 'flex';
         initTrack();
-    }
-
-    function closeRoulette() {
-        document.getElementById('roulette-screen').style.display = 'none';
     }
 
     function initTrack() {
         const track = document.getElementById('track');
         track.innerHTML = '';
-        for(let i=0; i<50; i++) {
-            const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-            track.innerHTML += `<div class="track-item" style="font-size:50px;">${item.icon}</div>`;
+        for(let i=0; i<60; i++) {
+            const it = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            track.innerHTML += `<div class="item"><div style="font-size:50px;">${it.icon}</div></div>`;
         }
     }
 
     document.getElementById('spin-btn').onclick = function() {
-        if(balance < 49) return alert("Недостаточно звезд!");
-        balance -= 49;
-        document.getElementById('balance').innerText = balance;
+        if(balance < 149) return alert("Мало звезд!");
+        balance -= 149; updateBal();
         
         const track = document.getElementById('track');
-        const winIndex = 40;
-        const itemWidth = 150; // 130 + 20 margin
-        const offset = winIndex * itemWidth;
+        const winIdx = 50;
+        const winner = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+        currentWin = winner;
 
-        track.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0.1, 1)';
+        const cards = track.querySelectorAll('.item');
+        cards[winIdx].innerHTML = `<div style="font-size:50px;">${winner.icon}</div>`;
+        
+        const offset = winIdx * 160; // 140 ширина + 20 марджин
+        track.style.transition = 'transform 5s cubic-bezier(0.1, 0, 0, 1)';
         track.style.transform = `translateX(-${offset}px)`;
 
-        this.disabled = true;
-        this.innerText = "ОТКРЫТИЕ...";
-
         setTimeout(() => {
-            alert("Поздравляем! Предмет добавлен в профиль.");
-            this.disabled = false;
-            this.innerText = "СВАЙПНИТЕ ЗА 49 ⭐️";
-            track.style.transition = 'none';
-            track.style.transform = 'translateX(0)';
-            initTrack();
+            showSellModal(winner);
         }, 5500);
+    }
+
+    function showSellModal(item) {
+        document.getElementById('win-icon').innerText = item.icon;
+        document.getElementById('win-name').innerText = item.name;
+        document.getElementById('price-val').innerText = item.price;
+        document.getElementById('sell-modal').style.display = 'flex';
+    }
+
+    function sellItem() {
+        balance += currentWin.price;
+        updateBal();
+        closeModal();
+        closeRoulette();
+    }
+
+    function updateBal() { document.getElementById('bal').innerText = balance; }
+    function closeModal() { document.getElementById('sell-modal').style.display = 'none'; }
+    function closeRoulette() { 
+        document.getElementById('roulette').style.display = 'none'; 
+        document.getElementById('track').style.transition = 'none';
+        document.getElementById('track').style.transform = 'translateX(0)';
     }
 </script>
 </body>
