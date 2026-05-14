@@ -2,297 +2,406 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Stars NFT Case</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Baza NFT Store</title>
     <style>
         :root {
-            --bg-color: #0b0e11;
-            --card-bg: #181c22;
+            --bg-color: #010101;
+            --card-bg: #1c1c1e;
             --accent: #0088cc;
             --star-gold: #febd2d;
-            --common: #8e8e93;
-            --rare: #007aff;
-            --epic: #af52de;
-            --legendary: #ff9500;
+            --rarity-common: #4a4a4a;
+            --rarity-rare: #007aff;
+            --rarity-epic: #af52de;
+            --rarity-legend: #ff9500;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: white;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
+            padding: 0;
+            user-select: none;
+            overflow: hidden;
         }
 
-        /* Шапка с балансом */
+        /* --- UI Elements --- */
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
         .header {
-            width: 100%;
-            max-width: 500px;
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-sizing: border-box;
+            background: rgba(0,0,0,0.5);
         }
 
-        .balance-badge {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
+        .balance-card {
+            background: #1c1c1e;
+            padding: 5px 15px;
             border-radius: 20px;
+            border: 1px solid #333;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
             font-weight: bold;
-            border: 1px solid rgba(254, 189, 45, 0.3);
         }
 
-        /* Контейнер рулетки */
-        .roulette-wrapper {
+        /* --- Tabs Logic --- */
+        .content-section {
+            flex: 1;
+            display: none;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .content-section.active { display: block; }
+
+        /* --- Roulette (Case Tab) --- */
+        .case-preview {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .roulette-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            height: 160px;
-            margin: 40px 0;
-            background: var(--card-bg);
-            border-top: 2px solid #2c3139;
-            border-bottom: 2px solid #2c3139;
+            height: 180px;
+            background: #111;
+            margin: 20px 0;
             overflow: hidden;
-            display: flex;
-            align-items: center;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
         }
 
-        /* Указатель (центр рулетки) */
-        .pointer {
+        .roulette-line {
             position: absolute;
             left: 50%;
             top: 0;
             bottom: 0;
-            width: 4px;
+            width: 2px;
             background: var(--star-gold);
-            z-index: 10;
-            transform: translateX(-50%);
+            z-index: 5;
             box-shadow: 0 0 15px var(--star-gold);
         }
 
-        .roulette-track {
+        .track {
             display: flex;
-            transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
+            align-items: center;
+            height: 100%;
             will-change: transform;
         }
 
-        .item {
-            min-width: 120px;
-            height: 120px;
-            margin: 10px;
-            background: #232931;
-            border-radius: 12px;
+        /* --- NFT Card Style (как на скринах) --- */
+        .nft-card {
+            min-width: 130px;
+            height: 150px;
+            margin: 0 10px;
+            background: #2c2c2e;
+            border-radius: 15px;
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-bottom: 4px solid var(--common);
+            overflow: hidden;
+            border-bottom: 4px solid var(--rarity-common);
         }
 
-        .item img { width: 60px; height: 60px; object-fit: contain; }
-        
-        /* Цвета редкости */
-        .item.common { border-color: var(--common); }
-        .item.rare { border-color: var(--rare); }
-        .item.epic { border-color: var(--epic); }
-        .item.legendary { border-color: var(--legendary); background: radial-gradient(circle, #3d2f1a 0%, #232931 100%); }
+        .nft-card.rare { border-bottom-color: var(--rarity-rare); }
+        .nft-card.epic { border-bottom-color: var(--rarity-epic); box-shadow: inset 0 0 20px rgba(175, 82, 222, 0.2); }
+        .nft-card.legend { border-bottom-color: var(--rarity-legend); box-shadow: 0 0 20px rgba(255, 149, 0, 0.3); }
 
-        /* Кнопки */
-        .controls {
+        .nft-image {
+            font-size: 50px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+        }
+
+        .nft-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .nft-name {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* --- Navigation --- */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 70px;
+            background: #1c1c1e;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #333;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+
+        /* --- Market/Inventory Grid --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .market-item {
+            background: #1c1c1e;
+            padding: 15px;
+            border-radius: 15px;
             text-align: center;
-            margin-bottom: 40px;
+            border: 1px solid #333;
         }
 
-        .btn-open {
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: none;
             background: var(--accent);
             color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 12px;
-            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4);
         }
 
-        .btn-open:disabled { background: #444; opacity: 0.5; cursor: not-allowed; }
-        .btn-open:active { transform: scale(0.95); }
+        .btn-sell { background: #ff3b30; }
 
-        /* Инвентарь */
-        .inventory-title { width: 90%; max-width: 500px; margin-bottom: 15px; }
-        .inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-            width: 90%;
-            max-width: 500px;
-            padding-bottom: 50px;
-        }
-
-        .inv-item {
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 12px;
-            border: 1px solid #2c3139;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Эффект победы */
-        .win-overlay {
+        /* --- Win Overlay --- */
+        .overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8);
+            inset: 0;
+            background: rgba(0,0,0,0.9);
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .glow-effect {
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { filter: drop-shadow(0 0 5px var(--star-gold)); }
+            50% { filter: drop-shadow(0 0 20px var(--star-gold)); }
+            100% { filter: drop-shadow(0 0 5px var(--star-gold)); }
         }
     </style>
 </head>
 <body>
 
+<div class="app-container">
     <div class="header">
-        <h2 style="margin:0;">Baza Shop NFT</h2>
-        <div class="balance-badge">
+        <div style="font-weight: 900; font-size: 20px;">BAZA <span style="color:var(--accent)">SHOP</span></div>
+        <div class="balance-card">
             <span id="stars-balance">1000</span> <span style="color:var(--star-gold)">⭐️</span>
         </div>
     </div>
 
-    <div class="roulette-wrapper">
-        <div class="pointer"></div>
-        <div class="roulette-track" id="track"></div>
-    </div>
+    <section id="tab-cases" class="content-section active">
+        <div class="case-preview">
+            <h1 style="margin-bottom: 5px;">Chill Flame Case</h1>
+            <p style="color:#666">Содержит редкие факелы и лампы</p>
+        </div>
 
-    <div class="controls">
-        <button class="btn-open" id="spin-btn">Открыть за 100 ⭐️</button>
-        <p id="status-msg" style="color: #888; margin-top: 15px;">Испытай удачу!</p>
-    </div>
+        <div class="roulette-container">
+            <div class="roulette-line"></div>
+            <div class="track" id="roulette-track"></div>
+        </div>
 
-    <h3 class="inventory-title">Твои NFT</h3>
-    <div class="inventory-grid" id="inventory"></div>
+        <button class="btn-action" id="spin-button" style="height: 60px; font-size: 18px;">Открыть за 100 ⭐️</button>
+    </section>
 
-    <div class="win-overlay" id="win-screen">
-        <h1 style="color: var(--star-gold);">ПОЗДРАВЛЯЕМ!</h1>
-        <div id="win-card-container"></div>
-        <button class="btn-open" style="margin-top:20px;" onclick="closeWin()">Забрать</button>
-    </div>
+    <section id="tab-inventory" class="content-section">
+        <h2>Твоя Коллекция</h2>
+        <div class="grid" id="inventory-grid">
+            </div>
+    </section>
 
-    <script>
-        const itemsData = [
-            { id: 1, name: "Chill Flame", img: "🔥", rarity: "common", price: 50, chance: 60 },
-            { id: 2, name: "L.A. Torch", img: "🔦", rarity: "rare", price: 150, chance: 25 },
-            { id: 3, name: "Lava Lamp", img: "🌋", rarity: "epic", price: 400, chance: 10 },
-            { id: 4, name: "Crypto King", img: "👑", rarity: "legendary", price: 1500, chance: 5 }
-        ];
+    <section id="tab-market" class="content-section">
+        <h2>Рынок NFT</h2>
+        <p style="color:#888">Здесь ты можешь продать свои предметы и вернуть звезды.</p>
+        <div class="grid" id="market-grid">
+            </div>
+    </section>
 
-        let stars = 1000;
-        const track = document.getElementById('track');
-        const btn = document.getElementById('spin-btn');
-        const balanceEl = document.getElementById('stars-balance');
-        const invGrid = document.getElementById('inventory');
+    <nav class="nav-bar">
+        <div class="nav-item active" onclick="showTab('cases', this)">
+            <span class="nav-icon">📦</span>
+            <span>Кейсы</span>
+        </div>
+        <div class="nav-item" onclick="showTab('inventory', this)">
+            <span class="nav-icon">🎒</span>
+            <span>Инвентарь</span>
+        </div>
+        <div class="nav-item" onclick="showTab('market', this)">
+            <span class="nav-icon">🏦</span>
+            <span>Маркет</span>
+        </div>
+    </nav>
+</div>
 
-        // Создание элементов для рулетки
-        function createTrackItems() {
-            track.innerHTML = '';
-            // Создаем 50 элементов для эффекта долгой прокрутки
-            for (let i = 0; i < 60; i++) {
-                const randomItem = itemsData[Math.floor(Math.random() * itemsData.length)];
-                const div = document.createElement('div');
-                div.className = `item ${randomItem.rarity}`;
-                div.innerHTML = `<span style="font-size:40px">${randomItem.img}</span>`;
-                track.appendChild(div);
-            }
+<div class="overlay" id="win-overlay">
+    <h2 style="color: var(--star-gold); margin-bottom: 30px;">ВЫ ВЫБИЛИ NFT!</h2>
+    <div id="winner-container"></div>
+    <button class="btn-action" style="width: 200px; margin-top: 40px;" onclick="closeWin()">ЗАБРАТЬ</button>
+</div>
+
+<script>
+    const NFT_DATA = [
+        { id: 1, name: "Chill Flame", model: "Los Angeles", icon: "🔥", rarity: "common", chance: 65, sellPrice: 40 },
+        { id: 2, name: "Blue Torch", model: "Tactical", icon: "💎", rarity: "rare", chance: 20, sellPrice: 150 },
+        { id: 3, name: "Lava Lamp", model: "Retro", icon: "🏮", rarity: "epic", chance: 10, sellPrice: 500 },
+        { id: 4, name: "Golden Star", model: "Legendary", icon: "⭐️", rarity: "legend", chance: 5, sellPrice: 2500 }
+    ];
+
+    let balance = 1000;
+    let myNFTs = [];
+
+    const track = document.getElementById('roulette-track');
+    const spinBtn = document.getElementById('spin-button');
+
+    function showTab(tabName, el) {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        el.classList.add('active');
+        if(tabName === 'inventory') renderInventory();
+        if(tabName === 'market') renderMarket();
+    }
+
+    function createCard(nft) {
+        return `
+            <div class="nft-card ${nft.rarity}">
+                <div class="nft-label">${nft.model}</div>
+                <div class="nft-image">${nft.icon}</div>
+                <div class="nft-name">${nft.name}</div>
+            </div>
+        `;
+    }
+
+    function initRoulette() {
+        track.innerHTML = '';
+        for(let i=0; i<60; i++) {
+            const randomNFT = NFT_DATA[Math.floor(Math.random() * NFT_DATA.length)];
+            track.innerHTML += createCard(randomNFT);
+        }
+    }
+
+    async function spin() {
+        if (balance < 100) return alert("Недостаточно звезд!");
+        
+        balance -= 100;
+        updateBalance();
+        spinBtn.disabled = true;
+
+        initRoulette();
+        
+        // Математика шансов
+        const rand = Math.random() * 100;
+        let cumulative = 0;
+        let winner = NFT_DATA[0];
+        for(let n of NFT_DATA) {
+            cumulative += n.chance;
+            if(rand <= cumulative) { winner = n; break; }
         }
 
-        function spin() {
-            if (stars < 100) return;
+        // Подменяем 55-ю карточку на победителя
+        const cards = track.querySelectorAll('.nft-card');
+        cards[55].className = `nft-card ${winner.rarity}`;
+        cards[55].innerHTML = `<div class="nft-label">${winner.model}</div><div class="nft-image glow-effect">${winner.icon}</div><div class="nft-name">${winner.name}</div>`;
 
-            stars -= 100;
-            balanceEl.innerText = stars;
-            btn.disabled = true;
-            
-            createTrackItems();
-            
-            // Определяем, что выпадет (математика шансов)
-            const rand = Math.random() * 100;
-            let cumulative = 0;
-            let winningNFT = itemsData[0];
-            for (let item of itemsData) {
-                cumulative += item.chance;
-                if (rand <= cumulative) {
-                    winningNFT = item;
-                    break;
-                }
-            }
+        const cardWidth = 150; 
+        const offset = (55 * cardWidth) - (window.innerWidth / 2) + (cardWidth / 2);
 
-            // Заменяем 55-й элемент в рулетке на наш выигрышный
-            const targetIndex = 55; 
-            const items = track.querySelectorAll('.item');
-            items[targetIndex].className = `item ${winningNFT.rarity}`;
-            items[targetIndex].innerHTML = `<span style="font-size:40px">${winningNFT.img}</span>`;
+        track.style.transition = 'none';
+        track.style.transform = 'translateX(0)';
+        
+        setTimeout(() => {
+            track.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0.1, 1)';
+            track.style.transform = `translateX(-${offset}px)`;
+        }, 50);
 
-            // Расчет смещения (120px ширина + 20px margin)
-            const itemWidth = 140;
-            const centerOffset = (window.innerWidth > 600 ? 600 : window.innerWidth) / 2;
-            const finalPosition = (targetIndex * itemWidth) - centerOffset + (itemWidth / 2);
+        setTimeout(() => {
+            myNFTs.push(winner);
+            showWinnerOverlay(winner);
+            spinBtn.disabled = false;
+        }, 5500);
+    }
 
-            track.style.transition = '5s cubic-bezier(0.15, 0, 0.15, 1)';
-            track.style.transform = `translateX(-${finalPosition}px)`;
+    function showWinnerOverlay(nft) {
+        const overlay = document.getElementById('win-overlay');
+        document.getElementById('winner-container').innerHTML = createCard(nft);
+        overlay.style.display = 'flex';
+    }
 
-            // Финал анимации
-            setTimeout(() => {
-                showWin(winningNFT);
-                addToInventory(winningNFT);
-                btn.disabled = false;
-                // Сброс позиции без анимации для следующего раза
-                track.style.transition = 'none';
-            }, 5500);
-        }
+    function closeWin() {
+        document.getElementById('win-overlay').style.display = 'none';
+    }
 
-        function showWin(nft) {
-            const winScreen = document.getElementById('win-screen');
-            const container = document.getElementById('win-card-container');
-            container.innerHTML = `
-                <div class="item ${nft.rarity}" style="width:200px; height:200px; transform:scale(1.2)">
-                    <span style="font-size:80px">${nft.img}</span>
-                    <p>${nft.name}</p>
-                </div>
-            `;
-            winScreen.style.display = 'flex';
-        }
+    function renderInventory() {
+        const container = document.getElementById('inventory-grid');
+        container.innerHTML = myNFTs.map(nft => `
+            <div class="market-item">
+                ${createCard(nft)}
+                <div style="margin-top:10px; font-size:12px; color:#aaa">В коллекции</div>
+            </div>
+        `).join('');
+    }
 
-        function closeWin() {
-            document.getElementById('win-screen').style.display = 'none';
-            track.style.transform = `translateX(0)`;
-        }
+    function renderMarket() {
+        const container = document.getElementById('market-grid');
+        container.innerHTML = myNFTs.map((nft, index) => `
+            <div class="market-item">
+                ${createCard(nft)}
+                <button class="btn-action btn-sell" onclick="sellNFT(${index})">Продать за ${nft.sellPrice} ⭐️</button>
+            </div>
+        `).join('');
+    }
 
-        function addToInventory(nft) {
-            const div = document.createElement('div');
-            div.className = 'inv-item';
-            div.innerHTML = `
-                <div style="font-size:24px">${nft.img}</div>
-                <div>${nft.name}</div>
-                <div style="color:var(--star-gold); font-size:10px; margin-top:5px;">+${nft.price} ⭐️</div>
-            `;
-            invGrid.prepend(div);
-        }
+    function sellNFT(index) {
+        const nft = myNFTs[index];
+        balance += nft.sellPrice;
+        myNFTs.splice(index, 1);
+        updateBalance();
+        renderMarket();
+    }
 
-        btn.addEventListener('click', spin);
-        createTrackItems(); // Начальное заполнение
-    </script>
+    function updateBalance() {
+        document.getElementById('stars-balance').innerText = balance;
+    }
+
+    spinBtn.addEventListener('click', spin);
+    initRoulette();
+    updateBalance();
+</script>
+
 </body>
 </html>
