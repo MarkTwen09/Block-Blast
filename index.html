@@ -3,191 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StarsCase Elite</title>
+    <title>StarsCase Final</title>
     <style>
         :root {
             --bg: #000000;
             --gold: #fcc21b;
             --blue: #248bf2;
-            --card-dark: #111111;
+            --card: #1c1c1e;
             --text: #ffffff;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             margin: 0; padding: 0;
-            user-select: none;
+            overflow: hidden;
         }
 
         /* HEADER */
         .header {
-            padding: 15px 20px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .balance-box {
-            background: #1a1a1a;
-            padding: 6px 14px;
-            border-radius: 20px;
-            display: flex; gap: 8px;
-            font-weight: bold;
+        .user-info { display: flex; align-items: center; gap: 10px; font-weight: 900; }
+        .balance { background: #1a1a1a; padding: 8px 15px; border-radius: 20px; font-weight: bold; }
+
+        /* SCREENS */
+        .screen { display: none; height: calc(100vh - 160px); overflow-y: auto; padding: 20px; }
+        .screen.active { display: block; }
+
+        /* CASE CARD */
+        .case-preview {
+            background: #111; border-radius: 30px;
+            padding: 40px 20px; text-align: center;
+            border: 1px solid #222; margin-top: 50px;
+        }
+        .case-btn {
+            background: #1a1a1a; padding: 12px 30px;
+            border-radius: 15px; display: inline-block;
+            margin-top: 20px; font-weight: bold;
         }
 
-        /* ROULETTE (как на видео) */
-        .roulette-container {
-            position: relative;
-            background: var(--gold);
-            height: 140px;
-            margin: 40px 0;
+        /* ROULETTE (ВИДЕО СТИЛЬ) */
+        .roulette-box {
+            position: relative; background: var(--gold);
+            height: 140px; margin: 40px -20px;
             overflow: hidden;
-            display: flex; align-items: center;
         }
-
-        .roulette-track {
-            display: flex;
+        .track {
+            display: flex; align-items: center;
             transition: transform 5s cubic-bezier(0.1, 0, 0, 1);
-            will-change: transform;
             padding-left: 50%;
         }
-
         .r-item {
             min-width: 100px; height: 100px;
-            margin: 0 10px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            margin: 0 10px; display: flex; justify-content: center;
         }
-
-        .r-item img { width: 70px; height: 70px; object-fit: contain; }
+        .r-item img { height: 100%; object-fit: contain; }
 
         .pointer {
             position: absolute; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            z-index: 10;
+            width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent;
+            z-index: 5;
         }
         .p-top { top: 0; border-top: 20px solid #000; }
         .p-bottom { bottom: 0; border-bottom: 20px solid #000; }
 
-        /* MODAL (WIN) */
+        /* WIN MODAL */
         .modal {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.85);
-            display: none; align-items: center; justify-content: center;
-            z-index: 100;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; align-items: center; justify-content: center; z-index: 100;
         }
-
         .win-card {
-            background: #1c1c1e;
-            width: 85%; border-radius: 25px;
-            padding: 30px; text-align: center;
-            border: 1px solid #333;
+            background: var(--card); width: 85%; border-radius: 30px;
+            padding: 30px; text-align: center; border: 1px solid #333;
         }
-
-        .win-img { width: 120px; margin-bottom: 20px; }
-
-        .btn-main {
-            width: 100%; padding: 18px;
-            border-radius: 15px; border: none;
-            font-weight: 800; font-size: 16px;
-            margin-top: 10px; cursor: pointer;
+        .btn-action {
+            width: 100%; padding: 18px; border-radius: 15px; border: none;
+            font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer;
         }
-
-        .btn-yellow { background: var(--gold); color: #000; }
-        .btn-dark { background: #2c2c2e; color: #fff; }
+        .btn-sell { background: var(--gold); color: #000; }
+        .btn-keep { background: #2c2c2e; color: #fff; }
 
         /* NAV */
         .nav {
-            position: fixed; bottom: 0; width: 100%;
-            height: 70px; background: #0a0a0a;
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid #222;
+            position: fixed; bottom: 0; width: 100%; height: 80px;
+            background: #0a0a0a; display: flex; border-top: 1px solid #222;
         }
-
-        .nav-item { color: #555; font-size: 10px; text-align: center; }
-        .nav-item.active { color: var(--blue); }
-
-        .screen { display: none; padding: 20px; padding-bottom: 100px; }
-        .screen.active { display: block; }
+        .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #555; font-size: 10px; }
+        .nav-tab.active { color: var(--blue); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div style="font-weight: 900; font-size: 18px;">Mark</div>
-        <div class="balance-box">
-            <span id="bal">1202</span> <span style="color:var(--gold)">⭐️</span>
+        <div class="user-info">Mark</div>
+        <div class="balance"><span id="stars">1053</span> <span style="color:var(--gold)">⭐️</span></div>
+    </div>
+
+    <div id="scr-main" class="screen active">
+        <div class="case-preview" onclick="openCaseScreen()">
+            <div style="font-size: 50px; margin-bottom: 20px;">📦</div>
+            <h2 style="margin:0">ПРЕМИУМ КЕЙС</h2>
+            <div class="case-btn">149 ⭐️</div>
         </div>
     </div>
 
-    <div id="home" class="screen active">
-        <div style="background: #121212; border-radius: 25px; padding: 30px; text-align: center;" onclick="openCase()">
-            <img src="https://i.imgur.com/8QG3j8G.png" style="width: 180px;">
-            <h2 style="margin: 15px 0;">ПРЕМИУМ КЕЙС</h2>
-            <div style="background: #1a1a1a; padding: 10px 25px; border-radius: 15px; display: inline-block;">
-                149 <span style="color:var(--gold)">⭐️</span>
-            </div>
-        </div>
-    </div>
-
-    <div id="roulette-screen" class="screen">
-        <div class="roulette-container">
+    <div id="scr-spin" class="screen">
+        <div class="roulette-box">
             <div class="pointer p-top"></div>
             <div class="pointer p-bottom"></div>
-            <div class="roulette-track" id="track"></div>
+            <div class="track" id="track"></div>
         </div>
-        <button class="btn-main btn-yellow" id="spin-btn">ОТКРЫТЬ ЗА 149 ⭐️</button>
+        <button class="btn-action btn-sell" style="margin-top: 30px;" id="spin-go">ОТКРЫТЬ ЗА 149 ⭐️</button>
     </div>
 
-    <div id="inventory" class="screen">
-        <h2 style="text-align: center;">ТВОЙ ИНВЕНТАРЬ</h2>
-        <div id="inv-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;"></div>
+    <div id="scr-inv" class="screen">
+        <h2 style="text-align:center">ТВОЙ ИНВЕНТАРЬ</h2>
+        <div id="inv-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;"></div>
     </div>
 
     <div class="modal" id="win-modal">
         <div class="win-card">
-            <img src="" id="win-img" class="win-img">
-            <h3 id="win-name" style="margin: 0;">Mini Oscar</h3>
-            <p id="win-stars" style="color: var(--gold); font-weight: bold; margin: 10px 0;">20887 ⭐️</p>
-            
-            <button class="btn-main btn-yellow" onclick="sellItem()">ПРОДАТЬ ПРЕДМЕТ</button>
-            <button class="btn-main btn-dark" onclick="saveToInventory()">ЗАКРЫТЬ (В ИНВЕНТАРЬ)</button>
+            <img id="win-img" src="" style="width:130px; margin-bottom:20px;">
+            <h2 id="win-name" style="margin:0">Item Name</h2>
+            <p id="win-price" style="color:var(--gold); font-weight:bold;">0 ⭐️</p>
+            <button class="btn-action btn-sell" onclick="sellItem()">ПРОДАТЬ ПРЕДМЕТ</button>
+            <button class="btn-action btn-keep" onclick="keepItem()">ЗАКРЫТЬ (В ИНВЕНТАРЬ)</button>
         </div>
     </div>
 
     <nav class="nav">
-        <div class="nav-item active" onclick="showTab('home')">🏠<br>ГЛАВНАЯ</div>
-        <div class="nav-item" onclick="showTab('inventory')">🎒<br>ИНВЕНТАРЬ</div>
+        <div class="nav-tab active" onclick="showTab('main', this)">🏠<br>ГЛАВНАЯ</div>
+        <div class="nav-tab" onclick="showTab('inv', this)">🎒<br>ИНВЕНТАРЬ</div>
     </nav>
 
 <script>
     const ITEMS = [
-        { name: "Mini Oscar", price: 20887, img: "https://i.imgur.com/XU9D3Rz.png" },
-        { name: "Diamond Ring", price: 5210, img: "https://i.imgur.com/pZz8B7S.png" },
-        { name: "Bling Binky", price: 6290, img: "https://i.imgur.com/wVf5L4y.png" },
-        { name: "Medal", price: 150, img: "https://i.imgur.com/8mXzH9C.png" }
+        { name: "Mini Oscar", price: 20887, img: "https://files.catbox.moe/u0q0z3.png" },
+        { name: "Diamond Ring", price: 5210, img: "https://files.catbox.moe/p9o4b7.png" },
+        { name: "Bling Binky", price: 6290, img: "https://files.catbox.moe/7x7v2n.png" },
+        { name: "Medal", price: 100, img: "https://files.catbox.moe/2s8d7k.png" }
     ];
 
-    let balance = 1202;
+    let balance = 1053;
     let inv = [];
-    let currentDrop = null;
+    let lastDrop = null;
 
-    function showTab(id) {
+    function showTab(id, el) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 'inventory') renderInv();
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('scr-' + id).classList.add('active');
+        el.classList.add('active');
+        if(id === 'inv') renderInv();
     }
 
-    function openCase() {
-        showTab('roulette-screen');
-        initTrack();
-    }
-
-    function initTrack() {
+    function openCaseScreen() {
+        showTab('spin', document.querySelectorAll('.nav-tab')[0]);
         const track = document.getElementById('track');
+        track.style.transition = 'none';
+        track.style.transform = 'translateX(0)';
         track.innerHTML = '';
         for(let i=0; i<80; i++) {
             const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
@@ -195,61 +174,55 @@
         }
     }
 
-    document.getElementById('spin-btn').onclick = function() {
-        if(balance < 149) return alert("Мало звёзд!");
-        balance -= 149; updateBal();
+    document.getElementById('spin-go').onclick = function() {
+        if(balance < 149) return alert("Недостаточно звёзд!");
+        balance -= 149; updateUI();
         
         const track = document.getElementById('track');
-        const winIdx = 65; 
-        currentDrop = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+        const winIdx = 60;
+        lastDrop = ITEMS[Math.floor(Math.random() * ITEMS.length)];
         
-        const items = track.querySelectorAll('.r-item');
-        items[winIdx].innerHTML = `<img src="${currentDrop.img}">`;
-
-        const offset = winIdx * 120; // 100 ширина + 20 марджин
+        track.querySelectorAll('.r-item')[winIdx].innerHTML = `<img src="${lastDrop.img}">`;
+        
+        const offset = winIdx * 120; // 100 width + 20 margin
         track.style.transition = 'transform 5s cubic-bezier(0.1, 0, 0, 1)';
         track.style.transform = `translateX(-${offset}px)`;
 
         setTimeout(() => {
-            showWin(currentDrop);
+            document.getElementById('win-img').src = lastDrop.img;
+            document.getElementById('win-name').innerText = lastDrop.name;
+            document.getElementById('win-price').innerText = lastDrop.price + " ⭐️";
+            document.getElementById('win-modal').style.display = 'flex';
         }, 5500);
-    };
-
-    function showWin(item) {
-        document.getElementById('win-img').src = item.img;
-        document.getElementById('win-name').innerText = item.name;
-        document.getElementById('win-stars').innerText = item.price + " ⭐️";
-        document.getElementById('win-modal').style.display = 'flex';
     }
 
     function sellItem() {
-        balance += currentDrop.price;
-        updateBal();
-        closeModal();
+        balance += lastDrop.price;
+        closeWin();
     }
 
-    function saveToInventory() {
-        inv.push(currentDrop);
-        closeModal();
+    function keepItem() {
+        inv.push(lastDrop);
+        closeWin();
+    }
+
+    function closeWin() {
+        document.getElementById('win-modal').style.display = 'none';
+        updateUI();
+        showTab('main', document.querySelectorAll('.nav-tab')[0]);
     }
 
     function renderInv() {
-        const list = document.getElementById('inv-list');
-        list.innerHTML = inv.map(i => `
-            <div style="background:#1a1a1a; padding:15px; border-radius:20px; text-align:center;">
-                <img src="${i.img}" style="width:60px;">
-                <div style="font-size:12px; margin-top:5px;">${i.name}</div>
+        const grid = document.getElementById('inv-grid');
+        grid.innerHTML = inv.map(i => `
+            <div style="background:#111; padding:20px; border-radius:20px; text-align:center; border:1px solid #222;">
+                <img src="${i.img}" style="width:70px;">
+                <div style="font-size:12px; margin-top:10px; font-weight:bold;">${i.name}</div>
             </div>
         `).join('');
     }
 
-    function updateBal() { document.getElementById('bal').innerText = balance; }
-    function closeModal() { 
-        document.getElementById('win-modal').style.display = 'none';
-        showTab('home');
-        document.getElementById('track').style.transition = 'none';
-        document.getElementById('track').style.transform = 'translateX(0)';
-    }
+    function updateUI() { document.getElementById('stars').innerText = balance; }
 </script>
 </body>
 </html>
