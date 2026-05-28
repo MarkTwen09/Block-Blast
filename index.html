@@ -1,32 +1,354 @@
-// Модернизированная логика для монетизации и бустов
-function startSystemWithLogs() {
-    if (session.active) {
-        // Окно, которое заставляет пользователя переходить в твои каналы / проекты
-        let action = confirm(
-            "Для увеличения скорости майнинга (BOOST x2.5) выполните инструкции:\n\n" +
-            "1. Подпишитесь на официальный канал пула.\n" +
-            "2. Перейдите по ссылке и подтвердите статус.\n\n" +
-            "Перейти к выполнению заданий?"
-        );
-        
-        if (action) {
-            // Сюда вставляешь ссылку на свой Telegram-канал или бота-проверок
-            window.open("https://t.me/твой_канал_или_инвайт_ссылка", "_blank");
-        }
-        return;
-    }
-
-    powerBtn.disabled = true;
-    logBox.innerText = "> Подключение к TON Gateway...";
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Star Allocation Protocol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    setTimeout(() => {
-        logBox.innerText = "> Проверка смарт-контракта... Успешно.";
-        setTimeout(() => {
-            logBox.innerText = "> Выделение виртуального потока... Поток запущен.";
-            session.active = true;
-            powerBtn.disabled = false;
-            save();
-            render();
+    <style>
+        :root {
+            --bg-black: #000000;
+            --card-gray: #0a0b0d;
+            --border-soft: rgba(255, 255, 255, 0.05);
+            --tg-premium: linear-gradient(135deg, #6b24cc 0%, #2481cc 100%);
+            --tg-blue: #2481cc;
+            --text-white: #ffffff;
+            --text-muted: #707579;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 390px;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 32px);
+            justify-content: space-between;
+        }
+
+        .protocol-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #30d158;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .secure-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #30d158;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #30d158;
+        }
+
+        .user-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .crypto-balance-card {
+            background: linear-gradient(180deg, #050608 0%, var(--card-gray) 100%);
+            border: 1px solid var(--border-soft);
+            border-radius: 24px;
+            padding: 28px 20px;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.8);
+        }
+
+        .balance-desc {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .balance-digits {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .star-asset {
+            color: #ffb800;
+            font-size: 34px;
+        }
+
+        .network-velocity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #30d158;
+            background: rgba(48, 209, 88, 0.05);
+            padding: 4px 12px;
+            border-radius: 100px;
+            display: inline-block;
+        }
+
+        .action-area {
+            background: var(--card-gray);
+            border: 1px solid var(--border-soft);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .console-log {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: #000;
+            padding: 10px;
+            border-radius: 10px;
+            min-height: 36px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .main-cta-btn {
+            background: var(--tg-premium);
+            color: var(--text-white);
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            box-shadow: 0 4px 20px rgba(36, 129, 204, 0.2);
+        }
+
+        .main-cta-btn:active {
+            opacity: 0.9;
+        }
+
+        .live-feed-box {
+            background: rgba(255,255,255,0.01);
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .feed-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .feed-row {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #e5e5ea;
+            display: flex;
+            justify-content: space-between;
+            animation: fadeInRow 0.5s ease-out;
+        }
+
+        .payout-btn {
+            width: 100%;
+            background: transparent;
+            color: var(--text-white);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .legal-notice {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Шапка -->
+        <div class="protocol-header">
+            <div class="secure-badge">
+                <div class="secure-dot"></div>
+                <span>TON Mainnet Node</span>
+            </div>
+            <div class="user-id">ID: kaoface</div>
+        </div>
+
+        <!-- Баланс -->
+        <div class="crypto-balance-card">
+            <div class="balance-desc">Доступный баланс пула</div>
+            <div class="balance-digits">
+                <span class="star-asset">★</span>
+                <span id="bal-val">0.0000</span>
+            </div>
+            <div class="network-velocity" id="speed-indicator">Ожидание инициализации</div>
+        </div>
+
+        <!-- Блок Запуска и Логов -->
+        <div class="action-area">
+            <div class="console-log" id="log-box">> Системный терминал готов к запуску.</div>
+            <button class="main-cta-btn" id="power-btn" onclick="startSystemWithLogs()">Авторизовать узел майнинга</button>
+        </div>
+
+        <!-- Лента выплат -->
+        <div class="live-feed-box">
+            <div class="feed-title">
+                <span>Мониторинг выплат пула</span>
+                <span style="color: #30d158;">● Live</span>
+            </div>
+            <div id="feed-container">
+                <div class="feed-row"><span>@ma***pl — выведено</span><span style="color: #ffb800;">68 ★</span></div>
+            </div>
+        </div>
+
+        <!-- Низ -->
+        <div>
+            <button class="payout-btn" onclick="processPayout()">Вывести активы на Wallet</button>
+            <div class="legal-notice">
+                Минимум к выводу: 50.0000 ★. Транзакции валидируются через протокол распределенного консенсуса Telegram WebApp API.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let session = {
+            balance: parseFloat(localStorage.getItem('r_bal')) || 0.0000,
+            active: localStorage.getItem('r_act') === 'true',
+            speed: 0.0008 
+        };
+
+        const balVal = document.getElementById('bal-val');
+        const speedIndicator = document.getElementById('speed-indicator');
+        const logBox = document.getElementById('log-box');
+        const powerBtn = document.getElementById('power-btn');
+        const feedContainer = document.getElementById('feed-container');
+
+        function render() {
+            balVal.innerText = session.balance.toFixed(4);
+            if (session.active) {
+                speedIndicator.innerText = `Выделено: +${session.speed.toFixed(4)} ★/сек`;
+                speedIndicator.style.color = "#30d158";
+                powerBtn.innerText = "Узел активен (Запросить буст)";
+            } else {
+                speedIndicator.innerText = "Узел приостановлен";
+                speedIndicator.style.color = "var(--text-muted)";
+                powerBtn.innerText = "Авторизовать узел майнинга";
+            }
+        }
+
+        function startSystemWithLogs() {
+            if (session.active) {
+                let action = confirm(
+                    "Для увеличения скорости майнинга (BOOST x2.5) выполните инструкции:\n\n" +
+                    "1. Подпишитесь на официальный канал пула.\n" +
+                    "2. Перейдите по ссылке и подтвердите статус.\n\n" +
+                    "Перейти к выполнению заданий?"
+                );
+                
+                if (action) {
+                    // Замени эту ссылку на свой реальный канал / бота
+                    window.open("https://t.me/твой_канал_или_инвайт_ссылка", "_blank");
+                }
+                return;
+            }
+
+            powerBtn.disabled = true;
+            logBox.innerText = "> Подключение к TON Gateway...";
+            
+            setTimeout(() => {
+                logBox.innerText = "> Проверка смарт-контракта... Успешно.";
+                setTimeout(() => {
+                    logBox.innerText = "> Выделение виртуального потока... Поток запущен.";
+                    session.active = true;
+                    powerBtn.disabled = false;
+                    save();
+                    render();
+                }, 1000);
+            }, 1000);
+        }
+
+        setInterval(() => {
+            if (session.active) {
+                session.balance += session.speed;
+                render();
+                save();
+            }
         }, 1000);
-    }, 1000);
-}
+
+        function processPayout() {
+            if (session.balance < 50) {
+                alert(`Отказ сети в генерации транзакции.\n\nЛимит вывода: не менее 50.0000 ★\nНа вашем балансе: ${session.balance.toFixed(4)} ★\n\nДля ускорения процесса вы можете активировать премиум-пулы.`);
+            } else {
+                alert(`Смарт-контракт сформирован успешно. ${session.balance.toFixed(4)} ★ отправлены на привязанный аккаунт Telegram Wallet.`);
+                session.balance = 0;
+                session.active = false;
+                save();
+                render();
+            }
+        }
+
+        const fakeUsers = ['se***ga', 'ni***ta', 'v_***_d', 'an***on', 'di***ma', 'ki***ll', 'te***_u'];
+        setInterval(() => {
+            const user = fakeUsers[Math.floor(Math.random() * fakeUsers.length)];
+            const stars = Math.floor(Math.random() * 80) + 50; 
+            feedContainer.innerHTML = `<div class="feed-row"><span>@${user} — выведено</span><span style="color: #ffb800;">${stars} ★</span></div>`;
+        }, 7000);
+
+        function save() {
+            localStorage.setItem('r_bal', session.balance);
+            localStorage.setItem('r_act', session.active);
+        }
+
+        render();
+    </script>
+</body>
+</html>
