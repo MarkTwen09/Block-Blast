@@ -26,6 +26,7 @@
             user-select: none;
             -webkit-user-select: none;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: manipulation;
         }
 
         body {
@@ -79,16 +80,18 @@
         .badge {
             font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
             padding: 4px 14px; border-radius: 20px; opacity: 0; transform: scale(0.8);
-            position: absolute; transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            position: absolute; transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+            pointer-events: none;
         }
-        .badge.active { opacity: 1; transform: scale(1); }
+        .badge.active { opacity: 1; transform: scale(1); z-index: 10; }
 
         .combo-badge { background: linear-gradient(90deg, var(--neon-blue), #3b82f6); box-shadow: 0 0 10px rgba(0,240,255,0.3); }
         .hyper-badge { background: linear-gradient(90deg, var(--accent-gold), var(--hyper-purple)); box-shadow: 0 0 15px var(--gold-glow); animation: pulse 0.4s infinite alternate; }
         .event-badge { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 0 15px rgba(16,185,129,0.4); color: white; }
-        .cheat-badge { background: var(--cheat-red); box-shadow: 0 0 15px rgba(239,68,68,0.5); color: white; }
+        .cheat-badge { background: var(--cheat-red); box-shadow: 0 0 25px rgba(239,68,68,0.8); color: white; animation: shake 0.2s infinite; }
 
         @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
 
         /* --- БАЛАНС --- */
         .balance-section { text-align: center; }
@@ -110,10 +113,11 @@
             display: flex; justify-content: center; align-items: center; cursor: pointer;
             transform-style: preserve-3d; position: relative; will-change: transform;
             transform: rotateX(0deg) rotateY(0deg) translateZ(0px);
+            transition: filter 0.2s, border-color 0.2s;
         }
 
         /* Эффект заморозки при читерстве */
-        .sphere-outer.frozen { border-color: var(--cheat-red) !important; box-shadow: 0 0 30px rgba(239,68,68,0.3) !important; filter: saturate(0.3); }
+        .sphere-outer.frozen { border-color: var(--cheat-red) !important; box-shadow: 0 0 40px rgba(239,68,68,0.6) !important; filter: saturate(0.2) brightness(0.7); }
 
         .shockwave { position: absolute; border-radius: 50%; border: 2px solid rgba(0, 240, 255, 0.35); width: 100%; height: 100%; opacity: 0; pointer-events: none; }
         @keyframes wave { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
@@ -195,7 +199,7 @@
             <div class="badge combo-badge" id="badge-combo">Combo x2 🔥</div>
             <div class="badge hyper-badge" id="badge-hyper">ГИПЕР КЛИК x5 👑</div>
             <div class="badge event-badge" id="badge-fever">ЗОЛОТАЯ ЛИХОРАДКА ⚡</div>
-            <div class="badge cheat-badge" id="badge-cheat">⚠️ КЛИКЕР ЗАБЛОКИРОВАН</div>
+            <div class="badge cheat-badge" id="badge-cheat">⚠️ СИСТЕМА ПЕРЕГРУЖЕНА (ЧИТ)</div>
         </div>
 
         <div class="balance-section">
@@ -241,23 +245,22 @@
 
         let state = { balance: 0, clickPower: 1, passiveIncomePerSec: 0, energy: 1000, maxEnergy: 1000, energyRegen: 3, upgrades: JSON.parse(JSON.stringify(dbUpgrades)) };
         
-        // Переменные механик игры
         let combo = 0, lastClick = 0, isFever = false, isFrozen = false, freezeUntil = 0;
         
-        // Античит логика
-        let clickHistory = []; 
+        // Массивы хранения истории для математического анализа античита
+        let clickIntervals = []; 
+        let clickPositions = [];
+        let lastClickTimeSystem = 0;
 
-        // Инерциальное сглаживание углов
         let rX = 0, rY = 0, tX = 0, tY = 0, zX = 0, tz = 0;
-
-        const SAVE_KEY = 'svet_klin_v7';
+        const SAVE_KEY = 'svet_klin_v8_anti';
         let uiBal = 0;
 
         function init() {
             loadGame(); renderCards(); recalculateStats(); uiBal = state.balance;
             setInterval(passiveLoop, 100);
             setInterval(regenLoop, 1000);
-            setInterval(randomEventTrigger, 1000); // Проверка случайных ивентов
+            setInterval(randomEventTrigger, 1000);
             loop();
         }
 
@@ -282,7 +285,6 @@
         }
 
         function loop() {
-            // Мягкий интерполятор без рывков
             rX += (tX - rX) * 0.25; rY += (tY - rY) * 0.25; zX += (tz - zX) * 0.3;
             tX *= 0.85; tY *= 0.85; tz *= 0.7;
             
@@ -300,42 +302,65 @@
             document.getElementById('energy-current').innerText = Math.floor(state.energy);
             document.getElementById('energy-fill').style.width = `${(state.energy / state.maxEnergy) * 100}%`;
 
-            // Сгорание комбо
             if(Date.now() - lastClick > 1200 && combo > 0) { combo = Math.max(0, combo - 1); updateUIBadges(); }
 
-            // Окончание заморозки античитом
-            if(isFrozen && Date.now() > freezeUntil) { isFrozen = false; document.getElementById('sphere-btn').classList.remove('frozen'); updateUIBadges(); }
+            if(isFrozen && Date.now() > freezeUntil) { 
+                isFrozen = false; 
+                document.getElementById('sphere-btn').classList.remove('frozen'); 
+                clickIntervals = [];
+                clickPositions = [];
+                updateUIBadges(); 
+            }
 
             requestAnimationFrame(loop);
         }
 
         function processClick(cX, cY) {
-            if (isFrozen) return; // Игнорируем клики во время бана
+            if (isFrozen) return;
 
             const now = Date.now();
+            
+            // Защита от сверхчеловеческой скорости (менее 45 мс между тапами)
+            if (lastClickTimeSystem > 0 && (now - lastClickTimeSystem) < 45) {
+                triggerFreeze(now);
+                return;
+            }
 
-            // --- УЛЬТРА АНТИЧИТ ДВИЖОК ---
-            const currentInterval = now - lastClick;
-            clickHistory.push({ time: currentInterval, x: cX, y: cY });
-            if (clickHistory.length > 6) clickHistory.shift();
+            if (lastClickTimeSystem > 0) {
+                const currentInterval = now - lastClickTimeSystem;
+                clickIntervals.push(currentInterval);
+                clickPositions.push({x: cX, y: cY});
 
-            if (clickHistory.length >= 5) {
-                let exactTimeMatches = 0;
-                let exactCoordMatches = 0;
-                for(let i = 1; i < clickHistory.length; i++) {
-                    if (Math.abs(clickHistory[i].time - clickHistory[i-1].time) <= 1) exactTimeMatches++; // Слишком точный интервал
-                    if (clickHistory[i].x === clickHistory[i-1].x && clickHistory[i].y === clickHistory[i-1].y) exactCoordMatches++; // Тап точно в один пиксель
+                if (clickIntervals.length > 12) {
+                    clickIntervals.shift();
+                    clickPositions.shift();
                 }
 
-                if (exactTimeMatches >= 4 || exactCoordMatches >= 4) {
-                    isFrozen = true;
-                    freezeUntil = now + 4000; // Бан на 4 секунды
-                    document.getElementById('sphere-btn').classList.add('frozen');
-                    combo = 0;
-                    updateUIBadges();
-                    return;
+                // Математический анализ на монотонность (когда накопилось больше 8 кликов)
+                if (clickIntervals.length >= 8) {
+                    // 1. Считаем среднее значение интервала
+                    const sum = clickIntervals.reduce((a, b) => a + b, 0);
+                    const avg = sum / clickIntervals.length;
+
+                    // 2. Считаем дисперсию (разброс) интервалов
+                    const variance = clickIntervals.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / clickIntervals.length;
+
+                    // 3. Анализируем разброс координат тачей
+                    let totalDist = 0;
+                    for(let i = 1; i < clickPositions.length; i++) {
+                        totalDist += Math.hypot(clickPositions[i].x - clickPositions[i-1].x, clickPositions[i].y - clickPositions[i-1].y);
+                    }
+                    const avgDistance = totalDist / (clickPositions.length - 1);
+
+                    // Условия детекта: среднее отклонение времени меньше 6мс ИЛИ среднее смещение пальца меньше 0.8 пикселя
+                    if (variance < 35 || avgDistance < 0.8) {
+                        triggerFreeze(now);
+                        return;
+                    }
                 }
             }
+
+            lastClickTimeSystem = now;
 
             if (!isFever && state.energy < state.clickPower) return;
 
@@ -343,25 +368,22 @@
             combo++;
             updateUIBadges();
 
-            // Расчет награды (Криты / Лихорадка / Комбо)
             let mult = combo >= 25 ? 5 : (combo >= 12 ? 3 : (combo >= 5 ? 2 : 1));
-            if (isFever) mult = 4; // Фиксированный буст лихорадки
+            if (isFever) mult = 4;
 
-            let isCrit = Math.random() < 0.07; // 7% шанс крита
-            let critMult = isCrit ? Math.floor(Math.random() * 5) + 6 : 1; // Криты от х6 до х10
+            let isCrit = Math.random() < 0.07;
+            let critMult = isCrit ? Math.floor(Math.random() * 5) + 6 : 1;
 
             let reward = state.clickPower * mult * critMult;
             
             if(!isFever) state.energy -= state.clickPower;
             state.balance += reward;
 
-            // Физика пружины
             const rect = document.getElementById('sphere-btn').getBoundingClientRect();
             tX = ((cY - (rect.top + rect.height/2)) / (rect.height/2)) * -30;
             tY = ((cX - (rect.left + rect.width/2)) / (rect.width/2)) * 30;
             tz = -15;
 
-            // Триггер вспышки волны
             const fx = document.getElementById('wave-fx'); fx.style.animation = 'none'; fx.offsetHeight; fx.style.animation = 'wave 0.4s ease-out';
 
             if(isCrit) {
@@ -370,6 +392,14 @@
             }
 
             createParticle(cX, cY, reward, isCrit);
+        }
+
+        function triggerFreeze(now) {
+            isFrozen = true;
+            freezeUntil = now + 5000; // Наказание: бан кликов на 5 секунд
+            document.getElementById('sphere-btn').classList.add('frozen');
+            combo = 0;
+            updateUIBadges();
         }
 
         function updateUIBadges() {
@@ -386,12 +416,11 @@
             }
         }
 
-        // Случайный запуск Золотой Лихорадки
         function randomEventTrigger() {
-            if(!isFever && !isFrozen && Math.random() < 0.02) { // 2% шанс каждую секунду
+            if(!isFever && !isFrozen && Math.random() < 0.015) {
                 isFever = true;
                 updateUIBadges();
-                setTimeout(() => { isFever = false; updateUIBadges(); }, 8000); // Длится 8 секунд
+                setTimeout(() => { isFever = false; updateUIBadges(); }, 8000);
             }
         }
 
@@ -424,8 +453,18 @@
             e.target.classList.add('active'); document.getElementById(`tab-${t}`).classList.add('active');
         }
 
-        document.getElementById('sphere-btn').addEventListener('touchstart', (e) => { e.preventDefault(); processClick(e.touches[0].clientX, e.touches[0].clientY); });
-        document.getElementById('sphere-btn').addEventListener('mousedown', (e) => { if ('ontouchstart' in window) return; processClick(e.clientX, e.clientY); });
+        // Слушатели событий с передачей координат
+        document.getElementById('sphere-btn').addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            if(e.touches.length > 0) {
+                processClick(e.touches[0].clientX, e.touches[0].clientY); 
+            }
+        }, { passive: false });
+
+        document.getElementById('sphere-btn').addEventListener('mousedown', (e) => { 
+            if ('ontouchstart' in window) return; 
+            processClick(e.clientX, e.clientY); 
+        });
 
         function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify({ balance: state.balance, upgrades: state.upgrades.map(u => ({ id: u.id, level: u.level })) })); }
         function loadGame() {
