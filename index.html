@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kao Space Clicker</title>
+    <title>Network Console</title>
     
     <style>
         :root {
-            --bg-black: #050505;
-            --neon-blue: #0076ff;
-            --neon-glow: 0 0 20px rgba(0, 118, 255, 0.4);
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border-line: rgba(255, 255, 255, 0.06);
+            --bg-main: #000000;
+            --panel-bg: #09090b;
+            --border-muted: #1e1e24;
+            --accent-glow: #0076ff;
+            --text-active: #ffffff;
+            --text-dim: #71717a;
         }
 
         * {
@@ -20,272 +21,273 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
         }
 
         body {
-            background-color: var(--bg-black);
-            color: #ffffff;
+            background-color: var(--bg-main);
+            color: var(--text-active);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 16px;
-            overflow: hidden;
-        }
-
-        .header {
-            width: 100%;
-            max-width: 360px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--neon-blue);
-            text-shadow: var(--neon-glow);
-        }
-
-        .user-id {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        /* Главный счетчик */
-        .score-container {
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .score-title {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 4px;
-        }
-
-        .score-value {
-            font-size: 52px;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        /* Кнопка-кликер с физикой */
-        .clicker-box {
-            flex-grow: 1;
-            display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
-            width: 100%;
-        }
-
-        .click-coin {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #111 0%, #000 100%);
-            border: 2px solid var(--border-line);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.05);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.05s ease;
-            position: relative;
-        }
-
-        .click-coin:active {
-            transform: scale(0.95);
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 30px rgba(0, 118, 255, 0.2);
-        }
-
-        .coin-icon {
-            font-size: 72px;
-            filter: drop-shadow(0 0 15px rgba(255,255,255,0.1));
-        }
-
-        /* Вылетающий текст +1 при тапе */
-        .tap-pop {
-            position: absolute;
-            color: var(--neon-blue);
-            font-size: 24px;
-            font-weight: 700;
-            pointer-events: none;
-            animation: floatUp 0.6s ease-out forwards;
-            text-shadow: var(--neon-glow);
-        }
-
-        /* Панель заданий (Твоя монетизация) */
-        .task-panel {
-            width: 100%;
-            max-width: 360px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-line);
-            border-radius: 20px;
             padding: 16px;
         }
 
-        .task-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-
-        .task-list {
+        .terminal-container {
+            width: 100%;
+            max-width: 360px;
+            height: calc(100vh - 32px);
+            max-height: 720px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            justify-content: space-between;
         }
 
-        .task-item {
+        /* Верхняя статусная строка */
+        .meta-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255,255,255,0.02);
-            padding: 12px 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.02);
-            cursor: pointer;
-            transition: background 0.2s;
+            padding: 0 4px;
         }
 
-        .task-item:active {
-            background: rgba(255,255,255,0.05);
-        }
-
-        .task-info h4 {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .task-info p {
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 11px;
-            color: var(--neon-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #00ff66;
         }
 
-        .task-reward {
-            font-size: 12px;
+        .live-pulse {
+            width: 4px;
+            height: 4px;
+            background: #00ff66;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff66;
+        }
+
+        .session-id {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        /* Центральный строгий блок мониторинга */
+        .main-display {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-muted);
+            border-radius: 16px;
+            padding: 32px 20px;
+            text-align: center;
+        }
+
+        .display-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .crypto-digits {
+            font-size: 46px;
             font-weight: 700;
-            background: rgba(0, 118, 255, 0.1);
-            color: var(--neon-blue);
-            padding: 4px 8px;
-            border-radius: 8px;
+            letter-spacing: -1px;
+            color: var(--text-active);
+            font-variant-numeric: tabular-nums;
         }
 
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        .network-stats {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-dim);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Сетка системных параметров */
+        .data-grid {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-muted);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .grid-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-muted);
+        }
+
+        .grid-row:last-child {
+            border-bottom: none;
+        }
+
+        .label-dim {
+            color: var(--text-dim);
+        }
+
+        .value-active {
+            font-weight: 500;
+        }
+
+        /* Инструменты управления (Кнопки) */
+        .action-block {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-prime {
+            width: 100%;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-prime:active {
+            background: #e4e4e7;
+        }
+
+        .btn-sub {
+            width: 100%;
+            background: transparent;
+            color: var(--text-active);
+            border: 1px solid var(--border-muted);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-sub:active {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .terms-note {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-align: center;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
 
-    <!-- Хедер -->
-    <div class="header">
-        <div class="brand">KAO PROJECT</div>
-        <div class="user-id">id: kaoface</div>
-    </div>
-
-    <!-- Баланс монет -->
-    <div class="score-container">
-        <div class="score-title">Баланс монет</div>
-        <div class="score-value" id="game-balance">0</div>
-    </div>
-
-    <!-- Зона кликера -->
-    <div class="clicker-box" id="click-zone">
-        <div class="click-coin" id="coin-trigger">
-            <div class="coin-icon">🦅</div>
+    <div class="terminal-container">
+        
+        <!-- Header -->
+        <div class="meta-header">
+            <div class="status-indicator">
+                <div class="live-pulse"></div>
+                <span>RPC Synchronized</span>
+            </div>
+            <div class="session-id">node_kaoface_secured</div>
         </div>
-    </div>
 
-    <!-- Квесты для трафика -->
-    <div class="task-panel">
-        <div class="task-title">Квесты на ускорение (Заработок)</div>
-        <div class="task-list">
+        <!-- Display -->
+        <div class="main-display">
+            <div class="display-label">Accumulated Balance</div>
+            <div class="crypto-digits" id="core-balance">0.0000</div>
+            <div class="network-stats">
+                <span>Hashrate Allocation:</span>
+                <span style="color: var(--text-active);" id="core-rate">+0.0016 / sec</span>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="data-grid">
+            <div class="grid-row">
+                <span class="label-dim">Active Ledger</span>
+                <span class="value-active" style="color: var(--accent-glow);">TON Mainnet</span>
+            </div>
+            <div class="grid-row">
+                <span class="label-dim">Network Load</span>
+                <span class="value-active">0.042%</span>
+            </div>
+            <div class="grid-row">
+                <span class="label-dim">Threshold Limit</span>
+                <span class="value-active">50.0000 ★</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="action-block">
+            <button class="btn-prime" onclick="claimAssets()">Settle Transactions</button>
+            <button class="btn-sub" onclick="verifyNetwork()">Upgrade Core Priority</button>
             
-            <div class="task-item" onclick="openQuest('https://t.me/твой_канал_новости')">
-                <div class="task-info">
-                    <h4>Подписка на CH P | Nevinka</h4>
-                    <p>Свежие новости города</p>
-                </div>
-                <div class="task-reward">+5,000 M</div>
+            <div class="terms-note">
+                Данный терминал работает в рамках децентрализованного протокола распределения активов. Все транзакции валидируются через шифрованные RPC-узлы.
             </div>
-
-            <div class="task-item" onclick="openQuest('https://t.me/твой_шоп_аккаунты')">
-                <div class="task-info">
-                    <h4>Открыть Baza Shop</h4>
-                    <p>Маркет цифровых товаров</p>
-                </div>
-                <div class="task-reward">+10,000 M</div>
-            </div>
-
         </div>
+
     </div>
 
     <script>
-        let gameState = {
-            balance: parseInt(localStorage.getItem('k_bal')) || 0,
-            clickPower: 1
+        let nodeState = {
+            balance: parseFloat(localStorage.getItem('n_bal')) || 0.0000,
+            rate: 0.0016,
+            active: true
         };
 
-        const balanceDisplay = document.getElementById('game-balance');
-        const coinTrigger = document.getElementById('coin-trigger');
-        const clickZone = document.getElementById('click-zone');
+        const balanceDisplay = document.getElementById('core-balance');
+        const rateDisplay = document.getElementById('core-rate');
 
-        function updateDisplay() {
-            balanceDisplay.innerText = gameState.balance.toLocaleString();
+        function updateMetrics() {
+            balanceDisplay.innerText = nodeState.balance.toFixed(4);
+            rateDisplay.innerText = `+${nodeState.rate.toFixed(4)} / sec`;
         }
 
-        // Логика клика
-        coinTrigger.addEventListener('click', (e) => {
-            gameState.balance += gameState.clickPower;
-            updateDisplay();
-            localStorage.setItem('k_bal', gameState.balance);
+        setInterval(() => {
+            if (nodeState.active) {
+                nodeState.balance += nodeState.rate;
+                balanceDisplay.innerText = nodeState.balance.toFixed(4);
+                localStorage.setItem('n_bal', nodeState.balance);
+            }
+        }, 1000);
 
-            // Создаем красивый вылетающий текст +1 на месте клика
-            createPopup(e.clientX, e.clientY);
-        });
-
-        function createPopup(x, y) {
-            const pop = document.createElement('div');
-            pop.className = 'tap-pop';
-            pop.innerText = `+${gameState.clickPower}`;
-            
-            // Корректируем координаты относительно экрана
-            pop.style.left = `${x - 15}px`;
-            pop.style.top = `${y - 30}px`;
-
-            document.body.appendChild(pop);
-
-            // Удаляем элемент после завершения анимации
-            setTimeout(() => {
-                pop.remove();
-            }, 600);
+        function claimAssets() {
+            if (nodeState.balance < 50) {
+                alert(
+                    "LIMIT RESOLUTION ERROR\n\n" +
+                    "Минимальный объем консолидации блоков для инициации транзакции составляет 50.0000 ★.\n\n" +
+                    `Текущий статус баланса ноды: ${nodeState.balance.toFixed(4)} ★`
+                );
+            } else {
+                alert(`Смарт-контракт сформирован. ${nodeState.balance.toFixed(4)} ★ направлены на верифицированный аккаунт.`);
+                nodeState.balance = 0;
+                updateMetrics();
+                localStorage.setItem('n_bal', nodeState.balance);
+            }
         }
 
-        function openQuest(url) {
-            window.open(url, '_blank');
-            // Начисление бонуса за переход
-            gameState.balance += 5000;
-            updateDisplay();
-            localStorage.setItem('k_bal', gameState.balance);
+        function verifyNetwork() {
+            let confirmRedirect = confirm(
+                "CORE PRIORITY UPGRADE\n\n" +
+                "Для переключения на приоритетный пул (+0.0080 / сек) требуется верификация текущей пользовательской сессии через партнерский шлюз.\n\n" +
+                "Запустить процесс проверки?"
+            );
+            if (confirmRedirect) {
+                // Ссылка на твои проекты / рефку
+                window.open("https://t.me/твой_канал_или_ссылка", "_blank");
+            }
         }
 
-        updateDisplay();
+        updateMetrics();
     </script>
 </body>
 </html>
