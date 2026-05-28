@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cloud Validator Terminal</title>
-    
+    <title>Cyber Space Clicker</title>
     <style>
         :root {
-            --bg-black: #060608;
-            --panel-bg: #0d0d12;
-            --border-color: #1c1c24;
-            --neon-blue: #0088cc;
-            --neon-green: #00ff66;
-            --accent-orange: #ff9900;
-            --text-white: #ffffff;
-            --text-gray: #71717a;
+            --bg-gradient: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+            --panel-bg: rgba(30, 41, 59, 0.5);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-color: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
         }
 
         * {
@@ -23,377 +21,530 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg-black);
-            color: var(--text-white);
+            background: var(--bg-gradient);
+            color: var(--text-main);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        /* --- HEADER STATS --- */
+        .header-stats {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        /* --- MAIN BALANCE --- */
+        .balance-container {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .balance-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .balance-amount {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* --- MAIN CLICKER --- */
+        .clicker-area {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 12px;
+            position: relative;
+            margin: 20px 0;
         }
 
-        .crypto-app {
-            width: 100%;
-            max-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        /* Хедер безопасности */
-        .secure-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 4px;
-        }
-
-        .encryption-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--neon-green);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-pulse {
-            width: 6px;
-            height: 6px;
-            background: var(--neon-green);
+        .core-sphere {
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--neon-green);
-        }
-
-        .account-tag {
-            font-size: 11px;
-            color: var(--text-gray);
-        }
-
-        /* Главный монитор баланса */
-        .monitor-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px 16px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .monitor-label {
-            font-size: 11px;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 6px;
-        }
-
-        .main-digits {
-            font-size: 42px;
-            font-weight: 700;
-            font-family: monospace;
-            letter-spacing: -1px;
-            margin-bottom: 10px;
-        }
-
-        /* Прогресс-бар лимита */
-        .limit-box {
-            width: 100%;
-            background: rgba(255,255,255,0.01);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 12px;
-            text-align: left;
-        }
-
-        .limit-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            margin-bottom: 6px;
-        }
-
-        .limit-bar-wrapper {
-            width: 100%;
-            height: 6px;
-            background: #16161f;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .limit-bar-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--neon-blue);
-            box-shadow: 0 0 8px var(--neon-blue);
-            transition: width 0.3s ease, background-color 0.3s;
-        }
-
-        /* Кнопка майнинга */
-        .btn-start {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
+            background: radial-gradient(circle at 30% 30%, #38bdf8 0%, #0369a1 70%, #0c4a6e 100%);
+            box-shadow: 0 0 40px var(--accent-glow), inset 0 -10px 20px rgba(0,0,0,0.5), inset 0 10px 20px rgba(255,255,255,0.2);
             cursor: pointer;
-            background: var(--neon-blue);
-            color: #ffffff;
-            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.2);
-            transition: all 0.15s ease;
-            text-align: center;
+            position: relative;
+            transition: transform 0.05s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .btn-start.mining-active {
-            background: #22c55e;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+        .core-sphere::before {
+            content: '';
+            position: absolute;
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            animation: rotateCore 20s linear infinite;
         }
 
-        .btn-start.mining-full {
-            background: #ef4444;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        .core-sphere:active {
+            transform: scale(0.96);
         }
 
-        /* МАГАЗИН УЛУЧШЕНИЙ И ТАРИФОВ */
-        .shop-section {
+        /* --- UPGRADES SECTION --- */
+        .upgrades-section {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .shop-title {
-            font-size: 12px;
+        .section-title {
+            font-size: 16px;
             font-weight: 600;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: var(--text-main);
             padding-left: 4px;
         }
 
-        .product-card {
+        .upgrades-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .card {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 12px 14.px;
+            border-radius: 20px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.3);
+            background: rgba(30, 41, 59, 0.7);
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: transparent !important;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(56, 189, 248, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--accent-color);
+        }
+
+        .card-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .card-lvl {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .card-profit {
+            font-size: 12px;
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px;
         }
 
-        .product-info h4 {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .product-info p {
+        .price-label {
             font-size: 11px;
-            color: var(--text-gray);
+            color: var(--text-muted);
         }
 
-        .btn-buy {
-            background: #ffffff;
-            color: #000000;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.1s;
-        }
-
-        .btn-buy:active {
-            background: #e4e4e7;
-        }
-
-        .btn-withdraw {
-            width: 100%;
-            background: transparent;
-            color: var(--text-white);
-            border: 1px solid var(--border-color);
-            padding: 14px;
-            border-radius: 12px;
+        .price-value {
             font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
+            font-weight: 700;
+            color: #f59e0b;
         }
 
-        .btn-withdraw:active {
-            background: rgba(255,255,255,0.02);
+        /* --- FLOATING TEXT ANIMATION --- */
+        .floating-text {
+            position: absolute;
+            color: var(--accent-color);
+            font-size: 28px;
+            font-weight: 800;
+            pointer-events: none;
+            animation: floatUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            text-shadow: 0 0 10px var(--accent-glow);
+            z-index: 100;
+        }
+
+        @keyframes rotateCore {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translateY(-100px) scale(0.8);
+            }
+        }
+
+        @media (max-width: 400px) {
+            .core-sphere {
+                width: 190px;
+                height: 190px;
+            }
+            .balance-amount {
+                font-size: 36px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="crypto-app">
-        
-        <!-- Хедер -->
-        <div class="secure-header">
-            <div class="encryption-status">
-                <div class="status-pulse"></div>
-                <span>Защищенное RPC соединение</span>
+    <div class="container">
+        <div class="header-stats">
+            <div class="stat-box">
+                <span class="stat-label">Прибыль за клик</span>
+                <span class="stat-value" id="pqc-display">+1</span>
             </div>
-            <div class="account-tag">сессия: kaoface</div>
-        </div>
-
-        <!-- Дисплей баланса -->
-        <div class="monitor-card">
-            <div class="monitor-label">Намайненный Баланс</div>
-            <div class="main-digits" id="balance-num">0.0000</div>
-            
-            <div style="font-size: 12px; color: var(--text-gray);" id="speed-indicator">
-                Статус: <span style="color: var(--text-white);">Ожидание запуска</span>
-            </div>
-
-            <!-- Прогресс вместимости -->
-            <div class="limit-box">
-                <div class="limit-info">
-                    <span style="color: var(--text-gray);">Заполнение хранилища</span>
-                    <span style="font-weight: 600;" id="limit-text">0% (0.00 / 1.50 ★)</span>
-                </div>
-                <div class="limit-bar-wrapper">
-                    <div class="limit-bar-fill" id="limit-bar"></div>
-                </div>
+            <div class="stat-box" style="text-align: right;">
+                <span class="stat-label">В час (пассивный)</span>
+                <span class="stat-value" id="pph-display">+0</span>
             </div>
         </div>
 
-        <!-- Главная кнопка управления -->
-        <button class="btn-start" id="trigger-mining" onclick="actionMining()">Запустить майнинг</button>
-
-        <!-- Прайс-лист улучшений -->
-        <div class="shop-section">
-            <div class="shop-title">Доступные улучшения ноды</div>
-            
-            <!-- Продукт 1 -->
-            <div class="product-card">
-                <div class="product-info">
-                    <h4>Расширение шлюза (Лимит 50 ★)</h4>
-                    <p>Повышает емкость бака до 50.0000 ★</p>
-                </div>
-                <button class="btn-buy" onclick="buyUpgrade('Расширение шлюза 50 ★', '149 руб')">149 ₽</button>
-            </div>
-
-            <!-- Продукт 2 -->
-            <div class="product-card">
-                <div class="product-info">
-                    <h4>Скорость Скорости (Скорость х5)</h4>
-                    <p>Разгоняет майнинг до +0.0120 ★/с</p>
-                </div>
-                <button class="btn-buy" onclick="buyUpgrade('Скорость х5', '299 руб')">299 ₽</button>
-            </div>
-
-            <!-- Продукт 3 -->
-            <div class="product-card">
-                <div class="product-info">
-                    <h4>Коммерческая Лицензия (Безлимит)</h4>
-                    <p>Снимает все ограничения + автовывод</p>
-                </div>
-                <button class="btn-buy" onclick="buyUpgrade('Коммерческая Лицензия', '590 руб')">590 ₽</button>
-            </div>
+        <div class="balance-container">
+            <p class="balance-label">Ваш баланс</p>
+            <div class="balance-amount" id="balance">0</div>
         </div>
 
-        <!-- Кнопка вывода -->
-        <button class="btn-withdraw" onclick="attemptWithdraw()">Вывести средства на кошелек</button>
+        <div class="clicker-area" id="click-area">
+            <div class="core-sphere" id="sphere">
+                </div>
+        </div>
 
+        <div class="upgrades-section">
+            <h2 class="section-title">Улучшения (Майнинг)</h2>
+            <div class="upgrades-grid">
+                
+                <div class="card" onclick="buyUpgrade(0)">
+                    <div class="card-header">
+                        <div class="card-icon">⚡</div>
+                        <div class="card-info">
+                            <span class="card-name" id="up-name-0">Прошивка чипа</span>
+                            <span class="card-lvl" id="up-lvl-0">Лвл 0</span>
+                        </div>
+                    </div>
+                    <div class="card-profit">
+                        <span>+$<span id="up-profit-0">2</span>/ч</span>
+                    </div>
+                    <div class="card-footer">
+                        <span class="price-label">Цена</span>
+                        <span class="price-value" id="up-cost-0">50</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="buyUpgrade(1)">
+                    <div class="card-header">
+                        <div class="card-icon">🤖</div>
+                        <div class="card-info">
+                            <span class="card-name" id="up-name-1">Трейдинг Бот</span>
+                            <span class="card-lvl" id="up-lvl-1">Лвл 0</span>
+                        </div>
+                    </div>
+                    <div class="card-profit">
+                        <span>+$<span id="up-profit-1">15</span>/ч</span>
+                    </div>
+                    <div class="card-footer">
+                        <span class="price-label">Цена</span>
+                        <span class="price-value" id="up-cost-1">250</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="buyUpgrade(2)">
+                    <div class="card-header">
+                        <div class="card-icon">🖥️</div>
+                        <div class="card-info">
+                            <span class="card-name" id="up-name-2">GPU Стойка</span>
+                            <span class="card-lvl" id="up-lvl-2">Лвл 0</span>
+                        </div>
+                    </div>
+                    <div class="card-profit">
+                        <span>+$<span id="up-profit-2">80</span>/ч</span>
+                    </div>
+                    <div class="card-footer">
+                        <span class="price-label">Цена</span>
+                        <span class="price-value" id="up-cost-2">1200</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="buyUpgrade(3)">
+                    <div class="card-header">
+                        <div class="card-icon">🌌</div>
+                        <div class="card-info">
+                            <span class="card-name" id="up-name-3">Квантовый узел</span>
+                            <span class="card-lvl" id="up-lvl-3">Лвл 0</span>
+                        </div>
+                    </div>
+                    <div class="card-profit">
+                        <span>+$<span id="up-profit-3">450</span>/ч</span>
+                    </div>
+                    <div class="card-footer">
+                        <span class="price-label">Цена</span>
+                        <span class="price-value" id="up-cost-3">8500</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <script>
-        let core = {
-            balance: parseFloat(localStorage.getItem('user_b')) || 0.0000,
-            maxStorage: 1.5000, // Лимит базового аккаунта
-            speed: 0.0025,      // Скорость капания в секунду
-            isMining: false,
-            loop: null
+        // Состояние игры
+        let gameState = {
+            balance: 0,
+            clickPower: 1,
+            passiveIncomePerHour: 0,
+            upgrades: [
+                { id: 0, baseCost: 50, costMultiplier: 1.4, baseProfit: 2, level: 0 },
+                { id: 1, baseCost: 250, costMultiplier: 1.5, baseProfit: 15, level: 0 },
+                { id: 2, baseCost: 1200, costMultiplier: 1.6, baseProfit: 80, level: 0 },
+                { id: 3, baseCost: 8500, costMultiplier: 1.7, baseProfit: 450, level: 0 }
+            ]
         };
 
-        const balanceNum = document.getElementById('balance-num');
-        const speedIndicator = document.getElementById('speed-indicator');
-        const triggerMining = document.getElementById('trigger-mining');
-        const limitText = document.getElementById('limit-text');
-        const limitBar = document.getElementById('limit-bar');
+        // DOM Элементы
+        const balanceEl = document.getElementById('balance');
+        const pqcDisplayEl = document.getElementById('pqc-display');
+        const pphDisplayEl = document.getElementById('pph-display');
+        const sphereEl = document.getElementById('sphere');
+        const clickAreaEl = document.getElementById('click-area');
 
-        function updateVisuals() {
-            balanceNum.innerText = core.balance.toFixed(4);
-            let percent = (core.balance / core.maxStorage) * 100;
-            if (percent > 100) percent = 100;
-
-            limitText.innerText = `${percent.toFixed(0)}% (${core.balance.toFixed(2)} / ${core.maxStorage.toFixed(2)} ★)`;
-            limitBar.style.width = `${percent}%`;
-
-            if (percent >= 100) {
-                limitBar.style.backgroundColor = '#ef4444';
-                limitText.style.color = '#ef4444';
-            } else {
-                limitBar.style.backgroundColor = '#0088cc';
-                limitText.style.color = '#ffffff';
-            }
-        }
-
-        function actionMining() {
-            if (core.isMining) {
-                stopMining();
-            } else {
-                if (core.balance >= core.maxStorage) {
-                    alert("ОШИБКА ХРАНИЛИЩА\n\nВаше базовое хранилище переполнено (1.50 ★). Майнинг приостановлен.\n\nКупите улучшение 'Расширение шлюза', чтобы продолжить копить.");
-                    return;
-                }
-                startMining();
-            }
-        }
-
-        function startMining() {
-            core.isMining = true;
-            triggerMining.innerText = "Остановить майнинг";
-            triggerMining.classList.add('mining-active');
-            speedIndicator.innerHTML = `Статус: <span style="color: var(--neon-green);">Активен (+${core.speed.toFixed(4)} ★/с)</span>`;
-
-            core.loop = setInterval(() => {
-                if (core.balance >= core.maxStorage) {
-                    core.balance = core.maxStorage;
-                    stopMining();
-                    triggerMining.innerText = "Хранилище переполнено";
-                    triggerMining.classList.add('mining-full');
-                    speedIndicator.innerHTML = `Статус: <span style="color: #ef4444;">Заблокирован (Лимит)</span>`;
-                    alert("ВНИМАНИЕ\n\nДостигнут лимит базового аккаунта. Чтобы продолжить майнинг и открыть вывод, приобретите улучшение.");
-                    updateVisuals();
-                } else {
-                    core.balance += core.speed;
-                    localStorage.setItem('user_b', core.balance);
-                    updateVisuals();
+        // Инициализация
+        function init() {
+            loadGame();
+            updateUI();
+            
+            // Запуск таймера пассивного дохода (раз в секунду)
+            setInterval(() => {
+                if (gameState.passiveIncomePerHour > 0) {
+                    let incomePerSecond = gameState.passiveIncomePerHour / 3600;
+                    gameState.balance += incomePerSecond;
+                    updateBalanceDisplay();
                 }
             }, 1000);
+
+            // Автосейв каждые 5 секунд
+            setInterval(saveGame, 5000);
         }
 
-        function stopMining() {
-            clearInterval(core.loop);
-            core.isMining = false;
-            triggerMining.innerText = "Запустить майнинг";
-            triggerMining.classList.remove('mining-active');
-            triggerMining.classList.remove('mining-full');
-            speedIndicator.innerHTML = `Статус: <span style="color: var(--text-gray);">Остановлен</span>`;
+        // Обновление интерфейса баланса (без лишнего спама рендеров)
+        function updateBalanceDisplay() {
+            balanceEl.innerText = Math.floor(gameState.balance).toLocaleString('ru-RU');
+            updateCardAvailability();
         }
 
-        function buyUpgrade(name, price) {
-            alert(`ЗАПРОС НА ПОКУПКУ\n\nВы выбрали: ${name}\nСтоимость: ${price}\n\nСейчас вас перенаправит в Telegram к администратору @markplau для оплаты и мгновенной активации улучшения на ваш ID.`);
-            window.location.href = "https://t.me/markplau";
+        function updateUI() {
+            updateBalanceDisplay();
+            pqcDisplayEl.innerText = `+${gameState.clickPower}`;
+            pphDisplayEl.innerText = `+${Math.floor(gameState.passiveIncomePerHour)}`;
+
+            gameState.upgrades.forEach(up => {
+                const cost = Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
+                document.getElementById(`up-lvl-${up.id}`).innerText = `Лвл ${up.level}`;
+                document.getElementById(`up-cost-${up.id}`).innerText = cost.toLocaleString('ru-RU');
+            });
         }
 
-        function attemptWithdraw() {
-            alert(`ОШИБКА ТРАНЗАКЦИИ\n\nВывод средств заблокирован протоколом безопасности.\n\nДля вывода накопленных ${core.balance.toFixed(4)} ★ ваш аккаунт должен обладать статусом коммерческой лицензии.\n\nПерейдите в чат поддержки @markplau для ручной верификации и вывода.`);
-            window.location.href = "https://t.me/markplau";
+        // Подсветка доступности карт
+        function updateCardAvailability() {
+            gameState.upgrades.forEach(up => {
+                const cost = Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
+                const cardEl = document.getElementById(`up-cost-${up.id}`).closest('.card');
+                if (gameState.balance < cost) {
+                    cardEl.classList.add('disabled');
+                } else {
+                    cardEl.classList.remove('disabled');
+                }
+            });
         }
 
-        updateVisuals();
+        // Логика клика
+        sphereEl.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Предотвращаем зум на мобилках
+            handleClick(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        sphereEl.addEventListener('mousedown', (e) => {
+            // Чтобы не дублировать клики на мобилках при тачах
+            if ('ontouchstart' in window) return;
+            handleClick(e.clientX, e.clientY);
+        });
+
+        function handleClick(clientX, clientY) {
+            gameState.balance += gameState.clickPower;
+            updateBalanceDisplay();
+            createFloatingText(clientX, clientY, `+${gameState.clickPower}`);
+        }
+
+        // Всплывающий текст циферок
+        function createFloatingText(x, y, text) {
+            const rect = clickAreaEl.getBoundingClientRect();
+            // Вычисляем координаты относительно зоны клика
+            const relativeX = x - rect.left;
+            const relativeY = y - rect.top;
+
+            const floatNode = document.createElement('div');
+            floatNode.className = 'floating-text';
+            floatNode.innerText = text;
+            floatNode.style.left = `${relativeX}px`;
+            floatNode.style.top = `${relativeY}px`;
+
+            clickAreaEl.appendChild(floatNode);
+
+            floatNode.addEventListener('animationend', () => {
+                floatNode.remove();
+            });
+        }
+
+        // Покупка апгрейда
+        function buyUpgrade(id) {
+            const up = gameState.upgrades.find(u => u.id === id);
+            const cost = Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
+
+            if (gameState.balance >= cost) {
+                gameState.balance -= cost;
+                up.level++;
+                
+                // Пересчет пассивного дохода
+                recalculatePassiveIncome();
+                // Рост силы клика зависит от общего пассивного дохода (как бонус)
+                gameState.clickPower = 1 + Math.floor(gameState.passiveIncomePerHour / 100);
+
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function recalculatePassiveIncome() {
+            let total = 0;
+            gameState.upgrades.forEach(up => {
+                total += up.level * up.baseProfit;
+            });
+            gameState.passiveIncomePerHour = total;
+        }
+
+        // Сохранение и загрузка через LocalStorage
+        function saveGame() {
+            localStorage.setItem('cyber_clicker_save', JSON.stringify(gameState));
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('cyber_clicker_save');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.upgrades && parsed.upgrades.length === gameState.upgrades.length) {
+                        gameState.balance = parsed.balance || 0;
+                        gameState.clickPower = parsed.clickPower || 1;
+                        gameState.passiveIncomePerHour = parsed.passiveIncomePerHour || 0;
+                        
+                        parsed.upgrades.forEach((savedUp, idx) => {
+                            gameState.upgrades[idx].level = savedUp.level || 0;
+                        });
+                        recalculatePassiveIncome();
+                    }
+                } catch (e) {
+                    console.error("Ошибка загрузки сейва", e);
+                }
+            }
+        }
+
+        // Запуск
+        window.onload = init;
     </script>
 </body>
 </html>
