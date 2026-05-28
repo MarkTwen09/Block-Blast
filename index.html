@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Светский Клин — Web3 Elite Cinematic</title>
+    <title>Светский Клин — Неоновый Азарт</title>
     <style>
         :root {
-            --bg-main: #03050d;
-            --bg-glow: radial-gradient(circle at 50% 35%, #0d122c 0%, #03050d 80%);
+            --bg-main: #02040a;
+            --bg-glow: radial-gradient(circle at 50% 35%, #0b1026 0%, #02040a 85%);
             --card-active: rgba(255, 255, 255, 0.07);
             --card-disabled: rgba(255, 255, 255, 0.015);
             --accent-gold: #f59e0b;
-            --gold-glow: rgba(245, 158, 11, 0.45);
+            --gold-glow: rgba(245, 158, 11, 0.5);
             --text-main: #ffffff;
-            --text-muted: #4b5563;
             --neon-blue: #00f0ff;
             --profit-green: #10b981;
             --hyper-purple: #a855f7;
+            --cheat-red: #ef4444;
         }
 
         * {
@@ -25,7 +25,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
@@ -38,7 +38,7 @@
             align-items: center;
             overflow-x: hidden;
             padding: 16px;
-            perspective: 1200px;
+            perspective: 1000px;
         }
 
         .container {
@@ -46,358 +46,175 @@
             max-width: 430px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         /* --- HEADER & STATS --- */
-        .app-header {
-            text-align: center;
-            margin-top: 5px;
-        }
-
+        .app-header { text-align: center; margin-top: 5px; }
         .app-title {
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: 3px;
-            text-transform: uppercase;
+            font-size: 24px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
             background: linear-gradient(135deg, #fff 20%, var(--accent-gold) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 2px 10px rgba(245, 158, 11, 0.3));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .stat-panel {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;
         }
-
-        .stat-icon { font-size: 18px; }
         .stat-info { display: flex; flex-direction: column; }
-        .stat-label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-value { font-size: 14px; font-weight: 700; color: #fff; }
+        .stat-label { font-size: 9px; color: #6b7280; text-transform: uppercase; }
+        .stat-value { font-size: 14px; font-weight: 700; }
 
-        /* --- COMBO SYSTEM --- */
-        .combo-container {
+        /* --- ИНФО-ПАНЕЛИ (КОМБО И ИВЕНТЫ) --- */
+        .status-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            height: 32px;
+            height: 35px;
             justify-content: center;
+            position: relative;
         }
 
-        .combo-badge {
-            font-size: 11px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            background: linear-gradient(90deg, var(--neon-blue), #3b82f6);
-            padding: 4px 12px;
-            border-radius: 20px;
-            box-shadow: 0 0 10px rgba(0,240,255,0.25);
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        .badge {
+            font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            padding: 4px 14px; border-radius: 20px; opacity: 0; transform: scale(0.8);
+            position: absolute; transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
         }
+        .badge.active { opacity: 1; transform: scale(1); }
 
-        .combo-badge.active { opacity: 1; transform: scale(1); }
-        .combo-badge.hyper {
-            background: linear-gradient(90deg, var(--accent-gold), var(--hyper-purple));
-            box-shadow: 0 0 20px var(--gold-glow);
-            animation: pulseHyper 0.6s infinite alternate cubic-bezier(0.445, 0.05, 0.55, 0.95);
-        }
+        .combo-badge { background: linear-gradient(90deg, var(--neon-blue), #3b82f6); box-shadow: 0 0 10px rgba(0,240,255,0.3); }
+        .hyper-badge { background: linear-gradient(90deg, var(--accent-gold), var(--hyper-purple)); box-shadow: 0 0 15px var(--gold-glow); animation: pulse 0.4s infinite alternate; }
+        .event-badge { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 0 15px rgba(16,185,129,0.4); color: white; }
+        .cheat-badge { background: var(--cheat-red); box-shadow: 0 0 15px rgba(239,68,68,0.5); color: white; }
 
-        @keyframes pulseHyper {
-            0% { transform: scale(1); filter: brightness(1); }
-            100% { transform: scale(1.05); filter: brightness(1.25); }
-        }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
 
         /* --- БАЛАНС --- */
         .balance-section { text-align: center; }
-        .balance-amount {
-            font-size: 46px;
-            font-weight: 900;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            color: #fff;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
+        .balance-amount { font-size: 46px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .premium-coin {
-            width: 38px;
-            height: 38px;
-            background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 60%, #ff8f00 100%);
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(255, 179, 0, 0.25), inset 0 2px 4px #fff, inset 0 -3px 6px rgba(0,0,0,0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 38px; height: 38px; background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 60%, #ff8f00 100%);
+            border-radius: 50%; box-shadow: 0 0 12px rgba(255, 179, 0, 0.25), inset 0 2px 4px #fff;
+            display: flex; justify-content: center; align-items: center;
         }
         .premium-coin::after { content: '⚜'; font-size: 18px; color: #fff; }
 
-        /* --- КИНЕМАТОГРАФИЧНЫЙ 3D КЛИКЕР --- */
-        .clicker-container {
-            display: flex;
-            justify-content: center;
-            position: relative;
-            margin: 12px 0;
-        }
-
+        /* --- СГЛАЖЕННЫЙ 3D КЛИКЕР --- */
+        .clicker-container { display: flex; justify-content: center; position: relative; margin: 8px 0; }
         .sphere-outer {
-            width: 230px;
-            height: 230px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #131b3d 0%, #090d1a 65%, #010307 100%);
+            width: 225px; height: 225px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #111836 0%, #070a14 70%, #000 100%);
             border: 2px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 
-                0 25px 60px rgba(0,0,0,0.75),
-                inset 0 4px 25px rgba(255,255,255,0.03);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transform-style: preserve-3d;
-            position: relative;
-            transform: rotateX(0deg) rotateY(0deg) translateZ(0px); 
-            will-change: transform;
+            box-shadow: 0 25px 55px rgba(0,0,0,0.8), inset 0 4px 20px rgba(255,255,255,0.02);
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            transform-style: preserve-3d; position: relative; will-change: transform;
+            transform: rotateX(0deg) rotateY(0deg) translateZ(0px);
         }
 
-        /* Мягкая интерьерная подсветка кликера */
-        .sphere-ambient-glow {
-            position: absolute;
-            width: 120%; height: 120%;
-            background: radial-gradient(circle, rgba(245, 158, 11, 0.0) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 1;
-            transition: background 0.5s ease;
-        }
-        .sphere-outer.hyper-mode ~ .sphere-ambient-glow {
-            background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 65%);
-        }
+        /* Эффект заморозки при читерстве */
+        .sphere-outer.frozen { border-color: var(--cheat-red) !important; box-shadow: 0 0 30px rgba(239,68,68,0.3) !important; filter: saturate(0.3); }
 
-        /* Шоковая волна */
-        .shockwave {
-            position: absolute;
-            border-radius: 50%;
-            border: 2px solid rgba(0, 240, 255, 0.35);
-            background: transparent;
-            pointer-events: none;
-            z-index: 2;
-            width: 100%; height: 100%;
-            opacity: 0;
-        }
-        @keyframes waveOut {
-            0% { transform: scale(0.92); opacity: 0.7; border-color: rgba(0, 240, 255, 0.4); }
-            100% { transform: scale(1.35); opacity: 0; border-color: rgba(168, 85, 247, 0); }
-        }
+        .shockwave { position: absolute; border-radius: 50%; border: 2px solid rgba(0, 240, 255, 0.35); width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+        @keyframes wave { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
 
-        /* НАСТОЯЩИЙ ОБЪЕМНЫЙ КРИСТАЛЛ-КЛИН */
-        .crystal-container-3d {
-            width: 80px;
-            height: 100px;
-            position: relative;
-            transform-style: preserve-3d;
-            transform: translateZ(40px);
-            z-index: 4;
-            pointer-events: none;
-        }
+        /* ТРЁХМЕРНЫЙ КРИСТАЛЛ */
+        .crystal-mesh { width: 76px; height: 96px; position: relative; transform-style: preserve-3d; transform: translateZ(35px); pointer-events: none; }
+        .facet { position: absolute; top: 0; width: 38px; height: 96px; }
+        .f-left { left: 0; background: linear-gradient(135deg, #fcd34d 0%, #d97706 100%); clip-path: polygon(100% 0, 100% 100%, 0 85%); -webkit-clip-path: polygon(100% 0, 100% 100%, 0 85%); }
+        .f-right { left: 38px; background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); clip-path: polygon(0 0, 100% 85%, 0 100%); -webkit-clip-path: polygon(0 0, 100% 85%, 0 100%); }
 
-        /* Базовые грани кристалла с эффектом стеклянного преломления */
-        .crystal-facet {
-            position: absolute;
-            top: 0; left: 0;
-            width: 40px; height: 100px;
-            transform-origin: right center;
-            will-change: transform;
-        }
+        /* Вспышка крита */
+        .sphere-outer.crit-flash .f-left { background: #fff !important; filter: drop-shadow(0 0 20px #fff); }
+        .sphere-outer.crit-flash .f-right { background: #e0e0e0 !important; filter: drop-shadow(0 0 20px #fff); }
 
-        /* Левая основная грань */
-        .facet-left {
-            left: 0;
-            background: linear-gradient(135deg, rgba(252, 211, 77, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%);
-            clip-path: polygon(100% 0, 100% 100%, 0 85%);
-            -webkit-clip-path: polygon(100% 0, 100% 100%, 0 85%);
-        }
-
-        /* Правая основная грань */
-        .facet-right {
-            left: 40px;
-            background: linear-gradient(135deg, rgba(245, 152, 11, 0.9) 0%, rgba(180, 83, 9, 0.95) 100%);
-            clip-path: polygon(0 0, 100% 85%, 0 100%);
-            -webkit-clip-path: polygon(0 0, 100% 85%, 0 100%);
-        }
-
-        /* Сверхтехнологичные блики на ребрах */
-        .crystal-facet::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.1s ease-out;
-        }
+        /* Режим золотой лихорадки */
+        .sphere-outer.fever-mode { border-color: #10b981; box-shadow: 0 0 35px rgba(16,185,129,0.3); }
+        .sphere-outer.fever-mode .f-left { background: linear-gradient(135deg, #6ee7b7 0%, #059669 100%); }
+        .sphere-outer.fever-mode .f-right { background: linear-gradient(135deg, #34d399 0%, #047857 100%); }
 
         /* --- ЭНЕРГИЯ --- */
-        .energy-container {
-            background: rgba(255,255,255,0.01);
-            border: 1px solid rgba(255,255,255,0.04);
-            padding: 10px 16px;
-            border-radius: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .energy-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #9ca3af; }
+        .energy-container { background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 10px 16px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; }
+        .energy-header { display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; font-weight: 600; }
         .energy-bar-outer { width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
-        .energy-bar-inner {
-            height: 100%; width: 100%;
-            background: linear-gradient(90deg, var(--neon-blue), #3b82f6);
-            box-shadow: 0 0 10px rgba(0,240,255,0.25);
-            transition: width 0.1s linear;
-        }
+        .energy-bar-inner { height: 100%; width: 100%; background: linear-gradient(90deg, var(--neon-blue), #3b82f6); box-shadow: 0 0 10px rgba(0,240,255,0.25); transition: width 0.1s linear; }
 
-        /* --- ТАБЫ --- */
-        .tabs-menu {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 4px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-        .tab-btn {
-            background: transparent; border: none; color: #4b5563;
-            padding: 10px; font-size: 12px; font-weight: 700; border-radius: 8px;
-            cursor: pointer; transition: all 0.2s ease;
-        }
+        /* --- ТАБЫ И КАРТОЧКИ --- */
+        .tabs-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: rgba(0, 0, 0, 0.4); padding: 4px; border-radius: 12px; }
+        .tab-btn { background: transparent; border: none; color: #4b5563; padding: 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; }
         .tab-btn.active { background: rgba(255, 255, 255, 0.06); color: #fff; }
 
-        /* --- КАРТОЧКИ УЛУЧШЕНИЙ --- */
         .upgrades-container { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
         .upgrades-container.active { display: grid; }
 
-        .card {
-            background: var(--card-active); border: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px;
-            cursor: pointer; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .card:hover { border-color: rgba(255,255,255,0.12); transform: translateY(-1px); }
-        .card.disabled { background: var(--card-disabled); border-color: rgba(255,255,255,0.01); opacity: 0.25; cursor: not-allowed; transform: none !important; }
+        .card { background: var(--card-active); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+        .card.disabled { opacity: 0.2; cursor: not-allowed; }
         .card-top { display: flex; align-items: center; gap: 10px; }
-        .card-icon-box { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; }
-        .card-meta { display: flex; flex-direction: column; }
-        .card-title { font-size: 11px; font-weight: 700; color: #fff; line-height: 1.2; }
-        .card-level { font-size: 10px; color: var(--accent-gold); font-weight: 600; }
+        .card-icon-box { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; display: flex; justify-content: center; align-items: center; }
+        .card-title { font-size: 11px; font-weight: 700; color: #fff; }
+        .card-level { font-size: 10px; color: var(--accent-gold); }
         .card-profit-row { font-size: 10px; color: var(--profit-green); font-weight: 600; }
-        .card-divider { height: 1px; background: rgba(255,255,255,0.04); margin-top: auto; }
-        .card-price-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
-        .price-title { color: #6b7280; font-size: 9px; text-transform: uppercase; }
-        .price-val { font-weight: 700; color: #fff; }
+        .card-price-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: auto; }
 
-        /* --- ЭФФЕКТЫ ЧАСТИЦ --- */
+        /* --- КИНЕМАТОГРАФИЧНЫЕ ЧАСТИЦЫ --- */
         .floating-num {
-            position: absolute; color: #fff; font-size: 32px; font-weight: 900;
-            pointer-events: none; z-index: 1000;
-            animation: floatCinematic 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            will-change: transform, opacity;
+            position: absolute; font-size: 30px; font-weight: 900; pointer-events: none; z-index: 1000;
+            animation: float 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity;
         }
-        .floating-num.hyper-text {
-            color: #f59e0b;
-            text-shadow: 0 0 15px var(--gold-glow);
+        .crit-text { color: #fff !important; text-shadow: 0 0 20px #fff, 0 0 40px var(--accent-gold); font-size: 38px !important; }
+        .fever-text { color: #10b981 !important; text-shadow: 0 0 15px rgba(16,185,129,0.6); }
+
+        @keyframes float {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8) rotate(-5deg); }
+            30% { transform: translate(-50%, -50%) translateY(-30px) scale(1.2) rotate(3deg); }
+            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-100px) scale(0.9) rotate(8deg); }
         }
 
-        @keyframes floatCinematic {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.75) rotate(-8deg); }
-            25% { transform: translate(-50%, -50%) translateY(-35px) scale(1.2) rotate(3deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-110px) scale(0.85) rotate(10deg); }
+        .mini-coin {
+            position: absolute; width: 12px; height: 12px; background: radial-gradient(circle at 30% 30%, #ffe082, #ffb300);
+            border-radius: 50%; pointer-events: none; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            animation: explode 0.7s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
         }
-
-        .mini-coin-3d {
-            position: absolute; width: 13px; height: 13px;
-            background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 70%, #d97706 100%);
-            border-radius: 50%; pointer-events: none; z-index: 999;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.35);
-            animation: coinExplode3D 0.75s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
-            will-change: transform, opacity;
-        }
-
-        @keyframes coinExplode3D {
-            0% { opacity: 1; transform: translate(-50%, -50%) translate(0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--mx), var(--my)) rotateX(360deg) rotateY(540deg) rotateZ(180deg); }
+        @keyframes explode {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--mx), var(--my)) rotateX(360deg) rotateY(360deg); }
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <header class="app-header">
-            <h1 class="app-title">Светский Клин</h1>
-        </header>
+        <header class="app-header"><h1 class="app-title">Светский Клин</h1></header>
 
         <div class="stats-grid">
-            <div class="stat-panel">
-                <div class="stat-icon">⚡</div>
-                <div class="stat-info">
-                    <span class="stat-label">За клик</span>
-                    <span class="stat-value" id="pqc-txt">+1</span>
-                </div>
-            </div>
-            <div class="stat-panel">
-                <div class="stat-icon">📈</div>
-                <div class="stat-info">
-                    <span class="stat-label">Доход в сек</span>
-                    <span class="stat-value" id="pps-txt">+0</span>
-                </div>
-            </div>
+            <div class="stat-panel">⚡&nbsp;<div class="stat-info"><span class="stat-label">Клик</span><span class="stat-value" id="pqc-txt">+1</span></div></div>
+            <div class="stat-panel">📈&nbsp;<div class="stat-info"><span class="stat-label">Доход/сек</span><span class="stat-value" id="pps-txt">+0</span></div></div>
         </div>
 
-        <div class="combo-container">
-            <div class="combo-badge" id="combo-tag">Combo x1</div>
+        <div class="status-container">
+            <div class="badge combo-badge" id="badge-combo">Combo x2 🔥</div>
+            <div class="badge hyper-badge" id="badge-hyper">ГИПЕР КЛИК x5 👑</div>
+            <div class="badge event-badge" id="badge-fever">ЗОЛОТАЯ ЛИХОРАДКА ⚡</div>
+            <div class="badge cheat-badge" id="badge-cheat">⚠️ КЛИКЕР ЗАБЛОКИРОВАН</div>
         </div>
 
         <div class="balance-section">
-            <div class="balance-amount">
-                <div class="premium-coin"></div>
-                <span id="balance-val">0</span>
-            </div>
+            <div class="balance-amount"><div class="premium-coin"></div><span id="balance-val">0</span></div>
         </div>
 
         <div class="clicker-container" id="click-zone">
             <div class="sphere-outer" id="sphere-btn">
                 <div class="shockwave" id="wave-fx"></div>
-                <div class="crystal-container-3d" id="crystal-mesh">
-                    <div class="crystal-facet facet-left"></div>
-                    <div class="crystal-facet facet-right"></div>
+                <div class="crystal-mesh">
+                    <div class="facet f-left"></div>
+                    <div class="facet f-right"></div>
                 </div>
             </div>
-            <div class="sphere-ambient-glow"></div>
         </div>
 
         <div class="energy-container">
-            <div class="energy-header">
-                <span>Энергия</span>
-                <span><span id="energy-current">1000</span>/<span id="energy-max">1000</span></span>
-            </div>
-            <div class="energy-bar-outer">
-                <div class="energy-bar-inner" id="energy-fill"></div>
-            </div>
+            <div class="energy-header"><span>Энергия</span><span><span id="energy-current">1000</span>/<span id="energy-max">1000</span></span></div>
+            <div class="energy-bar-outer"><div class="energy-bar-inner" id="energy-fill"></div></div>
         </div>
 
         <nav class="tabs-menu">
@@ -416,305 +233,208 @@
             { id: 0, tab: 'biz', name: 'Кофейный Бренд', icon: '☕', baseCost: 40, costMult: 1.3, profit: 1, level: 0 },
             { id: 1, tab: 'biz', name: 'Сеть Бутиков', icon: '👜', baseCost: 350, costMult: 1.32, profit: 8, level: 0 },
             { id: 2, tab: 'biz', name: 'Частная Авиация', icon: '🛩️', baseCost: 2000, costMult: 1.35, profit: 45, level: 0 },
-            { id: 3, tab: 'biz', name: 'IT Конгломерат', icon: '🌐', baseCost: 15000, costMult: 1.4, profit: 260, level: 0 },
-            { id: 4, tab: 'invest', name: 'Венчурный Фонд', icon: '📊', baseCost: 100, costMult: 1.28, profit: 3, level: 0 },
-            { id: 5, tab: 'invest', name: 'Акции Техногигантов', icon: '💎', baseCost: 800, costMult: 1.33, profit: 22, level: 0 },
-            { id: 6, tab: 'invest', name: 'Крипто Хедж-фонд', icon: '🪙', baseCost: 5000, costMult: 1.36, profit: 110, level: 0 },
-            { id: 7, tab: 'invest', name: 'Недвижимость в Дубае', icon: '🏙️', baseCost: 45000, costMult: 1.42, profit: 950, level: 0 },
-            { id: 8, tab: 'power', name: 'Элитный Чат', icon: '💬', baseCost: 60, costMult: 1.25, profit: 2, level: 0 },
-            { id: 9, tab: 'power', name: 'Медиа-Империя', icon: '📢', baseCost: 1200, costMult: 1.34, profit: 35, level: 0 },
-            { id: 10, tab: 'power', name: 'Синдикат Уолл-Стрит', icon: '🏛️', baseCost: 8000, costMult: 1.38, profit: 190, level: 0 },
-            { id: 11, tab: 'power', name: 'Политическое Лобби', icon: '👑', baseCost: 95000, costMult: 1.45, profit: 2400, level: 0 }
+            { id: 3, tab: 'invest', name: 'Венчурный Фонд', icon: '📊', baseCost: 100, costMult: 1.28, profit: 3, level: 0 },
+            { id: 4, tab: 'invest', name: 'Акции Гигантов', icon: '💎', baseCost: 800, costMult: 1.33, profit: 22, level: 0 },
+            { id: 5, tab: 'power', name: 'Элитный Чат', icon: '💬', baseCost: 60, costMult: 1.25, profit: 2, level: 0 },
+            { id: 6, tab: 'power', name: 'Медиа-Империя', icon: '📢', baseCost: 1200, costMult: 1.34, profit: 35, level: 0 }
         ];
 
-        let state = {
-            balance: 0, clickPower: 1, passiveIncomePerSec: 0,
-            energy: 1000, maxEnergy: 1000, energyRegen: 3,
-            upgrades: JSON.parse(JSON.stringify(dbUpgrades))
-        };
+        let state = { balance: 0, clickPower: 1, passiveIncomePerSec: 0, energy: 1000, maxEnergy: 1000, energyRegen: 3, upgrades: JSON.parse(JSON.stringify(dbUpgrades)) };
+        
+        // Переменные механик игры
+        let combo = 0, lastClick = 0, isFever = false, isFrozen = false, freezeUntil = 0;
+        
+        // Античит логика
+        let clickHistory = []; 
 
-        let comboCount = 0;
-        let lastClickTime = 0;
-        let currentMultiplier = 1;
+        // Инерциальное сглаживание углов
+        let rX = 0, rY = 0, tX = 0, tY = 0, zX = 0, tz = 0;
 
-        // Плавная физика со сглаживанием затухания (Smooth Spring Physics)
-        let curRotX = 0, curRotY = 0;
-        let tgtRotX = 0, tgtRotY = 0;
-        let curZ = 0, tgtZ = 0;
-        const springIntensity = 0.28; 
-        const dampingFactor = 0.82;   
-
-        const SAVE_KEY = 'svet_klin_pro_v6';
-        let uiBalance = 0;
-
-        const balanceVal = document.getElementById('balance-val');
-        const pqcTxt = document.getElementById('pqc-txt');
-        const ppsTxt = document.getElementById('pps-txt');
-        const sphereBtn = document.getElementById('sphere-btn');
-        const clickZone = document.getElementById('click-zone');
-        const energyCurrent = document.getElementById('energy-current');
-        const energyMax = document.getElementById('energy-max');
-        const energyFill = document.getElementById('energy-fill');
-        const comboTag = document.getElementById('combo-tag');
-        const waveFx = document.getElementById('wave-fx');
+        const SAVE_KEY = 'svet_klin_v7';
+        let uiBal = 0;
 
         function init() {
-            loadGame();
-            renderCards();
-            recalculateStats();
-            uiBalance = state.balance;
-            
-            startPassiveIncomeLoop();
-            startRegenEnergyLoop();
-            engineLoop(); 
-            comboDecayLoop();
-
-            setInterval(saveGame, 4000);
+            loadGame(); renderCards(); recalculateStats(); uiBal = state.balance;
+            setInterval(passiveLoop, 100);
+            setInterval(regenLoop, 1000);
+            setInterval(randomEventTrigger, 1000); // Проверка случайных ивентов
+            loop();
         }
 
         function renderCards() {
             ['biz', 'invest', 'power'].forEach(tab => {
-                const container = document.getElementById(`tab-${tab}`);
-                container.innerHTML = '';
+                const c = document.getElementById(`tab-${tab}`); c.innerHTML = '';
                 state.upgrades.filter(u => u.tab === tab).forEach(up => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.id = `card-${up.id}`;
-                    card.onclick = () => buyUpgrade(up.id);
                     const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
-
-                    card.innerHTML = `
-                        <div class="card-top">
-                            <div class="card-icon-box">${up.icon}</div>
-                            <div class="card-meta">
-                                <span class="card-title">${up.name}</span>
-                                <span class="card-level" id="lvl-txt-${up.id}">Лвл ${up.level}</span>
-                            </div>
-                        </div>
-                        <div class="card-profit-row"><span>+$${up.profit}/с</span></div>
-                        <div class="card-divider"></div>
-                        <div class="card-price-row">
-                            <span class="price-title">Цена</span>
-                            <span class="price-val" id="cost-txt-${up.id}">${cost.toLocaleString()}</span>
-                        </div>
-                    `;
-                    container.appendChild(card);
+                    const d = document.createElement('div'); d.className = 'card'; d.id = `card-${up.id}`;
+                    d.onclick = () => { if(state.balance >= cost) { state.balance -= cost; up.level++; renderCards(); recalculateStats(); } };
+                    d.innerHTML = `<div class="card-top"><div class="card-icon-box">${up.icon}</div><div><div class="card-title">${up.name}</div><div class="card-level">Лвл ${up.level}</div></div></div><div class="card-profit-row">+$${up.profit}/с</div><div class="card-price-row"><span style="color:#6b7280;font-size:9px;">ЦЕНА</span><span style="font-weight:700;">${cost.toLocaleString()}</span></div>`;
+                    c.appendChild(d);
                 });
             });
         }
 
         function recalculateStats() {
-            let passive = 0;
-            state.upgrades.forEach(up => { passive += up.level * up.profit; });
-            state.passiveIncomePerSec = passive;
-            state.maxEnergy = 1000 + (state.upgrades.filter(u => u.tab === 'power').reduce((acc, u) => acc + u.level, 0) * 200);
-            state.clickPower = 1 + Math.floor(state.passiveIncomePerSec / 12);
-
-            pqcTxt.innerText = `+${state.clickPower}`;
-            ppsTxt.innerText = `+${state.passiveIncomePerSec.toLocaleString()}`;
-            energyMax.innerText = state.maxEnergy;
+            let p = 0; state.upgrades.forEach(u => p += u.level * u.profit); state.passiveIncomePerSec = p;
+            state.clickPower = 1 + Math.floor(state.passiveIncomePerSec / 10);
+            document.getElementById('pqc-txt').innerText = `+${state.clickPower}`;
+            document.getElementById('pps-txt').innerText = `+${state.passiveIncomePerSec.toLocaleString()}`;
         }
 
-        // Стабильный, защищенный от дергания игровой движок рендеринга
-        function engineLoop() {
-            // Мягкое стремление к целевым углам без накопления лишней кинетической энергии
-            curRotX += (tgtRotX - curRotX) * springIntensity;
-            curRotY += (tgtRotY - curRotY) * springIntensity;
-            curZ += (tgtZ - curZ) * 0.35;
+        function loop() {
+            // Мягкий интерполятор без рывков
+            rX += (tX - rX) * 0.25; rY += (tY - rY) * 0.25; zX += (tz - zX) * 0.3;
+            tX *= 0.85; tY *= 0.85; tz *= 0.7;
+            
+            document.getElementById('sphere-btn').style.transform = `rotateX(${Math.max(-25, Math.min(25, rX))}deg) rotateY(${Math.max(-25, Math.min(25, rY))}deg) translateZ(${zX}px)`;
 
-            // Возврат к покою
-            tgtRotX *= dampingFactor;
-            tgtRotY *= dampingFactor;
-            tgtZ *= 0.7;
+            uiBal += (state.balance - uiBal) * 0.25;
+            document.getElementById('balance-val').innerText = Math.floor(uiBal).toLocaleString('ru-RU');
 
-            // Ограничиваем (Clamp) максимальные углы, чтобы избежать неестественного выкручивания
-            const clampedX = Math.max(-28, Math.min(28, curRotX));
-            const clampedY = Math.max(-28, Math.min(28, curRotY));
-
-            sphereBtn.style.transform = `rotateX(${clampedX}deg) rotateY(${clampedY}deg) translateZ(${curZ}px)`;
-
-            // Динамическое смещение бликов на гранях кристалла при движении монеты
-            document.querySelectorAll('.crystal-facet').forEach(f => {
-                f.style.setProperty('--shft', `${clampedY * 1.5}px`);
+            state.upgrades.forEach(u => {
+                const cost = Math.floor(u.baseCost * Math.pow(u.costMult, u.level));
+                const el = document.getElementById(`card-${u.id}`);
+                if(el) state.balance < cost ? el.classList.add('disabled') : el.classList.remove('disabled');
             });
 
-            // Плавный счетчик баланса
-            const diff = state.balance - uiBalance;
-            uiBalance += diff * 0.2;
-            if (Math.abs(diff) < 0.1) uiBalance = state.balance;
-            balanceVal.innerText = Math.floor(uiBalance).toLocaleString('ru-RU');
+            document.getElementById('energy-current').innerText = Math.floor(state.energy);
+            document.getElementById('energy-fill').style.width = `${(state.energy / state.maxEnergy) * 100}%`;
 
-            // Обновление состояния доступности карт
-            state.upgrades.forEach(up => {
-                const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
-                const cardEl = document.getElementById(`card-${up.id}`);
-                if (cardEl) {
-                    if (state.balance < cost) cardEl.classList.add('disabled');
-                    else cardEl.classList.remove('disabled');
-                }
-            });
+            // Сгорание комбо
+            if(Date.now() - lastClick > 1200 && combo > 0) { combo = Math.max(0, combo - 1); updateUIBadges(); }
 
-            energyCurrent.innerText = Math.floor(state.energy);
-            energyFill.style.width = `${(state.energy / state.maxEnergy) * 100}%`;
+            // Окончание заморозки античитом
+            if(isFrozen && Date.now() > freezeUntil) { isFrozen = false; document.getElementById('sphere-btn').classList.remove('frozen'); updateUIBadges(); }
 
-            requestAnimationFrame(engineLoop);
+            requestAnimationFrame(loop);
         }
 
-        function startPassiveIncomeLoop() {
-            let lastTime = Date.now();
-            setInterval(() => {
-                const now = Date.now();
-                state.balance += state.passiveIncomePerSec * ((now - lastTime) / 1000);
-                lastTime = now;
-            }, 100);
-        }
-
-        function startRegenEnergyLoop() {
-            setInterval(() => {
-                if (state.energy < state.maxEnergy) state.energy = Math.min(state.maxEnergy, state.energy + state.energyRegen);
-            }, 1000);
-        }
-
-        function comboDecayLoop() {
-            setInterval(() => {
-                const now = Date.now();
-                if (now - lastClickTime > 1300 && comboCount > 0) {
-                    comboCount = Math.max(0, comboCount - 1);
-                    updateComboMultiplier();
-                }
-            }, 150);
-        }
-
-        function processClick(clientX, clientY) {
-            if (state.energy < state.clickPower) return;
+        function processClick(cX, cY) {
+            if (isFrozen) return; // Игнорируем клики во время бана
 
             const now = Date.now();
-            lastClickTime = now;
-            comboCount++;
-            updateComboMultiplier();
 
-            const finalReward = state.clickPower * currentMultiplier;
-            state.energy -= state.clickPower;
-            state.balance += finalReward;
+            // --- УЛЬТРА АНТИЧИТ ДВИЖОК ---
+            const currentInterval = now - lastClick;
+            clickHistory.push({ time: currentInterval, x: cX, y: cY });
+            if (clickHistory.length > 6) clickHistory.shift();
 
-            const rect = sphereBtn.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            // Плавный расчет вектора отклонения на базе геометрии тача
-            tgtRotX = ((clientY - centerY) / (rect.height / 2)) * -32; 
-            tgtRotY = ((clientX - centerX) / (rect.width / 2)) * 32;
-            tgtZ = -18; // Импульс утапливания монеты вглубь экрана
-
-            // Волна детонации
-            waveFx.style.animation = 'none';
-            waveFx.offsetHeight; 
-            waveFx.style.animation = 'waveOut 0.45s ease-out';
-
-            createCinematicFX(clientX, clientY, finalReward);
-        }
-
-        function updateComboMultiplier() {
-            if (comboCount < 6) {
-                currentMultiplier = 1;
-                comboTag.classList.remove('active', 'hyper');
-                sphereBtn.classList.remove('hyper-mode');
-            } else if (comboCount >= 6 && comboCount < 16) {
-                currentMultiplier = 2;
-                comboTag.innerText = `Комбо x2 🔥`;
-                comboTag.classList.add('active');
-                comboTag.classList.remove('hyper');
-                sphereBtn.classList.remove('hyper-mode');
-            } else if (comboCount >= 16 && comboCount < 32) {
-                currentMultiplier = 3;
-                comboTag.innerText = `Ритм x3 ⚡`;
-                comboTag.classList.add('active', 'hyper');
-                sphereBtn.classList.remove('hyper-mode');
-            } else {
-                currentMultiplier = 5;
-                comboTag.innerText = `ГИПЕР КЛИК x5 👑`;
-                comboTag.classList.add('active', 'hyper');
-                sphereBtn.classList.add('hyper-mode');
-            }
-        }
-
-        function createCinematicFX(clientX, clientY, reward) {
-            const rect = clickZone.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-
-            const num = document.createElement('div');
-            num.className = `floating-num ${currentMultiplier === 5 ? 'hyper-text' : ''}`;
-            num.innerText = `+${reward}`;
-            num.style.left = `${x}px`;
-            num.style.top = `${y}px`;
-            clickZone.appendChild(num);
-            num.addEventListener('animationend', () => num.remove());
-
-            // Красивый фонтан из 3D-монеток
-            for (let i = 0; i < 5; i++) {
-                const coin = document.createElement('div');
-                coin.className = 'mini-coin-3d';
-                coin.style.left = `${x}px`;
-                coin.style.top = `${y}px`;
-                
-                const mx = (Math.random() - 0.5) * 190 + 'px';
-                const my = (Math.random() - 0.5) * 190 - 60 + 'px'; 
-                coin.style.setProperty('--mx', mx);
-                coin.style.setProperty('--my', my);
-
-                clickZone.appendChild(coin);
-                coin.addEventListener('animationend', () => coin.remove());
-            }
-        }
-
-        function buyUpgrade(id) {
-            const up = state.upgrades.find(u => u.id === id);
-            const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
-
-            if (state.balance >= cost) {
-                state.balance -= cost;
-                up.level++;
-                recalculateStats();
-                const nextCost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
-                document.getElementById(`lvl-txt-${id}`).innerText = `Лвл ${up.level}`;
-                document.getElementById(`cost-txt-${id}`).innerText = nextCost.toLocaleString();
-            }
-        }
-
-        function switchTab(tabId, e) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.upgrades-container').forEach(c => c.classList.remove('active'));
-            e.target.classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-        }
-
-        sphereBtn.addEventListener('touchstart', (e) => { e.preventDefault(); processClick(e.touches[0].clientX, e.touches[0].clientY); });
-        sphereBtn.addEventListener('mousedown', (e) => { if ('ontouchstart' in window) return; processClick(e.clientX, e.clientY); });
-
-        function saveGame() {
-            localStorage.setItem(SAVE_KEY, JSON.stringify({
-                balance: state.balance, energy: state.energy,
-                upgrades: state.upgrades.map(u => ({ id: u.id, level: u.level }))
-            }));
-        }
-
-        function loadGame() {
-            const raw = localStorage.getItem(SAVE_KEY);
-            if (!raw) return;
-            try {
-                const parsed = JSON.parse(raw);
-                state.balance = parsed.balance || 0;
-                state.energy = parsed.energy || 1000;
-                if (parsed.upgrades) {
-                    parsed.upgrades.forEach(pu => {
-                        const target = state.upgrades.find(u => u.id === pu.id);
-                        if (target) target.level = pu.level || 0;
-                    });
+            if (clickHistory.length >= 5) {
+                let exactTimeMatches = 0;
+                let exactCoordMatches = 0;
+                for(let i = 1; i < clickHistory.length; i++) {
+                    if (Math.abs(clickHistory[i].time - clickHistory[i-1].time) <= 1) exactTimeMatches++; // Слишком точный интервал
+                    if (clickHistory[i].x === clickHistory[i-1].x && clickHistory[i].y === clickHistory[i-1].y) exactCoordMatches++; // Тап точно в один пиксель
                 }
-            } catch(e) { console.error(e); }
+
+                if (exactTimeMatches >= 4 || exactCoordMatches >= 4) {
+                    isFrozen = true;
+                    freezeUntil = now + 4000; // Бан на 4 секунды
+                    document.getElementById('sphere-btn').classList.add('frozen');
+                    combo = 0;
+                    updateUIBadges();
+                    return;
+                }
+            }
+
+            if (!isFever && state.energy < state.clickPower) return;
+
+            lastClick = now;
+            combo++;
+            updateUIBadges();
+
+            // Расчет награды (Криты / Лихорадка / Комбо)
+            let mult = combo >= 25 ? 5 : (combo >= 12 ? 3 : (combo >= 5 ? 2 : 1));
+            if (isFever) mult = 4; // Фиксированный буст лихорадки
+
+            let isCrit = Math.random() < 0.07; // 7% шанс крита
+            let critMult = isCrit ? Math.floor(Math.random() * 5) + 6 : 1; // Криты от х6 до х10
+
+            let reward = state.clickPower * mult * critMult;
+            
+            if(!isFever) state.energy -= state.clickPower;
+            state.balance += reward;
+
+            // Физика пружины
+            const rect = document.getElementById('sphere-btn').getBoundingClientRect();
+            tX = ((cY - (rect.top + rect.height/2)) / (rect.height/2)) * -30;
+            tY = ((cX - (rect.left + rect.width/2)) / (rect.width/2)) * 30;
+            tz = -15;
+
+            // Триггер вспышки волны
+            const fx = document.getElementById('wave-fx'); fx.style.animation = 'none'; fx.offsetHeight; fx.style.animation = 'wave 0.4s ease-out';
+
+            if(isCrit) {
+                document.getElementById('sphere-btn').classList.add('crit-flash');
+                setTimeout(() => document.getElementById('sphere-btn').classList.remove('crit-flash'), 120);
+            }
+
+            createParticle(cX, cY, reward, isCrit);
         }
 
+        function updateUIBadges() {
+            document.querySelectorAll('.badge').forEach(b => b.classList.remove('active'));
+            if (isFrozen) { document.getElementById('badge-cheat').classList.add('active'); return; }
+            if (isFever) { document.getElementById('badge-fever').classList.add('active'); return; }
+
+            if (combo >= 25) {
+                document.getElementById('badge-hyper').classList.add('active');
+            } else if (combo >= 5) {
+                const b = document.getElementById('badge-combo');
+                b.innerText = `Комбо x${combo >= 12 ? 3 : 2} 🔥`;
+                b.classList.add('active');
+            }
+        }
+
+        // Случайный запуск Золотой Лихорадки
+        function randomEventTrigger() {
+            if(!isFever && !isFrozen && Math.random() < 0.02) { // 2% шанс каждую секунду
+                isFever = true;
+                updateUIBadges();
+                setTimeout(() => { isFever = false; updateUIBadges(); }, 8000); // Длится 8 секунд
+            }
+        }
+
+        function createParticle(cX, cY, r, isCrit) {
+            const rect = document.getElementById('click-zone').getBoundingClientRect();
+            const x = cX - rect.left, y = cY - rect.top;
+
+            const n = document.createElement('div');
+            n.className = `floating-num ${isCrit ? 'crit-text' : (isFever ? 'fever-text' : '')}`;
+            n.innerText = isCrit ? `CRIT! +${r}` : `+${r}`;
+            n.style.left = `${x}px`; n.style.top = `${y}px`;
+            document.getElementById('click-zone').appendChild(n);
+            n.addEventListener('animationend', () => n.remove());
+
+            for (let i = 0; i < 4; i++) {
+                const c = document.createElement('div'); c.className = 'mini-coin';
+                c.style.left = `${x}px`; c.style.top = `${y}px`;
+                c.style.setProperty('--mx', (Math.random() - 0.5) * 160 + 'px');
+                c.style.setProperty('--my', (Math.random() - 0.5) * 160 - 40 + 'px');
+                document.getElementById('click-zone').appendChild(c);
+                c.addEventListener('animationend', () => c.remove());
+            }
+        }
+
+        function passiveLoop() { state.balance += state.passiveIncomePerSec * 0.1; }
+        function regenLoop() { if(state.energy < state.maxEnergy) state.energy = Math.min(state.maxEnergy, state.energy + state.energyRegen); }
+        function switchTab(t, e) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.upgrades-container').forEach(c => c.classList.remove('active'));
+            e.target.classList.add('active'); document.getElementById(`tab-${t}`).classList.add('active');
+        }
+
+        document.getElementById('sphere-btn').addEventListener('touchstart', (e) => { e.preventDefault(); processClick(e.touches[0].clientX, e.touches[0].clientY); });
+        document.getElementById('sphere-btn').addEventListener('mousedown', (e) => { if ('ontouchstart' in window) return; processClick(e.clientX, e.clientY); });
+
+        function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify({ balance: state.balance, upgrades: state.upgrades.map(u => ({ id: u.id, level: u.level })) })); }
+        function loadGame() {
+            const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
+            try {
+                const p = JSON.parse(raw); state.balance = p.balance || 0;
+                if(p.upgrades) p.upgrades.forEach(pu => { const t = state.upgrades.find(u => u.id === pu.id); if(t) t.level = pu.level || 0; });
+            } catch(e) {}
+        }
         window.onload = init;
     </script>
 </body>
