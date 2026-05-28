@@ -2,18 +2,25 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Space Clicker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Светский Клин — Элита Криптомира</title>
     <style>
         :root {
-            --bg-gradient: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
-            --panel-bg: rgba(30, 41, 59, 0.5);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --accent-color: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.4);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            /* Палитра 'Old Money' / 'High Tech Noir' */
+            --bg-deep: #05070a; /* Почти черный, с глубоким синим отливом */
+            --bg-card: rgba(18, 24, 38, 0.7); /* Прозрачные карты */
+            --accent-gold: #c5a059; /* Тусклое, благородное золото */
+            --accent-gold-glow: rgba(197, 160, 89, 0.3);
+            --text-main: #f1f5f9; /* Почти белый */
+            --text-muted: #94a3b8; /* Серый для подписей */
+            --profit-green: #4ade80; /* Зеленый для прибыли, но более спокойный */
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --font-family: 'Cinzel', serif; /* Для заголовков */
+            --font-family-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
+
+        /* Загрузка шрифта */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap');
 
         * {
             box-sizing: border-box;
@@ -21,41 +28,59 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background: var(--bg-gradient);
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(197, 160, 89, 0.07) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(56, 189, 248, 0.05) 0px, transparent 50%);
             color: var(--text-main);
+            font-family: var(--font-family-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
-            padding: 20px;
+            padding: 16px;
         }
 
         .container {
             width: 100%;
-            max-width: 480px;
+            max-width: 420px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            height: 100%;
+            gap: 24px;
         }
 
-        /* --- HEADER STATS --- */
+        /* --- HEADER & STATS --- */
+        .app-header {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .app-title {
+            font-family: var(--font-family);
+            font-weight: 700;
+            font-size: 26px;
+            letter-spacing: 2px;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 15px var(--accent-gold-glow);
+            margin-bottom: 20px;
+        }
+
         .header-stats {
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 16px 24px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
         .stat-box {
@@ -65,38 +90,49 @@
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             color: var(--text-muted);
         }
 
         .stat-value {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
-            color: var(--accent-color);
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .coin-icon-small {
+            width: 14px; height: 14px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            display: inline-block;
         }
 
-        /* --- MAIN BALANCE --- */
+        /* --- BALANCE --- */
         .balance-container {
             text-align: center;
-            margin: 10px 0;
         }
 
         .balance-label {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .balance-amount {
-            font-size: 42px;
+            font-size: 48px;
             font-weight: 800;
-            letter-spacing: -1px;
-            background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            letter-spacing: -1.5px;
+            color: var(--text-main);
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         /* --- MAIN CLICKER --- */
@@ -105,128 +141,210 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            margin: 20px 0;
+            margin: 10px 0;
+            padding: 10px;
+        }
+
+        .sphere-outer {
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            padding: 8px;
+            background: linear-gradient(135deg, rgba(197,160,89,0.1) 0%, rgba(0,0,0,0) 50%, rgba(197,160,89,0.05) 100%);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
         }
 
         .core-sphere {
-            width: 220px;
-            height: 220px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #38bdf8 0%, #0369a1 70%, #0c4a6e 100%);
-            box-shadow: 0 0 40px var(--accent-glow), inset 0 -10px 20px rgba(0,0,0,0.5), inset 0 10px 20px rgba(255,255,255,0.2);
+            background: radial-gradient(circle at 35% 35%, #1e293b 0%, #0f172a 60%, #020617 100%);
+            box-shadow: 
+                inset 0 10px 20px rgba(255,255,255,0.05),
+                inset 0 -10px 20px rgba(0,0,0,0.6),
+                0 0 30px rgba(0,0,0,0.8);
             cursor: pointer;
             position: relative;
-            transition: transform 0.05s ease;
+            transition: transform 0.06s ease-out;
             display: flex;
             justify-content: center;
             align-items: center;
+            border: 2px solid rgba(197,160,89,0.15);
         }
 
-        .core-sphere::before {
+        /* Узор внутри сферы */
+        .sphere-pattern {
+            position: absolute;
+            width: 90%; height: 90%;
+            border-radius: 50%;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNjNWEwNTkiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGg0MHY0MEgwVjB6bTIwIDIwaDIwdjIwSDIWMjB6TTAgMjBoMjB2MjBIMFYyMHoyMCAwaDIwdjIwSDIwVjB6Ii8+PC9nPjwvZz48L3N2Zz4=');
+            opacity: 0.6;
+        }
+
+        /* Центральный Логотип Клина */
+        .wedge-logo {
+            width: 60px;
+            height: 60px;
+            background-color: var(--accent-gold);
+            /* Отрисовка клина через clip-path */
+            clip-path: polygon(50% 0%, 100% 100%, 50% 85%, 0% 100%);
+            -webkit-clip-path: polygon(50% 0%, 100% 100%, 50% 85%, 0% 100%);
+            box-shadow: 0 0 25px var(--accent-gold-glow);
+            z-index: 2;
+            position: relative;
+        }
+        
+        .wedge-logo::after {
             content: '';
             position: absolute;
-            width: 85%;
-            height: 85%;
-            border-radius: 50%;
-            border: 2px dashed rgba(255, 255, 255, 0.2);
-            animation: rotateCore 20s linear infinite;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            background-color: var(--bg-deep);
+            clip-path: polygon(50% 0%, 100% 100%, 50% 85%, 0% 100%);
+            -webkit-clip-path: polygon(50% 0%, 100% 100%, 50% 85%, 0% 100%);
         }
 
         .core-sphere:active {
-            transform: scale(0.96);
+            transform: scale(0.97);
+            border-color: rgba(197, 160, 89, 0.4);
         }
 
         /* --- UPGRADES SECTION --- */
         .upgrades-section {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
+            padding-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4px;
         }
 
         .section-title {
+            font-family: var(--font-family);
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-main);
-            padding-left: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .upgrades-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 16px;
         }
 
         .card {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             cursor: pointer;
-            transition: background 0.2s, border-color 0.2s, transform 0.2s;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Эффект блика при наведении */
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card:hover::after {
+            left: 100%; top: 100%;
         }
 
         .card:hover {
-            border-color: rgba(56, 189, 248, 0.3);
-            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(197, 160, 89, 0.2);
+            background: rgba(22, 29, 46, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
 
         .card:active {
-            transform: scale(0.98);
+            transform: translateY(1px) scale(0.99);
         }
 
         .card.disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
-            border-color: transparent !important;
+            border-color: var(--border-subtle) !important;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         .card-header {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .card-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: rgba(56, 189, 248, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(197, 160, 89, 0.08);
+            border: 1px solid rgba(197, 160, 89, 0.15);
             display: flex;
             justify-content: center;
             align-items: center;
-            color: var(--accent-color);
+            font-size: 20px;
+            color: var(--accent-gold);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
 
         .card-info {
             display: flex;
             flex-direction: column;
+            flex: 1;
         }
 
         .card-name {
             font-size: 13px;
             font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 2px;
         }
 
         .card-lvl {
             font-size: 11px;
             color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            align-self: flex-start;
         }
 
         .card-profit {
             font-size: 12px;
-            color: #10b981;
+            color: var(--profit-green);
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
+            font-weight: 600;
+            margin-top: 4px;
         }
 
         .card-footer {
             margin-top: auto;
-            border-top: 1px solid var(--border-color);
-            padding-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -238,26 +356,24 @@
         }
 
         .price-value {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
-            color: #f59e0b;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         /* --- FLOATING TEXT ANIMATION --- */
         .floating-text {
             position: absolute;
-            color: var(--accent-color);
-            font-size: 28px;
+            color: var(--text-main);
+            font-size: 32px;
             font-weight: 800;
             pointer-events: none;
-            animation: floatUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-            text-shadow: 0 0 10px var(--accent-glow);
+            animation: floatUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            text-shadow: 0 0 15px rgba(255,255,255,0.2);
             z-index: 100;
-        }
-
-        @keyframes rotateCore {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         @keyframes floatUp {
@@ -267,114 +383,136 @@
             }
             100% {
                 opacity: 0;
-                transform: translate(-50%, -50%) translateY(-100px) scale(0.8);
+                transform: translate(-50%, -50%) translateY(-120px) scale(0.8);
             }
         }
 
-        @media (max-width: 400px) {
-            .core-sphere {
-                width: 190px;
-                height: 190px;
-            }
-            .balance-amount {
-                font-size: 36px;
-            }
-        }
+        /* Вспомогательные классы */
+        .gold { color: var(--accent-gold); }
+        .muted { color: var(--text-muted); }
+
     </style>
 </head>
 <body>
 
     <div class="container">
+        <!-- Заголовок Приложения -->
+        <header class="app-header">
+            <h1 class="app-title">Светский Клин</h1>
+        </header>
+
+        <!-- Верхние показатели (Прозрачная панель) -->
         <div class="header-stats">
             <div class="stat-box">
-                <span class="stat-label">Прибыль за клик</span>
-                <span class="stat-value" id="pqc-display">+1</span>
+                <span class="stat-label">Клик</span>
+                <span class="stat-value"><span class="coin-icon-small"></span> +<span id="pqc-display">1</span></span>
             </div>
             <div class="stat-box" style="text-align: right;">
-                <span class="stat-label">В час (пассивный)</span>
-                <span class="stat-value" id="pph-display">+0</span>
+                <span class="stat-label">Доход в час</span>
+                <span class="stat-value"><span class="coin-icon-small"></span> +<span id="pph-display">0</span></span>
             </div>
         </div>
 
+        <!-- Баланс (Крупно) -->
         <div class="balance-container">
-            <p class="balance-label">Ваш баланс</p>
-            <div class="balance-amount" id="balance">0</div>
+            <p class="balance-label">Ваше состояние</p>
+            <div class="balance-amount">
+                <span class="coin-icon-small" style="width: 30px; height: 30px;"></span>
+                <span id="balance">0</span>
+            </div>
         </div>
 
+        <!-- Клик-зона (Премиальная Сфера) -->
         <div class="clicker-area" id="click-area">
-            <div class="core-sphere" id="sphere">
+            <div class="sphere-outer">
+                <div class="core-sphere" id="sphere">
+                    <div class="sphere-pattern"></div>
+                    <div class="wedge-logo"></div>
                 </div>
+            </div>
         </div>
 
+        <!-- Секция Улучшений (Стильные Карты) -->
         <div class="upgrades-section">
-            <h2 class="section-title">Улучшения (Майнинг)</h2>
+            <div class="section-header">
+                <h2 class="section-title">Активы Элиты</h2>
+            </div>
+            
             <div class="upgrades-grid">
                 
+                <!-- Card 1 -->
                 <div class="card" onclick="buyUpgrade(0)">
                     <div class="card-header">
-                        <div class="card-icon">⚡</div>
+                        <div class="card-icon">🗝️</div>
                         <div class="card-info">
-                            <span class="card-name" id="up-name-0">Прошивка чипа</span>
+                            <span class="card-name">Закрытый Клуб</span>
                             <span class="card-lvl" id="up-lvl-0">Лвл 0</span>
                         </div>
                     </div>
                     <div class="card-profit">
-                        <span>+$<span id="up-profit-0">2</span>/ч</span>
+                        <span class="coin-icon-small"></span>
+                        <span>+<span id="up-profit-0">2</span>/ч</span>
                     </div>
                     <div class="card-footer">
-                        <span class="price-label">Цена</span>
-                        <span class="price-value" id="up-cost-0">50</span>
+                        <span class="price-label">Взнос</span>
+                        <span class="price-value"><span id="up-cost-0">50</span></span>
                     </div>
                 </div>
 
+                <!-- Card 2 -->
                 <div class="card" onclick="buyUpgrade(1)">
                     <div class="card-header">
-                        <div class="card-icon">🤖</div>
+                        <div class="card-icon">🛰️</div>
                         <div class="card-info">
-                            <span class="card-name" id="up-name-1">Трейдинг Бот</span>
+                            <span class="card-name">Квантовый Трейд</span>
                             <span class="card-lvl" id="up-lvl-1">Лвл 0</span>
                         </div>
                     </div>
                     <div class="card-profit">
-                        <span>+$<span id="up-profit-1">15</span>/ч</span>
+                        <span class="coin-icon-small"></span>
+                        <span>+<span id="up-profit-1">15</span>/ч</span>
                     </div>
                     <div class="card-footer">
-                        <span class="price-label">Цена</span>
-                        <span class="price-value" id="up-cost-1">250</span>
+                        <span class="price-label">Инвестиция</span>
+                        <span class="price-value"><span id="up-cost-1">250</span></span>
                     </div>
                 </div>
 
+                <!-- Card 3 -->
                 <div class="card" onclick="buyUpgrade(2)">
                     <div class="card-header">
-                        <div class="card-icon">🖥️</div>
+                        <div class="card-icon">💎</div>
                         <div class="card-info">
-                            <span class="card-name" id="up-name-2">GPU Стойка</span>
+                            <span class="card-name">Цифровые Алмазы</span>
                             <span class="card-lvl" id="up-lvl-2">Лвл 0</span>
                         </div>
                     </div>
                     <div class="card-profit">
-                        <span>+$<span id="up-profit-2">80</span>/ч</span>
+                        <span class="coin-icon-small"></span>
+                        <span>+<span id="up-profit-2">80</span>/ч</span>
                     </div>
                     <div class="card-footer">
-                        <span class="price-label">Цена</span>
-                        <span class="price-value" id="up-cost-2">1200</span>
+                        <span class="price-label">Покупка</span>
+                        <span class="price-value"><span id="up-cost-2">1 200</span></span>
                     </div>
                 </div>
 
+                <!-- Card 4 -->
                 <div class="card" onclick="buyUpgrade(3)">
                     <div class="card-header">
-                        <div class="card-icon">🌌</div>
+                        <div class="card-icon">🏛️</div>
                         <div class="card-info">
-                            <span class="card-name" id="up-name-3">Квантовый узел</span>
+                            <span class="card-name">Крипто-Офшор</span>
                             <span class="card-lvl" id="up-lvl-3">Лвл 0</span>
                         </div>
                     </div>
                     <div class="card-profit">
-                        <span>+$<span id="up-profit-3">450</span>/ч</span>
+                        <span class="coin-icon-small"></span>
+                        <span>+<span id="up-profit-3">450</span>/ч</span>
                     </div>
                     <div class="card-footer">
-                        <span class="price-label">Цена</span>
-                        <span class="price-value" id="up-cost-3">8500</span>
+                        <span class="price-label">Депозит</span>
+                        <span class="price-value"><span id="up-cost-3">8 500</span></span>
                     </div>
                 </div>
 
@@ -383,16 +521,20 @@
     </div>
 
     <script>
-        // Состояние игры
+        // Идентификатор сейва
+        const SAVE_KEY = 'v1_svetckiy_klin_save';
+
+        // Состояние игры (по умолчанию)
         let gameState = {
             balance: 0,
             clickPower: 1,
             passiveIncomePerHour: 0,
+            lastTick: Date.now(),
             upgrades: [
-                { id: 0, baseCost: 50, costMultiplier: 1.4, baseProfit: 2, level: 0 },
-                { id: 1, baseCost: 250, costMultiplier: 1.5, baseProfit: 15, level: 0 },
-                { id: 2, baseCost: 1200, costMultiplier: 1.6, baseProfit: 80, level: 0 },
-                { id: 3, baseCost: 8500, costMultiplier: 1.7, baseProfit: 450, level: 0 }
+                { id: 0, name: "Закрытый Клуб", baseCost: 50, costMultiplier: 1.35, baseProfit: 2, level: 0, icon: "🗝️" },
+                { id: 1, name: "Квантовый Трейд", baseCost: 250, costMultiplier: 1.4, baseProfit: 15, level: 0, icon: "🛰️" },
+                { id: 2, name: "Цифровые Алмазы", baseCost: 1200, costMultiplier: 1.45, baseProfit: 80, level: 0, icon: "💎" },
+                { id: 3, name: "Крипто-Офшор", baseCost: 8500, costMultiplier: 1.5, baseProfit: 450, level: 0, icon: "🏛️" }
             ]
         };
 
@@ -403,77 +545,92 @@
         const sphereEl = document.getElementById('sphere');
         const clickAreaEl = document.getElementById('click-area');
 
+        // Глобальные переменные для плавного счетчика
+        let displayBalance = 0;
+        let animationFrameId = null;
+
         // Инициализация
         function init() {
             loadGame();
-            updateUI();
+            recalculatePassiveIncome();
+            recalculateClickPower();
+            displayBalance = gameState.balance;
             
-            // Запуск таймера пассивного дохода (раз в секунду)
-            setInterval(() => {
-                if (gameState.passiveIncomePerHour > 0) {
-                    let incomePerSecond = gameState.passiveIncomePerHour / 3600;
-                    gameState.balance += incomePerSecond;
-                    updateBalanceDisplay();
-                }
-            }, 1000);
-
-            // Автосейв каждые 5 секунд
+            updateStaticUI();
+            startPassiveIncomeTick();
+            startBalanceAnimation();
+            
+            // Автосейв
             setInterval(saveGame, 5000);
         }
 
-        // Обновление интерфейса баланса (без лишнего спама рендеров)
-        function updateBalanceDisplay() {
-            balanceEl.innerText = Math.floor(gameState.balance).toLocaleString('ru-RU');
-            updateCardAvailability();
-        }
+        // --- ЛОГИКА ДОХОДА ---
 
-        function updateUI() {
-            updateBalanceDisplay();
-            pqcDisplayEl.innerText = `+${gameState.clickPower}`;
-            pphDisplayEl.innerText = `+${Math.floor(gameState.passiveIncomePerHour)}`;
-
-            gameState.upgrades.forEach(up => {
-                const cost = Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
-                document.getElementById(`up-lvl-${up.id}`).innerText = `Лвл ${up.level}`;
-                document.getElementById(`up-cost-${up.id}`).innerText = cost.toLocaleString('ru-RU');
-            });
-        }
-
-        // Подсветка доступности карт
-        function updateCardAvailability() {
-            gameState.upgrades.forEach(up => {
-                const cost = Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
-                const cardEl = document.getElementById(`up-cost-${up.id}`).closest('.card');
-                if (gameState.balance < cost) {
-                    cardEl.classList.add('disabled');
-                } else {
-                    cardEl.classList.remove('disabled');
+        function startPassiveIncomeTick() {
+            // Расчет оффлайн дохода
+            const now = Date.now();
+            const elapsedSeconds = (now - gameState.lastTick) / 1000;
+            if (elapsedSeconds > 10) { // Если прошло больше 10 сек (защита от перезагрузки)
+                const offlineIncome = (gameState.passiveIncomePerHour / 3600) * elapsedSeconds;
+                if (offlineIncome > 1) {
+                    gameState.balance += offlineIncome;
+                    // Можно добавить алерт "Вы заработали пока вас не было"
                 }
-            });
+            }
+            gameState.lastTick = now;
+
+            // Запуск таймера пассивного дохода (раз в секунду)
+            setInterval(() => {
+                const now = Date.now();
+                const dt = (now - gameState.lastTick) / 1000; // Точное время в сек
+                if (gameState.passiveIncomePerHour > 0) {
+                    let incomePerTick = (gameState.passiveIncomePerHour / 3600) * dt;
+                    gameState.balance += incomePerTick;
+                }
+                gameState.lastTick = now;
+            }, 1000);
         }
 
-        // Логика клика
+        // Плавная анимация баланса (через requestAnimationFrame)
+        function startBalanceAnimation() {
+            function step() {
+                // Разница между реальным балансом и отображаемым
+                const diff = gameState.balance - displayBalance;
+                
+                if (Math.abs(diff) > 0.1) {
+                    // Скорость догона зависит от величины разницы
+                    displayBalance += diff * 0.15;
+                    balanceEl.innerText = Math.floor(displayBalance).toLocaleString('ru-RU');
+                    updateCardAvailability(); // Проверяем карты только когда баланс меняется
+                } else {
+                    // Точное выравнивание
+                    displayBalance = gameState.balance;
+                    balanceEl.innerText = Math.floor(displayBalance).toLocaleString('ru-RU');
+                }
+                animationFrameId = requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        // --- ЛОГИКА КЛИКА ---
+
         sphereEl.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Предотвращаем зум на мобилках
+            e.preventDefault();
             handleClick(e.touches[0].clientX, e.touches[0].clientY);
         });
 
         sphereEl.addEventListener('mousedown', (e) => {
-            // Чтобы не дублировать клики на мобилках при тачах
             if ('ontouchstart' in window) return;
             handleClick(e.clientX, e.clientY);
         });
 
         function handleClick(clientX, clientY) {
             gameState.balance += gameState.clickPower;
-            updateBalanceDisplay();
             createFloatingText(clientX, clientY, `+${gameState.clickPower}`);
         }
 
-        // Всплывающий текст циферок
         function createFloatingText(x, y, text) {
             const rect = clickAreaEl.getBoundingClientRect();
-            // Вычисляем координаты относительно зоны клика
             const relativeX = x - rect.left;
             const relativeY = y - rect.top;
 
@@ -490,21 +647,46 @@
             });
         }
 
-        // Покупка апгрейда
+        // --- ЛОГИКА УЛУЧШЕНИЙ ---
+
+        function updateStaticUI() {
+            pqcDisplayEl.innerText = gameState.clickPower;
+            pphDisplayEl.innerText = Math.floor(gameState.passiveIncomePerHour).toLocaleString('ru-RU');
+
+            gameState.upgrades.forEach(up => {
+                const cost = calculateCost(up);
+                document.getElementById(`up-lvl-${up.id}`).innerText = `Лвл ${up.level}`;
+                document.getElementById(`up-cost-${up.id}`).innerText = cost.toLocaleString('ru-RU');
+            });
+        }
+
+        function updateCardAvailability() {
+            gameState.upgrades.forEach(up => {
+                const cost = calculateCost(up);
+                const cardEl = document.getElementById(`up-lvl-${up.id}`).closest('.card');
+                if (gameState.balance < cost) {
+                    cardEl.classList.add('disabled');
+                } else {
+                    cardEl.classList.remove('disabled');
+                }
+            });
+        }
+
+        function calculateCost(up) {
+            return Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
+        }
+
         function buyUpgrade(id) {
             const up = gameState.upgrades.find(u => u.id === id);
-            const cost = Math.floor(up.baseCost * Math.pow(up.costMultiplier, up.level));
+            const cost = calculateCost(up);
 
             if (gameState.balance >= cost) {
                 gameState.balance -= cost;
                 up.level++;
                 
-                // Пересчет пассивного дохода
                 recalculatePassiveIncome();
-                // Рост силы клика зависит от общего пассивного дохода (как бонус)
-                gameState.clickPower = 1 + Math.floor(gameState.passiveIncomePerHour / 100);
-
-                updateUI();
+                recalculateClickPower();
+                updateStaticUI();
                 saveGame();
             }
         }
@@ -517,28 +699,42 @@
             gameState.passiveIncomePerHour = total;
         }
 
-        // Сохранение и загрузка через LocalStorage
+        function recalculateClickPower() {
+            // Сила клика = 1 + 1% от дохода в час
+            gameState.clickPower = 1 + Math.floor(gameState.passiveIncomePerHour / 100);
+        }
+
+        // --- СИСТЕМА СОХРАНЕНИЙ ---
+
         function saveGame() {
-            localStorage.setItem('cyber_clicker_save', JSON.stringify(gameState));
+            const dataToSave = {
+                ...gameState,
+                lastTick: Date.now() // Сохраняем время выхода
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(dataToSave));
         }
 
         function loadGame() {
-            const saved = localStorage.getItem('cyber_clicker_save');
+            const saved = localStorage.getItem(SAVE_KEY);
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    if (parsed.upgrades && parsed.upgrades.length === gameState.upgrades.length) {
+                    // Мерджим сейв с дефолтным состоянием (чтобы новые апгрейды добавлялись)
+                    if (parsed.upgrades) {
                         gameState.balance = parsed.balance || 0;
                         gameState.clickPower = parsed.clickPower || 1;
                         gameState.passiveIncomePerHour = parsed.passiveIncomePerHour || 0;
+                        gameState.lastTick = parsed.lastTick || Date.now();
                         
-                        parsed.upgrades.forEach((savedUp, idx) => {
-                            gameState.upgrades[idx].level = savedUp.level || 0;
+                        parsed.upgrades.forEach(savedUp => {
+                            const currentUp = gameState.upgrades.find(u => u.id === savedUp.id);
+                            if (currentUp) {
+                                currentUp.level = savedUp.level || 0;
+                            }
                         });
-                        recalculatePassiveIncome();
                     }
                 } catch (e) {
-                    console.error("Ошибка загрузки сейва", e);
+                    console.error("Ошибка загрузки сейва 'Светский Клин'", e);
                 }
             }
         }
