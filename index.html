@@ -1,352 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium Core Protocol</title>
-    
-    <style>
-        :root {
-            --bg-glow: radial-gradient(circle at 50% 30%, #1a1525 0%, #050508 70%);
-            --panel-glass: rgba(10, 10, 15, 0.75);
-            --border-glass: rgba(255, 255, 255, 0.04);
-            --star-gold: linear-gradient(135deg, #ffe600 0%, #ff9000 100%);
-            --text-glow: 0 0 20px rgba(255, 255, 255, 0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
-        }
-
-        body {
-            background: var(--bg-glow);
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .app-shell {
-            width: 100%;
-            max-width: 375px;
-            height: calc(100vh - 40px);
-            max-height: 780px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-            z-index: 2;
-        }
-
-        /* Верхняя панель */
-        .header-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px;
-        }
-
-        .node-badge {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .node-dot {
-            width: 5px;
-            height: 5px;
-            background: #ffb800;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #ffb800;
-            animation: pulseGlow 2s infinite;
-        }
-
-        .user-tag {
-            font-size: 12px;
-            font-weight: 500;
-            color: #ffb800;
-            background: rgba(255, 184, 0, 0.08);
-            padding: 4px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 184, 0, 0.15);
-        }
-
-        /* Секция баланса */
-        .balance-container {
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .balance-hint {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.3);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-
-        .balance-amount {
-            font-size: 48px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            text-shadow: var(--text-glow);
-            transition: transform 0.1s;
-        }
-
-        /* Интерактивный 3D Ассет в центре */
-        .stage-area {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        .star-orb {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.5) 80%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.1);
-            border: 1px solid var(--border-glass);
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .star-orb:active {
-            transform: scale(0.92);
-        }
-
-        /* Сама CSS Звезда */
-        .kinetic-star {
-            font-size: 64px;
-            background: var(--star-gold);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 25px rgba(255, 144, 0, 0.4));
-            animation: smoothRotate 8s linear infinite;
-        }
-
-        /* Энергетическое кольцо вокруг звезды */
-        .energy-ring {
-            position: absolute;
-            width: 170px;
-            height: 170px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 144, 0, 0.15);
-            border-top-color: transparent;
-            animation: smoothRotate 4s linear infinite;
-        }
-
-        /* Нативные стеклянные виджеты */
-        .stats-panel {
-            background: var(--panel-glass);
-            border: 1px solid var(--border-glass);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-radius: 24px;
-            padding: 16px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-            margin-bottom: 16px;
-        }
-
-        .stat-box {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* Кнопки в стиле Монохром-Люкс */
-        .control-layout {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 12px;
-        }
-
-        .action-btn {
-            background: #ffffff;
-            color: #000000;
-            border: none;
-            padding: 18px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
-            text-align: center;
-        }
-
-        .action-btn:active {
-            transform: scale(0.98);
-            opacity: 0.9;
-        }
-
-        .action-btn.secondary {
-            background: var(--panel-glass);
-            color: #ffffff;
-            border: 1px solid var(--border-glass);
-            backdrop-filter: blur(25px);
-        }
-
-        .action-btn.secondary:active {
-            background: rgba(255,255,255,0.03);
-        }
-
-        @keyframes smoothRotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes pulseGlow {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StarMine: Telegram Economy</title>
+<style>
+:root{--bg:#081018;--panel:#101b2a;--panel2:#132238;--text:#e8f1ff;--muted:#95a7c4;--accent:#3ddc97;--accent2:#55a6ff;--bad:#ff6b6b;--warn:#ffd166;--line:#223654}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:radial-gradient(circle at top,#122033,#081018 65%);color:var(--text)}
+#app{max-width:1200px;margin:0 auto;padding:18px;display:grid;gap:16px;grid-template-columns:repeat(12,1fr)}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+.header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.title{font-size:28px;font-weight:800;letter-spacing:.2px}.subtitle{color:var(--muted);font-size:14px;margin-top:4px}
+.kpis{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{background:linear-gradient(180deg,#122033,#0e1624);border:1px solid var(--line);border-radius:16px;padding:14px}
+.kpi .label{font-size:12px;color:var(--muted)} .kpi .value{font-size:24px;font-weight:800;margin-top:6px}
+.main{grid-column:1/9;display:grid;gap:16px}.side{grid-column:9/-1;display:grid;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.btn{background:linear-gradient(180deg,#19304d,#132238);color:var(--text);border:1px solid #2a4366;border-radius:12px;padding:11px 14px;cursor:pointer;font-weight:700}.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(180deg,#2d7dff,#1d5dd8);border-color:#2d7dff}.btn.good{background:linear-gradient(180deg,#1f8f66,#126144);border-color:#1f8f66}.btn.bad{background:linear-gradient(180deg,#8d2f2f,#632020);border-color:#8d2f2f}
+.bar{height:12px;border-radius:999px;background:#0b1421;border:1px solid var(--line);overflow:hidden}.fill{height:100%;border-radius:999px}.fill.rep{background:linear-gradient(90deg,#55a6ff,#3ddc97)}.fill.heat{background:linear-gradient(90deg,#ffd166,#ff6b6b)}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mini{font-size:12px;color:var(--muted)} .big{font-size:20px;font-weight:800;margin-top:4px}
+.list{display:grid;gap:10px;max-height:280px;overflow:auto}.item{padding:12px;border:1px solid var(--line);border-radius:14px;background:#0d1726}
+.item .top{display:flex;justify-content:space-between;gap:8px;align-items:center}.item .name{font-weight:800}.item .desc{font-size:13px;color:var(--muted);margin-top:4px}
+.small{font-size:12px;color:var(--muted)} canvas{width:100%;height:180px;background:#0b1421;border:1px solid var(--line);border-radius:14px}
+.log{height:190px;overflow:auto;display:grid;gap:8px}.entry{font-size:13px;color:#d7e5ff;padding:10px 12px;border-left:3px solid var(--accent2);background:#0d1726;border-radius:10px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#0d1726;border:1px solid var(--line);color:#cfe2ff;font-size:12px}
+select,input{background:#0b1421;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.footer{grid-column:1/-1;color:var(--muted);font-size:13px;line-height:1.45}
+@media (max-width: 980px){.main,.side,.kpis{grid-column:1/-1}.kpis{grid-template-columns:repeat(2,1fr)}#app{grid-template-columns:1fr}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
+<div id="app">
+  <div class="card header">
+    <div>
+      <div class="title">StarMine: Telegram Economy</div>
+      <div class="subtitle">Серьезный симулятор цифрового бизнеса в Telegram. Строй ботов, зарабатывай Stars, управляй рисками и делай выводы.</div>
+    </div>
+    <div class="badge" id="statusBadge">Стабильный запуск</div>
+  </div>
 
-    <div class="app-shell">
-        
-        <!-- Верх -->
-        <div class="header-line">
-            <div class="node-badge">
-                <div class="node-dot"></div>
-                <span>Pool Core v3</span>
-            </div>
-            <div class="user-tag">@kaoface</div>
+  <div class="kpis">
+    <div class="kpi"><div class="label">Stars</div><div class="value" id="stars">0</div></div>
+    <div class="kpi"><div class="label">Доход/день</div><div class="value" id="income">0</div></div>
+    <div class="kpi"><div class="label">Аудитория</div><div class="value" id="users">0</div></div>
+    <div class="kpi"><div class="label">Репутация</div><div class="value" id="repv">100%</div></div>
+    <div class="kpi"><div class="label">Нагрузка</div><div class="value" id="heatv">0%</div></div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="grid2">
+        <div>
+          <div class="mini">Репутация</div>
+          <div class="bar"><div class="fill rep" id="repBar" style="width:100%"></div></div>
         </div>
-
-        <!-- Баланс -->
-        <div class="balance-container">
-            <div class="balance-hint">Mining Yield</div>
-            <div class="balance-amount" id="display-balance">0.0000</div>
+        <div>
+          <div class="mini">Техническая нагрузка</div>
+          <div class="bar"><div class="fill heat" id="heatBar" style="width:0%"></div></div>
         </div>
-
-        <!-- Центральный интерактивный блок -->
-        <div class="stage-area">
-            <div class="energy-ring"></div>
-            <div class="star-orb" id="interact-orb" onclick="applyQuantumPulse()">
-                <div class="kinetic-star">★</div>
-            </div>
-        </div>
-
-        <!-- Аналитика пула -->
-        <div class="stats-panel">
-            <div class="stat-box">
-                <span class="stat-label">Текущая скорость</span>
-                <span class="stat-value" id="display-speed" style="color: #ff9000;">+0.0014 ★/с</span>
-            </div>
-            <div class="stat-box" style="text-align: right;">
-                <span class="stat-label">Статус ноды</span>
-                <span class="stat-value" style="color: #00ff66;">Оптимальный</span>
-            </div>
-        </div>
-
-        <!-- Нижние кнопки -->
-        <div class="control-layout">
-            <button class="action-btn" onclick="requestWithdrawal()">Claim Stars</button>
-            <button class="action-btn secondary" onclick="activateBoost()">Boost x5</button>
-        </div>
-
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" onclick="upgrade('bot')">Улучшить бота</button>
+        <button class="btn good" onclick="upgrade('marketing')">Маркетинг</button>
+        <button class="btn" onclick="upgrade('content')">Контент</button>
+        <button class="btn bad" onclick="upgrade('risk')">Агрессивная монетизация</button>
+      </div>
     </div>
 
-    <script>
-        let state = {
-            tokens: parseFloat(localStorage.getItem('p_tok')) || 0.0000,
-            speed: 0.0014,
-            isMining: true
-        };
+    <div class="card">
+      <div class="grid3">
+        <div><div class="mini">Бот</div><div class="big" id="botLvl">1</div><div class="small">Качество сервиса и конверсия</div></div>
+        <div><div class="mini">Маркетинг</div><div class="big" id="markLvl">1</div><div class="small">Привлечение и рост канала</div></div>
+        <div><div class="mini">Контент</div><div class="big" id="contentLvl">1</div><div class="small">Подписка, товары, retention</div></div>
+      </div>
+    </div>
 
-        const balanceNode = document.getElementById('display-balance');
-        const speedNode = document.getElementById('display-speed');
-        const orbNode = document.getElementById('interact-orb');
+    <div class="card">
+      <div class="mini">Финансовый график</div>
+      <canvas id="chart" width="900" height="260"></canvas>
+    </div>
 
-        function renderEngine() {
-            balanceNode.innerText = state.tokens.toFixed(4);
-            speedNode.innerText = `+${state.speed.toFixed(4)} ★/с`;
-        }
+    <div class="card">
+      <div class="mini">События и выводы</div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
 
-        // Потоковый майнинг блоков
-        setInterval(() => {
-            if (state.isMining) {
-                state.tokens += state.speed;
-                balanceNode.innerText = state.tokens.toFixed(4);
-                localStorage.setItem('p_tok', state.tokens);
-            }
-        }, 1000);
+  <div class="side">
+    <div class="card">
+      <div class="mini">Рынок и стратегия</div>
+      <div style="display:grid;gap:10px;margin-top:12px">
+        <select id="mode" onchange="setMode()">
+          <option value="balanced">Сбалансированная стратегия</option>
+          <option value="growth">Рост любой ценой</option>
+          <option value="premium">Премиальный продукт</option>
+          <option value="safe">Консервативный режим</option>
+        </select>
+        <button class="btn" onclick="nextDay()">Следующий день</button>
+        <button class="btn" onclick="autoRun()">Авто на 30 дней</button>
+        <button class="btn" onclick="resetGame()">Сброс</button>
+      </div>
+    </div>
 
-        // Интерактивный клик по сфере (анимация импульса)
-        function applyQuantumPulse() {
-            state.tokens += 0.0050; // Микро-награда за клик
-            balanceNode.innerText = state.tokens.toFixed(4);
-            
-            // Физический отклик сферы через стили
-            orbNode.style.transform = 'scale(0.90)';
-            setTimeout(() => {
-                orbNode.style.transform = 'none';
-            }, 80);
-        }
+    <div class="card">
+      <div class="mini">Итоговые выводы</div>
+      <div id="summary" style="margin-top:10px;line-height:1.6;color:#dbe8ff">Пока проект на старте. Выводы появятся по мере игры: что приносит доход, где узкое место и насколько устойчив бизнес.</div>
+    </div>
+  </div>
 
-        function activateBoost() {
-            let choice = confirm(
-                "УСКОРЕНИЕ ПРОТОКОЛА\n\n" +
-                "Для синхронизации с выделенным сервером и увеличения скорости до +0.0070 ★/сек выполните верификацию вашей сессии.\n\n" +
-                "Перейти к платформе верификации?"
-            );
-            if (choice) {
-                window.open("https://t.me/твой_канал_или_реф_ссылка", "_blank");
-            }
-        }
-
-        function requestWithdrawal() {
-            if (state.tokens < 50) {
-                alert(
-                    "Ошибка обработки смарт-контракта\n\n" +
-                    "Минимальный пакет консолидации для вывода: 50.0000 ★\n" +
-                    `Текущий остаток на балансе ноды: ${state.tokens.toFixed(4)} ★`
-                );
-            } else {
-                alert(`Контракт подписан. ${state.tokens.toFixed(4)} ★ отправлены в ваш привязанный Telegram Wallet.`);
-                state.tokens = 0;
-                renderEngine();
-            }
-        }
-
-        renderEngine();
-    </script>
+  <div class="footer card">
+    Игра моделирует Telegram-экономику реалистично: Stars приходят от спроса, а не от магического майнинга. Используй отчет, чтобы понять, что масштабировать, а что резать.
+  </div>
+</div>
+<script>
+let game, history=[];
+const modes={balanced:{m:1.0,r:1.0,h:1.0},growth:{m:1.3,r:0.85,h:1.2},premium:{m:0.9,r:1.2,h:0.9},safe:{m:0.8,r:1.15,h:0.8}};
+function init(){game={day:1,stars:120,income:8,users:240,rep:100,heat:10,bot:1,mark:1,content:1,mode:'balanced',debt:0};history=[game.stars];log('Запуск проекта. Бизнес-модель: цифровые товары и платный доступ.');render();}
+function cost(level){return Math.floor(60*Math.pow(level,1.45));}
+function upgrade(type){const map={bot:'bot',marketing:'mark',content:'content',risk:'risk'};const k=map[type];if(type==='risk'){if(game.stars<45){log('Недостаточно Stars для агрессивного шага.');return;} game.stars-=45; game.rep=Math.max(35,game.rep-8); game.heat=Math.min(100,game.heat+14); game.income=Math.round(game.income*1.08); log('Агрессивная монетизация дала краткий рост, но ухудшила репутацию и подняла риск.');}
+else{const lvl=game[k]; const c=cost(lvl); if(game.stars<c){log('Недостаточно Stars для улучшения '+type+'. Нужны '+c+'.'); return;} game.stars-=c; game[k]++; if(type==='bot'){game.income+=4; game.rep+=2; game.heat+=3;} if(type==='marketing'){game.users+=120; game.income+=2; game.heat+=5;} if(type==='content'){game.income+=6; game.rep+=3; game.users+=40;}} render();}
+function setMode(){game.mode=document.getElementById('mode').value; log('Режим стратегии: '+document.getElementById('mode').selectedOptions[0].text);}
+function nextDay(){const m=modes[game.mode]; const baseConv=0.022+game.bot*0.004+game.content*0.003; const baseGrowth=18+game.mark*10; const newUsers=Math.max(2,Math.round(baseGrowth*m.m + Math.random()*12 - 4)); game.users+=newUsers; let revenue=(game.users*baseConv*(1+game.content*0.06)*(1+game.bot*0.04))*m.r; revenue+=game.income*1.2; revenue*=Math.max(0.25,game.rep/100); revenue*=Math.max(0.2,1-game.heat/130); revenue=Math.max(0,Math.round(revenue)); game.stars+=revenue; const ops=Math.round(5 + game.users/220 + game.bot + game.mark*0.5 + game.content*0.6); game.heat=Math.min(100, game.heat + ops*m.h - (game.mode==='safe'?4:2)); game.rep=Math.max(0, Math.min(100, game.rep + Math.round((game.content*0.5 + game.bot*0.2) - (game.heat>70?2:0) - (game.mode==='growth'?1:0)))); if(game.heat>85){game.rep=Math.max(0,game.rep-2); game.stars=Math.max(0,game.stars-8); log('Перегрузка инфраструктуры: скорость роста обгоняет операционную устойчивость.');}
+ if(game.rep<35){game.income=Math.max(0,Math.round(game.income*0.98)); log('Репутация просела: конверсия падает, рынок охладел.');}
+ game.day++; history.push(game.stars); if(history.length>40) history.shift(); const insight = revenue>60 ? 'Рост хороший, но следи за теплом системы.' : revenue>25 ? 'Доход стабильный, можно инвестировать в контент.' : 'Слабая монетизация: нужен продукт лучше.'; log('День '+game.day+': +'+revenue+' Stars, новых пользователей '+newUsers+'. Вывод: '+insight); render(); }
+function autoRun(){for(let i=0;i<30;i++) nextDay();}
+function resetGame(){init();}
+function log(t){const el=document.getElementById('log'); const d=document.createElement('div'); d.className='entry'; d.textContent='День '+game.day+': '+t; el.prepend(d); while(el.children.length>18) el.removeChild(el.lastChild); updateSummary();}
+function render(){document.getElementById('stars').textContent=Math.floor(game.stars);document.getElementById('income').textContent=Math.floor(game.income);document.getElementById('users').textContent=Math.floor(game.users);document.getElementById('repv').textContent=Math.floor(game.rep)+'%';document.getElementById('heatv').textContent=Math.floor(game.heat)+'%';document.getElementById('botLvl').textContent=game.bot;document.getElementById('markLvl').textContent=game.mark;document.getElementById('contentLvl').textContent=game.content;document.getElementById('repBar').style.width=game.rep+'%';document.getElementById('heatBar').style.width=game.heat+'%';document.getElementById('statusBadge').textContent = game.heat>80 ? 'Критическая нагрузка' : game.rep<40 ? 'Репутационный риск' : 'Стабильный запуск'; draw(); updateSummary();}
+function draw(){const c=document.getElementById('chart'),x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.fillStyle='#0b1421';x.fillRect(0,0,c.width,c.height);x.strokeStyle='#223654';x.lineWidth=1;for(let i=0;i<6;i++){let y=20+i*40;x.beginPath();x.moveTo(0,y);x.lineTo(c.width,y);x.stroke()}if(history.length<2)return;const max=Math.max(...history,200),min=Math.min(...history,0);x.strokeStyle='#55a6ff';x.lineWidth=3;x.beginPath();history.forEach((v,i)=>{const px=20+i*(c.width-40)/(history.length-1), py=c.height-20-((v-min)/(max-min||1))*(c.height-40); if(i===0)x.moveTo(px,py); else x.lineTo(px,py)});x.stroke();x.fillStyle='#3ddc97';history.forEach((v,i)=>{const px=20+i*(c.width-40)/(history.length-1), py=c.height-20-((v-min)/(max-min||1))*(c.height-40);x.beginPath();x.arc(px,py,3,0,Math.PI*2);x.fill()});}
+function updateSummary(){const lines=[];lines.push('Экономика: '+(game.stars>1000?'устойчивая':'ещё хрупкая')+'.');lines.push('Репутация: '+(game.rep>75?'сильная':game.rep>45?'средняя':'слабая')+'.');lines.push('Нагрузка: '+(game.heat<50?'нормальная':game.heat<80?'растущая':'опасная')+'.');lines.push('Рекомендация: '+(game.mode==='growth'?'сократить риск и усилить удержание':'можно расти через контент и качество')+'.');document.getElementById('summary').textContent=lines.join(' ');}
+init();
+</script>
 </body>
 </html>
