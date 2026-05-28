@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Светский Клин — Web3 Elite Pro</title>
+    <title>Светский Клин — Web3 Elite Cinematic</title>
     <style>
         :root {
-            --bg-main: #040610;
-            --bg-glow: radial-gradient(circle at 50% 35%, #101636 0%, #040610 75%);
-            --card-active: rgba(255, 255, 255, 0.08);
-            --card-disabled: rgba(255, 255, 255, 0.02);
+            --bg-main: #03050d;
+            --bg-glow: radial-gradient(circle at 50% 35%, #0d122c 0%, #03050d 80%);
+            --card-active: rgba(255, 255, 255, 0.07);
+            --card-disabled: rgba(255, 255, 255, 0.015);
             --accent-gold: #f59e0b;
-            --gold-glow: rgba(245, 158, 11, 0.5);
+            --gold-glow: rgba(245, 158, 11, 0.45);
             --text-main: #ffffff;
             --text-muted: #4b5563;
             --neon-blue: #00f0ff;
@@ -73,8 +73,8 @@
         }
 
         .stat-panel {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 16px;
             padding: 10px 14px;
             display: flex;
@@ -88,7 +88,7 @@
         .stat-label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
         .stat-value { font-size: 14px; font-weight: 700; color: #fff; }
 
-        /* --- COMBO BADGE --- */
+        /* --- COMBO SYSTEM --- */
         .combo-container {
             display: flex;
             flex-direction: column;
@@ -99,141 +99,157 @@
         }
 
         .combo-badge {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 1.5px;
             background: linear-gradient(90deg, var(--neon-blue), #3b82f6);
-            padding: 3px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
-            box-shadow: 0 0 10px rgba(0,240,255,0.3);
+            box-shadow: 0 0 10px rgba(0,240,255,0.25);
             opacity: 0;
             transform: scale(0.8);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        .combo-badge.active {
-            opacity: 1;
-            transform: scale(1);
-        }
-
+        .combo-badge.active { opacity: 1; transform: scale(1); }
         .combo-badge.hyper {
             background: linear-gradient(90deg, var(--accent-gold), var(--hyper-purple));
-            box-shadow: 0 0 15px var(--gold-glow);
-            animation: pulseHyper 0.5s infinite alternate;
+            box-shadow: 0 0 20px var(--gold-glow);
+            animation: pulseHyper 0.6s infinite alternate cubic-bezier(0.445, 0.05, 0.55, 0.95);
         }
 
         @keyframes pulseHyper {
             0% { transform: scale(1); filter: brightness(1); }
-            100% { transform: scale(1.08); filter: brightness(1.3); }
+            100% { transform: scale(1.05); filter: brightness(1.25); }
         }
 
         /* --- БАЛАНС --- */
-        .balance-section {
-            text-align: center;
-        }
-
+        .balance-section { text-align: center; }
         .balance-amount {
-            font-size: 48px;
+            font-size: 46px;
             font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             color: #fff;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         .premium-coin {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 60%, #ff8f00 100%);
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(255, 179, 0, 0.3), inset 0 2px 4px #fff, inset 0 -3px 6px rgba(0,0,0,0.4);
+            box-shadow: 0 0 15px rgba(255, 179, 0, 0.25), inset 0 2px 4px #fff, inset 0 -3px 6px rgba(0,0,0,0.4);
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        .premium-coin::after { content: '⚜'; font-size: 20px; color: #fff; }
+        .premium-coin::after { content: '⚜'; font-size: 18px; color: #fff; }
 
-        /* --- ФИЗИЧЕСКИЙ 3D КЛИКЕР --- */
+        /* --- КИНЕМАТОГРАФИЧНЫЙ 3D КЛИКЕР --- */
         .clicker-container {
             display: flex;
             justify-content: center;
             position: relative;
-            margin: 10px 0;
+            margin: 12px 0;
         }
 
         .sphere-outer {
-            width: 235px;
-            height: 235px;
+            width: 230px;
+            height: 230px;
             border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #16224f 0%, #0d1326 65%, #02040a 100%);
-            border: 2px solid rgba(255, 255, 255, 0.06);
+            background: radial-gradient(circle at 35% 35%, #131b3d 0%, #090d1a 65%, #010307 100%);
+            border: 2px solid rgba(255, 255, 255, 0.05);
             box-shadow: 
-                0 20px 50px rgba(0,0,0,0.7),
-                inset 0 4px 20px rgba(255,255,255,0.04);
+                0 25px 60px rgba(0,0,0,0.75),
+                inset 0 4px 25px rgba(255,255,255,0.03);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
             transform-style: preserve-3d;
             position: relative;
-            /* Плавный возврат за счет JS-анимации пружины */
-            transform: rotateX(0deg) rotateY(0deg); 
+            transform: rotateX(0deg) rotateY(0deg) translateZ(0px); 
+            will-change: transform;
         }
 
-        /* Динамический волновой удар при клике */
+        /* Мягкая интерьерная подсветка кликера */
+        .sphere-ambient-glow {
+            position: absolute;
+            width: 120%; height: 120%;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.0) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            transition: background 0.5s ease;
+        }
+        .sphere-outer.hyper-mode ~ .sphere-ambient-glow {
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 65%);
+        }
+
+        /* Шоковая волна */
         .shockwave {
             position: absolute;
             border-radius: 50%;
-            border: 2px solid rgba(0, 240, 255, 0.4);
+            border: 2px solid rgba(0, 240, 255, 0.35);
             background: transparent;
             pointer-events: none;
-            z-index: 1;
+            z-index: 2;
             width: 100%; height: 100%;
             opacity: 0;
-            transform: scale(1);
         }
         @keyframes waveOut {
-            0% { transform: scale(0.9); opacity: 0.8; border-color: rgba(0, 240, 255, 0.5); }
-            100% { transform: scale(1.4); opacity: 0; border-color: rgba(168, 85, 247, 0); }
+            0% { transform: scale(0.92); opacity: 0.7; border-color: rgba(0, 240, 255, 0.4); }
+            100% { transform: scale(1.35); opacity: 0; border-color: rgba(168, 85, 247, 0); }
         }
 
-        /* 3D Кристалл-клин */
-        .crystal-wedge-3d {
-            width: 76px;
-            height: 96px;
+        /* НАСТОЯЩИЙ ОБЪЕМНЫЙ КРИСТАЛЛ-КЛИН */
+        .crystal-container-3d {
+            width: 80px;
+            height: 100px;
             position: relative;
             transform-style: preserve-3d;
-            transform: translateZ(35px);
-            z-index: 3;
+            transform: translateZ(40px);
+            z-index: 4;
             pointer-events: none;
-            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.5));
-            transition: filter 0.2s;
         }
 
-        /* Реалистичные грани со смещающимися бликами */
-        .crystal-wedge-3d::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 38px; height: 96px;
-            background: linear-gradient(135deg, #fcd34d 0%, #d97706 100%);
-            clip-path: polygon(100% 0, 100% 100%, 0 85%); -webkit-clip-path: polygon(100% 0, 100% 100%, 0 85%);
-            box-shadow: inset -2px 0 5px rgba(255,255,255,0.2);
+        /* Базовые грани кристалла с эффектом стеклянного преломления */
+        .crystal-facet {
+            position: absolute;
+            top: 0; left: 0;
+            width: 40px; height: 100px;
+            transform-origin: right center;
+            will-change: transform;
         }
 
-        .crystal-wedge-3d::after {
-            content: ''; position: absolute; top: 0; left: 38px; width: 38px; height: 96px;
-            background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
-            clip-path: polygon(0 0, 100% 85%, 0 100%); -webkit-clip-path: polygon(0 0, 100% 85%, 0 100%);
+        /* Левая основная грань */
+        .facet-left {
+            left: 0;
+            background: linear-gradient(135deg, rgba(252, 211, 77, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%);
+            clip-path: polygon(100% 0, 100% 100%, 0 85%);
+            -webkit-clip-path: polygon(100% 0, 100% 100%, 0 85%);
         }
 
-        /* Подсветка во время Гипер-режима */
-        .sphere-outer.hyper-mode {
-            border-color: rgba(245, 158, 11, 0.4);
-            box-shadow: 0 0 40px rgba(245, 158, 11, 0.25), inset 0 4px 20px rgba(255,255,255,0.05);
+        /* Правая основная грань */
+        .facet-right {
+            left: 40px;
+            background: linear-gradient(135deg, rgba(245, 152, 11, 0.9) 0%, rgba(180, 83, 9, 0.95) 100%);
+            clip-path: polygon(0 0, 100% 85%, 0 100%);
+            -webkit-clip-path: polygon(0 0, 100% 85%, 0 100%);
         }
-        .sphere-outer.hyper-mode .crystal-wedge-3d {
-            filter: drop-shadow(0 0 30px var(--gold-glow)) brightness(1.2);
+
+        /* Сверхтехнологичные блики на ребрах */
+        .crystal-facet::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.1s ease-out;
         }
 
         /* --- ЭНЕРГИЯ --- */
@@ -251,7 +267,7 @@
         .energy-bar-inner {
             height: 100%; width: 100%;
             background: linear-gradient(90deg, var(--neon-blue), #3b82f6);
-            box-shadow: 0 0 10px rgba(0,240,255,0.3);
+            box-shadow: 0 0 10px rgba(0,240,255,0.25);
             transition: width 0.1s linear;
         }
 
@@ -272,58 +288,59 @@
         }
         .tab-btn.active { background: rgba(255, 255, 255, 0.06); color: #fff; }
 
-        /* --- УЛУЧШЕНИЯ КАРТОЧКИ --- */
+        /* --- КАРТОЧКИ УЛУЧШЕНИЙ --- */
         .upgrades-container { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
         .upgrades-container.active { display: grid; }
 
         .card {
-            background: var(--card-active); border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--card-active); border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px;
             cursor: pointer; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             transition: transform 0.2s, border-color 0.2s;
         }
-        .card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-1px); }
+        .card:hover { border-color: rgba(255,255,255,0.12); transform: translateY(-1px); }
         .card.disabled { background: var(--card-disabled); border-color: rgba(255,255,255,0.01); opacity: 0.25; cursor: not-allowed; transform: none !important; }
         .card-top { display: flex; align-items: center; gap: 10px; }
-        .card-icon-box { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.04); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .card-icon-box { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; }
         .card-meta { display: flex; flex-direction: column; }
         .card-title { font-size: 11px; font-weight: 700; color: #fff; line-height: 1.2; }
         .card-level { font-size: 10px; color: var(--accent-gold); font-weight: 600; }
         .card-profit-row { font-size: 10px; color: var(--profit-green); font-weight: 600; }
-        .card-divider { height: 1px; background: rgba(255,255,255,0.05); margin-top: auto; }
+        .card-divider { height: 1px; background: rgba(255,255,255,0.04); margin-top: auto; }
         .card-price-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
         .price-title { color: #6b7280; font-size: 9px; text-transform: uppercase; }
         .price-val { font-weight: 700; color: #fff; }
 
-        /* --- СПЕЦЭФФЕКТЫ ЧАСТИЦ (КИНЕМАТОГРАФИЧНЫЕ) --- */
+        /* --- ЭФФЕКТЫ ЧАСТИЦ --- */
         .floating-num {
-            position: absolute; color: #fff; font-size: 34px; font-weight: 900;
+            position: absolute; color: #fff; font-size: 32px; font-weight: 900;
             pointer-events: none; z-index: 1000;
-            animation: floatComplex 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            animation: floatCinematic 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
         }
         .floating-num.hyper-text {
             color: #f59e0b;
-            text-shadow: 0 0 12px var(--gold-glow);
+            text-shadow: 0 0 15px var(--gold-glow);
         }
 
-        @keyframes floatComplex {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8) rotate(-10deg); }
-            30% { transform: translate(-50%, -50%) translateY(-40px) scale(1.3) rotate(5deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-120px) scale(0.8) rotate(15deg); }
+        @keyframes floatCinematic {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.75) rotate(-8deg); }
+            25% { transform: translate(-50%, -50%) translateY(-35px) scale(1.2) rotate(3deg); }
+            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-110px) scale(0.85) rotate(10deg); }
         }
 
-        /* Вылетающие монетки вместо искр */
-        .mini-coin {
-            position: absolute; width: 14px; height: 14px;
-            background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 70%);
+        .mini-coin-3d {
+            position: absolute; width: 13px; height: 13px;
+            background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 70%, #d97706 100%);
             border-radius: 50%; pointer-events: none; z-index: 999;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            animation: coinExplode 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+            animation: coinExplode3D 0.75s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
+            will-change: transform, opacity;
         }
 
-        @keyframes coinExplode {
-            0% { opacity: 1; transform: translate(-50%, -50%) translate(0,0) rotateY(0deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--mx), var(--my)) rotateY(720deg); }
+        @keyframes coinExplode3D {
+            0% { opacity: 1; transform: translate(-50%, -50%) translate(0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--mx), var(--my)) rotateX(360deg) rotateY(540deg) rotateZ(180deg); }
         }
     </style>
 </head>
@@ -365,8 +382,12 @@
         <div class="clicker-container" id="click-zone">
             <div class="sphere-outer" id="sphere-btn">
                 <div class="shockwave" id="wave-fx"></div>
-                <div class="crystal-wedge-3d"></div>
+                <div class="crystal-container-3d" id="crystal-mesh">
+                    <div class="crystal-facet facet-left"></div>
+                    <div class="crystal-facet facet-right"></div>
+                </div>
             </div>
+            <div class="sphere-ambient-glow"></div>
         </div>
 
         <div class="energy-container">
@@ -412,22 +433,18 @@
             upgrades: JSON.parse(JSON.stringify(dbUpgrades))
         };
 
-        // Переменные комбо-системы
         let comboCount = 0;
         let lastClickTime = 0;
         let currentMultiplier = 1;
 
-        // Физика пружины (Inertial Spring System)
-        let currentRotationX = 0;
-        let currentRotationY = 0;
-        let targetRotationX = 0;
-        let targetRotationY = 0;
-        let velocityX = 0;
-        let velocityY = 0;
-        const springK = 0.4;  // Жесткость пружины
-        const damping = 0.78; // Затухание
+        // Плавная физика со сглаживанием затухания (Smooth Spring Physics)
+        let curRotX = 0, curRotY = 0;
+        let tgtRotX = 0, tgtRotY = 0;
+        let curZ = 0, tgtZ = 0;
+        const springIntensity = 0.28; 
+        const dampingFactor = 0.82;   
 
-        const SAVE_KEY = 'svet_klin_pro_v5';
+        const SAVE_KEY = 'svet_klin_pro_v6';
         let uiBalance = 0;
 
         const balanceVal = document.getElementById('balance-val');
@@ -449,8 +466,8 @@
             
             startPassiveIncomeLoop();
             startRegenEnergyLoop();
-            physicsLoop(); // Запуск математического просчета инерции
-            comboDecayLoop(); // Сгорание комбо
+            engineLoop(); 
+            comboDecayLoop();
 
             setInterval(saveGame, 4000);
         }
@@ -498,31 +515,36 @@
             energyMax.innerText = state.maxEnergy;
         }
 
-        // Рендер движения монеты на базе физического движка пружины
-        function physicsLoop() {
-            // Рассчитываем силу пружины, тянущую к центру (0,0)
-            let forceX = (targetRotationX - currentRotationX) * springK;
-            let forceY = (targetRotationY - currentRotationY) * springK;
+        // Стабильный, защищенный от дергания игровой движок рендеринга
+        function engineLoop() {
+            // Мягкое стремление к целевым углам без накопления лишней кинетической энергии
+            curRotX += (tgtRotX - curRotX) * springIntensity;
+            curRotY += (tgtRotY - curRotY) * springIntensity;
+            curZ += (tgtZ - curZ) * 0.35;
 
-            velocityX = (velocityX + forceX) * damping;
-            velocityY = (velocityY + forceY) * damping;
+            // Возврат к покою
+            tgtRotX *= dampingFactor;
+            tgtRotY *= dampingFactor;
+            tgtZ *= 0.7;
 
-            currentRotationX += velocityX;
-            currentRotationY += velocityY;
+            // Ограничиваем (Clamp) максимальные углы, чтобы избежать неестественного выкручивания
+            const clampedX = Math.max(-28, Math.min(28, curRotX));
+            const clampedY = Math.max(-28, Math.min(28, curRotY));
 
-            // Если палец отпущен, цель стремится к нулю
-            targetRotationX *= 0.75;
-            targetRotationY *= 0.75;
+            sphereBtn.style.transform = `rotateX(${clampedX}deg) rotateY(${clampedY}deg) translateZ(${curZ}px)`;
 
-            sphereBtn.style.transform = `rotateX(${currentRotationX}deg) rotateY(${currentRotationY}deg)`;
+            // Динамическое смещение бликов на гранях кристалла при движении монеты
+            document.querySelectorAll('.crystal-facet').forEach(f => {
+                f.style.setProperty('--shft', `${clampedY * 1.5}px`);
+            });
 
-            // Обновление баланса
+            // Плавный счетчик баланса
             const diff = state.balance - uiBalance;
-            uiBalance += diff * 0.25;
+            uiBalance += diff * 0.2;
             if (Math.abs(diff) < 0.1) uiBalance = state.balance;
             balanceVal.innerText = Math.floor(uiBalance).toLocaleString('ru-RU');
 
-            // Карты доступность
+            // Обновление состояния доступности карт
             state.upgrades.forEach(up => {
                 const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
                 const cardEl = document.getElementById(`card-${up.id}`);
@@ -532,11 +554,10 @@
                 }
             });
 
-            // Бар энергии
             energyCurrent.innerText = Math.floor(state.energy);
             energyFill.style.width = `${(state.energy / state.maxEnergy) * 100}%`;
 
-            requestAnimationFrame(physicsLoop);
+            requestAnimationFrame(engineLoop);
         }
 
         function startPassiveIncomeLoop() {
@@ -554,15 +575,14 @@
             }, 1000);
         }
 
-        // Сгорание комбо-серии со временем
         function comboDecayLoop() {
             setInterval(() => {
                 const now = Date.now();
-                if (now - lastClickTime > 1500 && comboCount > 0) {
-                    comboCount = Math.max(0, comboCount - 2);
+                if (now - lastClickTime > 1300 && comboCount > 0) {
+                    comboCount = Math.max(0, comboCount - 1);
                     updateComboMultiplier();
                 }
-            }, 200);
+            }, 150);
         }
 
         function processClick(clientX, clientY) {
@@ -577,38 +597,35 @@
             state.energy -= state.clickPower;
             state.balance += finalReward;
 
-            // Расчет физического импульса наклона
             const rect = sphereBtn.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             
-            // Задаем мгновенное смещение цели для физического движка
-            targetRotationX = ((clientY - centerY) / (rect.height / 2)) * -35; 
-            targetRotationY = ((clientX - centerX) / (rect.width / 2)) * 35;
+            // Плавный расчет вектора отклонения на базе геометрии тача
+            tgtRotX = ((clientY - centerY) / (rect.height / 2)) * -32; 
+            tgtRotY = ((clientX - centerX) / (rect.width / 2)) * 32;
+            tgtZ = -18; // Импульс утапливания монеты вглубь экрана
 
-            // Добавляем скорость отдачи (вздрагивание монеты)
-            velocityX += targetRotationX * 0.4;
-            velocityY += targetRotationY * 0.4;
-
-            // Анимация ударной волны
+            // Волна детонации
             waveFx.style.animation = 'none';
-            waveFx.offsetHeight; // триггер перерисовки
-            waveFx.style.animation = 'waveOut 0.4s ease-out';
+            waveFx.offsetHeight; 
+            waveFx.style.animation = 'waveOut 0.45s ease-out';
 
-            createFX(clientX, clientY, finalReward);
+            createCinematicFX(clientX, clientY, finalReward);
         }
 
         function updateComboMultiplier() {
-            if (comboCount < 5) {
+            if (comboCount < 6) {
                 currentMultiplier = 1;
                 comboTag.classList.remove('active', 'hyper');
-            } else if (comboCount >= 5 && comboCount < 15) {
+                sphereBtn.classList.remove('hyper-mode');
+            } else if (comboCount >= 6 && comboCount < 16) {
                 currentMultiplier = 2;
                 comboTag.innerText = `Комбо x2 🔥`;
                 comboTag.classList.add('active');
                 comboTag.classList.remove('hyper');
                 sphereBtn.classList.remove('hyper-mode');
-            } else if (comboCount >= 15 && comboCount < 30) {
+            } else if (comboCount >= 16 && comboCount < 32) {
                 currentMultiplier = 3;
                 comboTag.innerText = `Ритм x3 ⚡`;
                 comboTag.classList.add('active', 'hyper');
@@ -621,12 +638,11 @@
             }
         }
 
-        function createFX(clientX, clientY, reward) {
+        function createCinematicFX(clientX, clientY, reward) {
             const rect = clickZone.getBoundingClientRect();
             const x = clientX - rect.left;
             const y = clientY - rect.top;
 
-            // Создание цифры профита
             const num = document.createElement('div');
             num.className = `floating-num ${currentMultiplier === 5 ? 'hyper-text' : ''}`;
             num.innerText = `+${reward}`;
@@ -635,15 +651,15 @@
             clickZone.appendChild(num);
             num.addEventListener('animationend', () => num.remove());
 
-            // Взрыв 3D-микромонеток (5 штук)
+            // Красивый фонтан из 3D-монеток
             for (let i = 0; i < 5; i++) {
                 const coin = document.createElement('div');
-                coin.className = 'mini-coin';
+                coin.className = 'mini-coin-3d';
                 coin.style.left = `${x}px`;
                 coin.style.top = `${y}px`;
                 
-                const mx = (Math.random() - 0.5) * 180 + 'px';
-                const my = (Math.random() - 0.5) * 180 - 50 + 'px'; 
+                const mx = (Math.random() - 0.5) * 190 + 'px';
+                const my = (Math.random() - 0.5) * 190 - 60 + 'px'; 
                 coin.style.setProperty('--mx', mx);
                 coin.style.setProperty('--my', my);
 
