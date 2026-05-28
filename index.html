@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Star Forge | Telegram Mining Terminal</title>
+    <title>Star Yield Protocol | Premium Mining Terminal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-glow: #0a0516;
-            --bg-card: rgba(17, 12, 28, 0.65);
-            --border-line: rgba(255, 255, 255, 0.07);
-            --accent-star: #00f0ff;
-            --accent-purple: #8a2be2;
-            --text-main: #f3f1f6;
-            --text-muted: #8a8795;
+            --bg-main: #060709;
+            --bg-card: #0d1116;
+            --border-color: rgba(255, 255, 255, 0.05);
+            --accent-cyan: #00f0ff;
+            --accent-green: #00ff88;
+            --text-white: #ffffff;
+            --text-gray: #6c727a;
+            --neon-glow: drop-shadow(0 0 8px rgba(0, 240, 255, 0.3));
         }
 
         * {
@@ -25,361 +26,462 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         body {
-            background: radial-gradient(circle at 50% 30%, #1a0b36 0%, var(--bg-glow) 70%);
-            color: var(--text-main);
+            background-color: var(--bg-main);
+            color: var(--text-white);
+            font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow: hidden;
-            padding: 24px 16px;
+            padding: 16px;
+            overflow-x: hidden;
         }
 
-        /* Хедер профиля */
-        .header {
+        /* Вертикальный контейнер для фиксации на мобилках */
+        .app-container {
             width: 100%;
             max-width: 420px;
             display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 90px;
+        }
+
+        /* Хедер - Сеть и Статус */
+        .app-header {
+            display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .user-badge {
             background: var(--bg-card);
-            border: 1px solid var(--border-line);
-            backdrop-filter: blur(12px);
-            padding: 8px 16px;
-            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            border-radius: 16px;
+        }
+
+        .status-block {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-gray);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        .protocol-title {
+            font-family: 'JetBrains+Mono', monospace;
+            font-weight: 700;
             font-size: 14px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
         }
 
-        /* Секция баланса */
-        .balance-container {
+        /* Главный баланс - выглядит солидно */
+        .balance-card {
+            background: radial-gradient(100% 100% at 50% 0%, rgba(0, 240, 255, 0.03) 0%, rgba(0, 0, 0, 0) 100%), var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 24px;
             text-align: center;
-            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .balance-label {
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+
+        .balance-title {
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 2px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
+            color: var(--text-gray);
+            margin-bottom: 6px;
         }
 
-        .balance-amount {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 42px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, var(--accent-star) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .balance-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .balance-amount span.star-icon {
-            -webkit-text-fill-color: initial;
-            background: none;
-            font-size: 36px;
+        .star-symbol {
+            color: var(--accent-cyan);
+            filter: var(--neon-glow);
         }
 
-        .passive-income {
+        .hashrate-info {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 13px;
-            color: #00ffa3;
-            margin-top: 6px;
-            font-weight: 500;
+            color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            border: 1px solid rgba(0, 255, 136, 0.1);
         }
 
-        /* Игровое Кликер-Ядро */
-        .core-wrapper {
-            position: relative;
-            flex-grow: 1;
+        /* Блок управления Нодами / Контрактами */
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-gray);
+            margin-left: 4px;
+            margin-top: 8px;
+        }
+
+        .node-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 16px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 420px;
+            flex-direction: column;
+            gap: 12px;
+            transition: border-color 0.3s;
         }
 
-        .core-node {
-            width: 240px;
-            height: 240px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,240,255,0.15) 0%, rgba(138,43,226,0.05) 70%);
-            border: 2px solid rgba(0, 240, 255, 0.2);
-            box-shadow: 0 0 40px rgba(138, 43, 226, 0.2), inset 0 0 30px rgba(0, 240, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.05s ease;
-            position: relative;
+        .node-card:hover {
+            border-color: rgba(0, 240, 255, 0.15);
         }
 
-        .core-node:active {
-            transform: scale(0.96);
-        }
-
-        .core-inner {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-purple) 0%, #05020a 100%);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 0 25px var(--accent-purple);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 64px;
-            animation: pulseGlow 4s infinite ease-in-out;
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 25px rgba(138, 43, 226, 0.6); }
-            50% { box-shadow: 0 0 45px rgba(0, 240, 255, 0.8); }
-        }
-
-        /* Всплывающий урон/клики */
-        .click-pop {
-            position: absolute;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
-            font-size: 24px;
-            color: var(--accent-star);
-            text-shadow: 0 0 8px rgba(0,240,255,0.6);
-            pointer-events: none;
-            animation: floatUp 0.6s ease-out forwards;
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-100px) scale(0.8); opacity: 0; }
-        }
-
-        /* Энергопанель */
-        .energy-section {
-            width: 100%;
-            max-width: 380px;
-            margin-bottom: 24px;
-        }
-
-        .energy-meta {
+        .node-header {
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
+            align-items: center;
         }
 
-        .energy-bar-bg {
-            width: 100%;
-            height: 6px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid var(--border-line);
+        .node-info h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-white);
         }
 
-        .energy-bar-fill {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, var(--accent-purple), var(--accent-star));
-            box-shadow: 0 0 10px var(--accent-star);
-            transition: width 0.1s linear;
+        .node-info p {
+            font-size: 12px;
+            color: var(--text-gray);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
         }
 
-        /* Навигационная панель (Таббар) */
-        .nav-bar {
-            width: 100%;
-            max-width: 420px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-line);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
+        .node-status-badge {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .node-status-badge.active {
+            color: var(--accent-cyan);
+            border-color: rgba(0, 240, 255, 0.2);
+            background: rgba(0, 240, 255, 0.02);
+        }
+
+        .node-stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            padding: 8px;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.02);
         }
 
-        .nav-item {
+        .stat-item-label {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-bottom: 2px;
+        }
+
+        .stat-item-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-white);
+        }
+
+        /* Кнопка действия */
+        .action-btn {
+            background: var(--text-white);
+            color: var(--bg-main);
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .action-btn.cyan-btn {
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.05);
+        }
+
+        .action-btn.cyan-btn:active {
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        /* Дисклеймер / Валидация выплат */
+        .security-footer {
+            background: rgba(0, 240, 255, 0.02);
+            border: 1px dashed rgba(0, 240, 255, 0.15);
+            border-radius: 16px;
+            padding: 12px;
+            font-size: 11px;
+            color: var(--text-gray);
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* Фиксированная нижняя навигация */
+        .bottom-nav {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 388px;
+            background: rgba(13, 17, 22, 0.85);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            padding: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-gray);
+            padding: 10px 0;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.2s;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 10px 0;
-            font-size: 11px;
-            font-weight: 500;
-            transition: all 0.2s;
-            border-radius: 16px;
         }
 
-        .nav-item.active {
-            color: var(--accent-star);
-            background: rgba(255, 255, 255, 0.03);
-            text-shadow: 0 0 10px rgba(0,240,255,0.2);
+        .nav-btn.active {
+            color: var(--accent-cyan);
+            background: rgba(255,255,255,0.02);
         }
 
-        .nav-icon {
-            font-size: 20px;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Хедер профиля -->
-    <div class="header">
-        <div class="user-badge">⚡ Node: Mainnet</div>
-        <div class="user-badge" style="color: var(--accent-star);">kaoface</div>
-    </div>
+    <div class="app-container">
+        
+        <!-- Хедер -->
+        <div class="app-header">
+            <div class="status-block">
+                <div class="status-dot"></div>
+                <span>POOL: CLOUD_MAIN_01</span>
+            </div>
+            <div class="protocol-title">SYS_V2.04</div>
+        </div>
 
-    <!-- Секция баланса -->
-    <div class="balance-container">
-        <div class="balance-label">Mining Balance</div>
-        <div class="balance-amount">
-            <span class="star-icon">🌌</span>
-            <span id="balance-display">0</span>
+        <!-- Баланс выплат -->
+        <div class="balance-card">
+            <div class="balance-title">Доступно к выводу</div>
+            <div class="balance-value">
+                <span id="balance-num">0.0000</span> <span class="star-symbol">★</span>
+            </div>
+            <div class="hashrate-info" id="global-speed">Суммарный хэшрейт: 0.00 TH/s</div>
         </div>
-        <div class="passive-income">+<span id="income-display">0</span> $STAR/s</div>
-    </div>
 
-    <!-- Кликер Ядро -->
-    <div class="core-wrapper">
-        <div class="core-node" id="click-core">
-            <div class="core-inner">⭐</div>
-        </div>
-    </div>
+        <!-- Кнопка немедленного вывода -->
+        <button class="action-btn" onclick="triggerWithdraw()">Вывести на Telegram Wallet</button>
 
-    <!-- Энергопанель -->
-    <div class="energy-section">
-        <div class="energy-meta">
-            <span>Energy Terminal</span>
-            <span><span id="energy-current">1000</span>/1000</span>
+        <!-- Раздел контрактов -->
+        <div class="section-title">Доступные пулы майнинга</div>
+
+        <!-- Карточка контракта 1 -->
+        <div class="node-card">
+            <div class="node-header">
+                <div class="node-info">
+                    <h4>Node: Stratum-X1</h4>
+                    <p>Аренда вычислительной мощности</p>
+                </div>
+                <div class="node-status-badge active" id="node1-status">Неактивен</div>
+            </div>
+            <div class="node-stats-grid">
+                <div>
+                    <div class="stat-item-label">Доходность в сутки</div>
+                    <div class="stat-item-value" style="color: var(--accent-green);">+5.40 ★</div>
+                </div>
+                <div>
+                    <div class="stat-item-label">Скорость</div>
+                    <div class="stat-item-value">12.50 TH/s</div>
+                </div>
+            </div>
+            <button class="action-btn cyan-btn" id="node1-btn" onclick="toggleNode(1, 5.40, 12.50)">Запустить пул (Тест)</button>
         </div>
-        <div class="energy-bar-bg">
-            <div class="energy-bar-fill" id="energy-fill"></div>
+
+        <!-- Карточка контракта 2 -->
+        <div class="node-card">
+            <div class="node-header">
+                <div class="node-info">
+                    <h4>Node: Overlord Enterprise</h4>
+                    <p>Промышленный выделенный сервер</p>
+                </div>
+                <div class="node-status-badge">Высокий приоритет</div>
+            </div>
+            <div class="node-stats-grid">
+                <div>
+                    <div class="stat-item-label">Доходность в сутки</div>
+                    <div class="stat-item-value" style="color: var(--accent-green);">+48.00 ★</div>
+                </div>
+                <div>
+                    <div class="stat-item-label">Скорость</div>
+                    <div class="stat-item-value">110.00 TH/s</div>
+                </div>
+            </div>
+            <button class="action-btn cyan-btn" onclick="alert('Для активации промышленного пула требуется верификация аккаунта.')">Подключить оборудование</button>
         </div>
+
+        <!-- Официальное заявление / Инфо-блок -->
+        <div class="security-footer">
+            Заработанные Telegram Stars начисляются на внутренний баланс протокола в реальном времени. Обработка смарт-контракта на вывод занимает от 5 до 30 минут. Сеть защищена сквозным шифрованием Telegram WebApps Core.
+        </div>
+
     </div>
 
     <!-- Навигация -->
-    <div class="nav-bar">
-        <button class="nav-item active">
-            <span class="nav-icon">🛸</span>
-            <span>Forge</span>
+    <div class="bottom-nav">
+        <button class="nav-btn active">
+            <span>💻</span>
+            <span>TERMINAL</span>
         </button>
-        <button class="nav-item" onclick="alert('Магазин улучшений будет в следующем апдейте!')">
-            <span class="nav-icon">⚡</span>
-            <span>Upgrades</span>
+        <button class="nav-btn" onclick="alert('Раздел смарт-контрактов авторизуется через бот.')">
+            <span>📜</span>
+            <span>CONTRACTS</span>
         </button>
-        <button class="nav-item" onclick="alert('Задания будут доступны в следующем апдейте!')">
-            <span class="nav-icon">💎</span>
-            <span>Tasks</span>
-        </button>
-        <button class="nav-item" onclick="alert('Реферальная сеть в разработке!')">
-            <span class="nav-icon">👑</span>
-            <span>Ref</span>
+        <button class="nav-btn" onclick="alert('Реферальная сеть распределения пулов.')">
+            <span>🔗</span>
+            <span>PARTNERS</span>
         </button>
     </div>
 
     <script>
-        // Инициализация дефолтных данных игры
-        let gameState = {
-            balance: parseFloat(localStorage.getItem('sf_balance')) || 0,
-            incomePerSecond: parseFloat(localStorage.getItem('sf_income')) || 0,
-            clickPower: parseInt(localStorage.getItem('sf_clickPower')) || 1,
-            energy: parseInt(localStorage.getItem('sf_energy')) || 1000,
-            maxEnergy: 1000
+        // Логика строгого майнинга
+        let accountData = {
+            balance: parseFloat(localStorage.getItem('sys_stars_bal')) || 0.0000,
+            activeIncomePerSecond: parseFloat(localStorage.getItem('sys_stars_income')) || 0,
+            currentHashrate: parseFloat(localStorage.getItem('sys_stars_hash')) || 0
         };
 
-        const balanceDisplay = document.getElementById('balance-display');
-        const incomeDisplay = document.getElementById('income-display');
-        const energyCurrent = document.getElementById('energy-current');
-        const energyFill = document.getElementById('energy-fill');
-        const clickCore = document.getElementById('click-core');
+        const balanceNum = document.getElementById('balance-num');
+        const globalSpeed = document.getElementById('global-speed');
 
-        // Обновление интерфейса при старте
-        function updateUI() {
-            balanceDisplay.innerText = Math.floor(gameState.balance).toLocaleString();
-            incomeDisplay.innerText = gameState.incomePerSecond;
-            energyCurrent.innerText = gameState.energy;
-            
-            const energyPercent = (gameState.energy / gameState.maxEnergy) * 100;
-            energyFill.style.width = `${energyPercent}%`;
+        function refreshDashboard() {
+            balanceNum.innerText = accountData.balance.toFixed(4);
+            globalSpeed.innerText = `Суммарный хэшрейт: ${accountData.currentHashrate.toFixed(2)} TH/s`;
         }
 
-        // Логика клика
-        clickCore.addEventListener('click', (e) => {
-            if (gameState.energy >= gameState.clickPower) {
-                gameState.balance += gameState.clickPower;
-                gameState.energy -= gameState.clickPower;
+        // Симуляция включения тестовой ноды для демонстрации
+        function toggleNode(id, dailyIncome, hashrate) {
+            const btn = document.getElementById(`node${id}-btn`);
+            const status = document.getElementById(`node${id}-status`);
+
+            if (accountData.activeIncomePerSecond === 0) {
+                // Включаем
+                accountData.activeIncomePerSecond = dailyIncome / 86400; // перевод суточного дохода в секунды
+                accountData.currentHashrate = hashrate;
                 
-                // Создаем премиальный эффект вылетающей цифры
-                createClickPop(e, `+${gameState.clickPower}★`);
-                updateUI();
-                saveData();
+                btn.innerText = "Остановить майнинг";
+                btn.style.borderColor = "rgba(255, 70, 70, 0.4)";
+                btn.style.color = "#ff4646";
+                status.innerText = "В СЕТИ";
+                status.style.color = "var(--accent-green)";
+                status.style.borderColor = "rgba(0, 255, 136, 0.2)";
+            } else {
+                // Выключаем
+                accountData.activeIncomePerSecond = 0;
+                accountData.currentHashrate = 0;
+                
+                btn.innerText = "Запустить пул (Тест)";
+                btn.style.borderColor = "rgba(0, 240, 255, 0.3)";
+                btn.style.color = "var(--accent-cyan)";
+                status.innerText = "Неактивен";
+                status.style.color = "var(--text-gray)";
+                status.style.borderColor = "var(--border-color)";
             }
-        });
-
-        function createClickPop(e, text) {
-            const pop = document.createElement('div');
-            pop.classList.add('click-pop');
-            pop.innerText = text;
-            
-            // Рассчитываем позицию клика относительно центра ядра
-            const rect = clickCore.getBoundingClientRect();
-            const x = e.clientX - rect.left - 15;
-            const y = e.clientY - rect.top - 20;
-            
-            pop.style.left = `${x}px`;
-            pop.style.top = `${y}px`;
-            
-            clickCore.appendChild(pop);
-            
-            setTimeout(() => {
-                pop.remove();
-            }, 600);
+            saveData();
+            refreshDashboard();
         }
 
-        // Пассивный майнинг (каждую секунду)
+        // Начисление баланса в реальном времени (раз в 100мс для плавности цифр)
         setInterval(() => {
-            if (gameState.incomePerSecond > 0) {
-                gameState.balance += gameState.incomePerSecond;
-                updateUI();
+            if (accountData.activeIncomePerSecond > 0) {
+                accountData.balance += (accountData.activeIncomePerSecond / 10);
+                refreshDashboard();
                 saveData();
             }
-        }, 1000);
+        }, 100);
 
-        // Регенерация энергии (+3 энергии в сек)
-        setInterval(() => {
-            if (gameState.energy < gameState.maxEnergy) {
-                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 3);
-                updateUI();
+        function triggerWithdraw() {
+            if (accountData.balance < 5) {
+                alert(`Минимальная сумма вывода: 5.0000 ★\nВаш текущий баланс: ${accountData.balance.toFixed(4)} ★\n\nПродолжайте майнинг или подключите более мощные пулы.`);
+            } else {
+                alert(`Заявка на вывод ${accountData.balance.toFixed(4)} ★ успешно сформирована и отправлена в очередь пула.`);
+                accountData.balance = 0;
+                refreshDashboard();
+                saveData();
             }
-        }, 1000);
+        }
 
-        // Сохранение в LocalStorage
         function saveData() {
-            localStorage.setItem('sf_balance', gameState.balance);
-            localStorage.setItem('sf_income', gameState.incomePerSecond);
-            localStorage.setItem('sf_clickPower', gameState.clickPower);
-            localStorage.setItem('sf_energy', gameState.energy);
+            localStorage.setItem('sys_stars_bal', accountData.balance);
+            localStorage.setItem('sys_stars_income', accountData.activeIncomePerSecond);
+            localStorage.setItem('sys_stars_hash', accountData.currentHashrate);
         }
 
-        // Первый запуск
-        updateUI();
+        // Старт
+        refreshDashboard();
     </script>
 </body>
 </html>
