@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Network Console</title>
+    <title>Панель Распределения Сети</title>
     
     <style>
         :root {
@@ -21,7 +21,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
@@ -76,7 +76,7 @@
             color: var(--text-dim);
         }
 
-        /* Центральный строгий блок мониторинга */
+        /* Центральный блок мониторинга */
         .main-display {
             background: var(--panel-bg);
             border: 1px solid var(--border-muted);
@@ -110,7 +110,7 @@
             gap: 6px;
         }
 
-        /* Сетка системных параметров */
+        /* Сетка параметров */
         .data-grid {
             background: var(--panel-bg);
             border: 1px solid var(--border-muted);
@@ -138,7 +138,7 @@
             font-weight: 500;
         }
 
-        /* Инструменты управления (Кнопки) */
+        /* Управляющие кнопки */
         .action-block {
             display: flex;
             flex-direction: column;
@@ -190,48 +190,48 @@
 
     <div class="terminal-container">
         
-        <!-- Header -->
+        <!-- Шапка -->
         <div class="meta-header">
             <div class="status-indicator">
                 <div class="live-pulse"></div>
-                <span>RPC Synchronized</span>
+                <span>RPC Синхронизация</span>
             </div>
             <div class="session-id">node_kaoface_secured</div>
         </div>
 
-        <!-- Display -->
+        <!-- Дисплей баланса -->
         <div class="main-display">
-            <div class="display-label">Accumulated Balance</div>
+            <div class="display-label font-fix">Распределенный Баланс</div>
             <div class="crypto-digits" id="core-balance">0.0000</div>
             <div class="network-stats">
-                <span>Hashrate Allocation:</span>
-                <span style="color: var(--text-active);" id="core-rate">+0.0016 / sec</span>
+                <span>Выделенная скорость:</span>
+                <span style="color: var(--text-active);" id="core-rate">+0.0016 ★ / сек</span>
             </div>
         </div>
 
-        <!-- Metrics -->
+        <!-- Параметры сети -->
         <div class="data-grid">
             <div class="grid-row">
-                <span class="label-dim">Active Ledger</span>
+                <span class="label-dim">Активный пул</span>
                 <span class="value-active" style="color: var(--accent-glow);">TON Mainnet</span>
             </div>
             <div class="grid-row">
-                <span class="label-dim">Network Load</span>
-                <span class="value-active">0.042%</span>
+                <span class="label-dim">Статус тарифа</span>
+                <span class="value-active" id="tariff-status" style="color: #ff3b30;">Демонстрационный</span>
             </div>
             <div class="grid-row">
-                <span class="label-dim">Threshold Limit</span>
+                <span class="label-dim">Лимит вывода</span>
                 <span class="value-active">50.0000 ★</span>
             </div>
         </div>
 
-        <!-- Controls -->
+        <!-- Кнопки управления -->
         <div class="action-block">
-            <button class="btn-prime" onclick="claimAssets()">Settle Transactions</button>
-            <button class="btn-sub" onclick="verifyNetwork()">Upgrade Core Priority</button>
+            <button class="btn-prime" onclick="initiateSettlement()">Вывести активы на Wallet</button>
+            <button class="btn-sub" onclick="redirectToSupport()">Активировать Коммерческий Тариф</button>
             
             <div class="terms-note">
-                Данный терминал работает в рамках децентрализованного протокола распределения активов. Все транзакции валидируются через шифрованные RPC-узлы.
+                Данный узел работает в рамках распределенного протокола. Обработка коммерческих транзакций и активация постоянных шлюзов осуществляется через верификацию службы поддержки.
             </div>
         </div>
 
@@ -249,7 +249,7 @@
 
         function updateMetrics() {
             balanceDisplay.innerText = nodeState.balance.toFixed(4);
-            rateDisplay.innerText = `+${nodeState.rate.toFixed(4)} / sec`;
+            rateDisplay.innerText = `+${nodeState.rate.toFixed(4)} ★ / сек`;
         }
 
         setInterval(() => {
@@ -260,30 +260,27 @@
             }
         }, 1000);
 
-        function claimAssets() {
-            if (nodeState.balance < 50) {
-                alert(
-                    "LIMIT RESOLUTION ERROR\n\n" +
-                    "Минимальный объем консолидации блоков для инициации транзакции составляет 50.0000 ★.\n\n" +
-                    `Текущий статус баланса ноды: ${nodeState.balance.toFixed(4)} ★`
-                );
-            } else {
-                alert(`Смарт-контракт сформирован. ${nodeState.balance.toFixed(4)} ★ направлены на верифицированный аккаунт.`);
-                nodeState.balance = 0;
-                updateMetrics();
-                localStorage.setItem('n_bal', nodeState.balance);
-            }
+        // Функция обработки клика на вывод активов
+        function initiateSettlement() {
+            // В любом случае требуем активации платного тарифа
+            alert(
+                "ОШИБКА ИНИЦИАЛИЗАЦИИ ТРАНЗАКЦИИ\n\n" +
+                "Вывод средств заблокирован протоколом безопасности.\n\n" +
+                "На вашем аккаунте активен «Демонстрационный» режим. Для вывода накопленных наград пула необходимо активировать коммерческий тариф и верифицировать подпись узла.\n\n" +
+                "Обратитесь к администратору шлюза для активации."
+            );
+            window.location.href = "https://t.me/markplau";
         }
 
-        function verifyNetwork() {
-            let confirmRedirect = confirm(
-                "CORE PRIORITY UPGRADE\n\n" +
-                "Для переключения на приоритетный пул (+0.0080 / сек) требуется верификация текущей пользовательской сессии через партнерский шлюз.\n\n" +
-                "Запустить процесс проверки?"
+        // Функция для ручного перехода на покупку улучшения
+        function redirectToSupport() {
+            let confirmation = confirm(
+                "АКТИВАЦИЯ КОММЕРЧЕСКОГО ТАРИФА\n\n" +
+                "Вы собираетесь отправить запрос на подключение приоритетного шлюза вывода средств.\n\n" +
+                "Перейти в чат верификации с администратором?"
             );
-            if (confirmRedirect) {
-                // Ссылка на твои проекты / рефку
-                window.open("https://t.me/твой_канал_или_ссылка", "_blank");
+            if (confirmation) {
+                window.location.href = "https://t.me/markplau";
             }
         }
 
