@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telegram Stars Staking Protocol</title>
+    <title>Premium Core Protocol</title>
     
     <style>
         :root {
-            --tg-theme-bg-color: #17212b;
-            --tg-theme-text-color: #f5f5f5;
-            --tg-theme-hint-color: #708499;
-            --tg-theme-link-color: #5288c1;
-            --tg-theme-button-color: #2f6ea5;
-            --tg-theme-button-text-color: #ffffff;
-            --tg-theme-secondary-bg-color: #0e1621;
-            --border-color: #24313f;
+            --bg-glow: radial-gradient(circle at 50% 30%, #1a1525 0%, #050508 70%);
+            --panel-glass: rgba(10, 10, 15, 0.75);
+            --border-glass: rgba(255, 255, 255, 0.04);
+            --star-gold: linear-gradient(135deg, #ffe600 0%, #ff9000 100%);
+            --text-glow: 0 0 20px rgba(255, 255, 255, 0.1);
         }
 
         * {
@@ -23,299 +20,333 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
         }
 
         body {
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
+            background: var(--bg-glow);
+            color: #ffffff;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            justify-content: space-between;
-            padding: 20px 16px;
+            overflow: hidden;
+            position: relative;
         }
 
-        .container {
+        .app-shell {
             width: 100%;
-            max-width: 390px;
+            max-width: 375px;
+            height: calc(100vh - 40px);
+            max-height: 780px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            height: 100%;
+            justify-content: space-between;
+            padding: 10px;
+            z-index: 2;
         }
 
-        /* Верхняя плашка верификации */
-        .verification-banner {
-            background-color: var(--tg-theme-bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px;
+        /* Верхняя панель */
+        .header-line {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 12px;
+            padding: 0 10px;
         }
 
-        .badge-icon {
-            width: 24px;
-            height: 24px;
-            background-color: rgba(82, 136, 193, 0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--tg-theme-link-color);
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .banner-text h4 {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .banner-text p {
+        .node-badge {
             font-size: 11px;
-            color: var(--tg-theme-hint-color);
-        }
-
-        /* Минималистичный блок баланса (как в Wallet) */
-        .balance-block {
-            text-align: center;
-            padding: 30px 0;
-        }
-
-        .balance-label {
-            font-size: 13px;
-            color: var(--tg-theme-hint-color);
+            font-weight: 600;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .balance-value {
-            font-size: 44px;
-            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .star-symbol {
-            color: #ffb800;
-            font-size: 38px;
-        }
-
-        .staking-status {
-            font-size: 12px;
-            color: #31b545;
-            margin-top: 10px;
-            display: inline-flex;
             align-items: center;
             gap: 6px;
         }
 
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #31b545;
+        .node-dot {
+            width: 5px;
+            height: 5px;
+            background: #ffb800;
             border-radius: 50%;
+            box-shadow: 0 0 10px #ffb800;
+            animation: pulseGlow 2s infinite;
         }
 
-        /* Информационные ячейки (Нативный стиль настроек Telegram) */
-        .info-list {
-            background-color: var(--tg-theme-bg-color);
-            border-radius: 14px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 16px;
-            font-size: 14px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .info-item:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            color: var(--tg-theme-hint-color);
-        }
-
-        .info-val {
+        .user-tag {
+            font-size: 12px;
             font-weight: 500;
+            color: #ffb800;
+            background: rgba(255, 184, 0, 0.08);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 184, 0, 0.15);
         }
 
-        /* Кнопки действий (Точные копии кнопок из Telegram WebApp) */
-        .button-group {
+        /* Секция баланса */
+        .balance-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .balance-hint {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .balance-amount {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-shadow: var(--text-glow);
+            transition: transform 0.1s;
+        }
+
+        /* Интерактивный 3D Ассет в центре */
+        .stage-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .star-orb {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.5) 80%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.1);
+            border: 1px solid var(--border-glass);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .star-orb:active {
+            transform: scale(0.92);
+        }
+
+        /* Сама CSS Звезда */
+        .kinetic-star {
+            font-size: 64px;
+            background: var(--star-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 25px rgba(255, 144, 0, 0.4));
+            animation: smoothRotate 8s linear infinite;
+        }
+
+        /* Энергетическое кольцо вокруг звезды */
+        .energy-ring {
+            position: absolute;
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 144, 0, 0.15);
+            border-top-color: transparent;
+            animation: smoothRotate 4s linear infinite;
+        }
+
+        /* Нативные стеклянные виджеты */
+        .stats-panel {
+            background: var(--panel-glass);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            margin-bottom: 16px;
+        }
+
+        .stat-box {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            width: 100%;
+            gap: 4px;
         }
 
-        .btn-main {
-            width: 100%;
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-            border: none;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.15s;
-        }
-
-        .btn-main:active {
-            background-color: #20507a;
-        }
-
-        .btn-secondary {
-            width: 100%;
-            background-color: transparent;
-            color: var(--tg-theme-link-color);
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-secondary:active {
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        .footer-terms {
+        .stat-label {
             font-size: 11px;
-            color: var(--tg-theme-hint-color);
+            color: rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Кнопки в стиле Монохром-Люкс */
+        .control-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 12px;
+        }
+
+        .action-btn {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 18px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
             text-align: center;
-            line-height: 1.4;
-            margin-top: 15px;
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .action-btn.secondary {
+            background: var(--panel-glass);
+            color: #ffffff;
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(25px);
+        }
+
+        .action-btn.secondary:active {
+            background: rgba(255,255,255,0.03);
+        }
+
+        @keyframes smoothRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="app-shell">
         
-        <!-- Аудит безопасности -->
-        <div class="verification-banner">
-            <div class="badge-icon">✓</div>
-            <div class="banner-text">
-                <h4>Смарт-контракт верифицирован</h4>
-                <p>Протокол распределения наград Stars v2.4 passed CertiK audit.</p>
+        <!-- Верх -->
+        <div class="header-line">
+            <div class="node-badge">
+                <div class="node-dot"></div>
+                <span>Pool Core v3</span>
+            </div>
+            <div class="user-tag">@kaoface</div>
+        </div>
+
+        <!-- Баланс -->
+        <div class="balance-container">
+            <div class="balance-hint">Mining Yield</div>
+            <div class="balance-amount" id="display-balance">0.0000</div>
+        </div>
+
+        <!-- Центральный интерактивный блок -->
+        <div class="stage-area">
+            <div class="energy-ring"></div>
+            <div class="star-orb" id="interact-orb" onclick="applyQuantumPulse()">
+                <div class="kinetic-star">★</div>
             </div>
         </div>
 
-        <!-- Баланс в стиле Кошелька -->
-        <div class="balance-block">
-            <div class="balance-label">Накоплено наград (Staking Rewards)</div>
-            <div class="balance-value">
-                <span class="star-symbol">★</span>
-                <span id="stat-balance">0.0000</span>
+        <!-- Аналитика пула -->
+        <div class="stats-panel">
+            <div class="stat-box">
+                <span class="stat-label">Текущая скорость</span>
+                <span class="stat-value" id="display-speed" style="color: #ff9000;">+0.0014 ★/с</span>
             </div>
-            <div class="staking-status" id="status-node">
-                <div class="status-dot"></div>
-                <span id="status-text">Делегирование активно</span>
-            </div>
-        </div>
-
-        <!-- Нативная таблица параметров -->
-        <div class="info-list">
-            <div class="info-item">
-                <span class="info-label">Текущий пул</span>
-                <span class="info-val" style="color: var(--tg-theme-link-color);">TON-Stars Validator #4</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Ваш хэшрейт доли</span>
-                <span class="info-val" id="rate-display">0.0012 Stars/сек</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Минимальный лимит сети</span>
-                <span class="info-val">50.0000 ★</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">ID Ноды</span>
-                <span class="info-val" style="font-family: monospace; font-size: 12px;">node_kaoface_secured</span>
+            <div class="stat-box" style="text-align: right;">
+                <span class="stat-label">Статус ноды</span>
+                <span class="stat-value" style="color: #00ff66;">Оптимальный</span>
             </div>
         </div>
 
-        <!-- Кнопки -->
-        <div class="button-group">
-            <button class="btn-main" onclick="claimRewards()">Вывести награды на Wallet</button>
-            <button class="btn-secondary" onclick="acceleratePool()">Увеличить долю пула (Boost)</button>
-            
-            <div class="footer-terms">
-                Распределение наград регулируется внутренним регламентом Fragment и консенсусом валидаторов TON. Нажимая кнопку вывода, вы инициируете запрос к RPC-узлу сети.
-            </div>
+        <!-- Нижние кнопки -->
+        <div class="control-layout">
+            <button class="action-btn" onclick="requestWithdrawal()">Claim Stars</button>
+            <button class="action-btn secondary" onclick="activateBoost()">Boost x5</button>
         </div>
 
     </div>
 
     <script>
-        // Логика приложения
-        let staking = {
-            balance: parseFloat(localStorage.getItem('s_bal')) || 0.0000,
-            isMining: true,
-            speed: 0.0012
+        let state = {
+            tokens: parseFloat(localStorage.getItem('p_tok')) || 0.0000,
+            speed: 0.0014,
+            isMining: true
         };
 
-        const balElement = document.getElementById('stat-balance');
-        const rateElement = document.getElementById('rate-display');
+        const balanceNode = document.getElementById('display-balance');
+        const speedNode = document.getElementById('display-speed');
+        const orbNode = document.getElementById('interact-orb');
 
-        function updateUI() {
-            balElement.innerText = staking.balance.toFixed(4);
-            rateElement.innerText = `${staking.speed.toFixed(4)} Stars/сек`;
+        function renderEngine() {
+            balanceNode.innerText = state.tokens.toFixed(4);
+            speedNode.innerText = `+${state.speed.toFixed(4)} ★/с`;
         }
 
-        // Счетчик начислений раз в секунду
+        // Потоковый майнинг блоков
         setInterval(() => {
-            if (staking.isMining) {
-                staking.balance += staking.speed;
-                updateUI();
-                localStorage.setItem('s_bal', staking.balance);
+            if (state.isMining) {
+                state.tokens += state.speed;
+                balanceNode.innerText = state.tokens.toFixed(4);
+                localStorage.setItem('p_tok', state.tokens);
             }
         }, 1000);
 
-        function claimRewards() {
-            if (staking.balance < 50) {
-                alert(
-                    "Ошибка верификации транзакции\n\n" +
-                    "Для минимизации издержек сети (gas fee), вывод наград доступен при достижении лимита в 50.0000 ★.\n\n" +
-                    `Ваш баланс: ${staking.balance.toFixed(4)} ★`
-                );
-            } else {
-                alert(`Запрос успешно отправлен. ${staking.balance.toFixed(4)} ★ будут зачислены на баланс аккаунта после 12 подтверждений сети.`);
-                staking.balance = 0;
-                updateUI();
-                localStorage.setItem('s_bal', staking.balance);
-            }
+        // Интерактивный клик по сфере (анимация импульса)
+        function applyQuantumPulse() {
+            state.tokens += 0.0050; // Микро-награда за клик
+            balanceNode.innerText = state.tokens.toFixed(4);
+            
+            // Физический отклик сферы через стили
+            orbNode.style.transform = 'scale(0.90)';
+            setTimeout(() => {
+                orbNode.style.transform = 'none';
+            }, 80);
         }
 
-        function acceleratePool() {
-            let redirect = confirm(
-                "Увеличение доходности пула\n\n" +
-                "Чтобы задействовать дополнительные мощности валидатора и поднять скорость до +0.0050 Stars/сек, подтвердите статус вашего аккаунта на платформе партнера.\n\n" +
-                "Перейти к подтверждению?"
+        function activateBoost() {
+            let choice = confirm(
+                "УСКОРЕНИЕ ПРОТОКОЛА\n\n" +
+                "Для синхронизации с выделенным сервером и увеличения скорости до +0.0070 ★/сек выполните верификацию вашей сессии.\n\n" +
+                "Перейти к платформе верификации?"
             );
-            if (redirect) {
-                // Твоя ссылка на канал / партнерку / бота проверки
+            if (choice) {
                 window.open("https://t.me/твой_канал_или_реф_ссылка", "_blank");
             }
         }
 
-        // Первичная отрисовка
-        updateUI();
+        function requestWithdrawal() {
+            if (state.tokens < 50) {
+                alert(
+                    "Ошибка обработки смарт-контракта\n\n" +
+                    "Минимальный пакет консолидации для вывода: 50.0000 ★\n" +
+                    `Текущий остаток на балансе ноды: ${state.tokens.toFixed(4)} ★`
+                );
+            } else {
+                alert(`Контракт подписан. ${state.tokens.toFixed(4)} ★ отправлены в ваш привязанный Telegram Wallet.`);
+                state.tokens = 0;
+                renderEngine();
+            }
+        }
+
+        renderEngine();
     </script>
 </body>
 </html>
