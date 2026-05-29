@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sky in Flames - Operational Command v18</title>
+    <title>Sky in Flames - Advanced Tactical Command</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -16,8 +16,7 @@
         
         #monitor-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 2000;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.05);
+            pointer-events: none; z-index: 2000; box-shadow: inset 0 0 40px rgba(0,0,0,0.05);
         }
 
         #faction-screen {
@@ -37,7 +36,7 @@
         /* HUD */
         #hud-top {
             position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.92); border: 1px solid #cbd5e1;
+            background: rgba(255, 255, 255, 0.94); border: 1px solid #cbd5e1;
             backdrop-filter: blur(8px); border-radius: 8px; padding: 10px 12px;
             display: flex; flex-direction: column; gap: 4px; font-size: 11px; pointer-events: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -49,9 +48,18 @@
         .hp-player { background: #10b981; }
         .hp-enemy { background: #ef4444; }
 
+        /* ИВЕНТ-ПАНЕЛЬ (ВСПЛЫВАЮЩИЕ УГРОЗЫ И СОБЫТИЯ) */
+        #event-banner {
+            position: absolute; top: 75px; left: 8px; right: 8px; z-index: 1005;
+            background: #1e293b; color: #f8fafc; padding: 8px; border-radius: 6px;
+            font-size: 10px; text-align: center; font-weight: bold; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;
+            animation: slide-in 0.3s ease;
+        }
+
         /* ТЕРМИНАЛ ЛОГОВ */
         #log-container {
-            position: absolute; bottom: 130px; left: 8px; right: 8px; z-index: 1010;
+            position: absolute; bottom: 172px; left: 8px; right: 8px; z-index: 1010;
             background: rgba(255, 255, 255, 0.95); border: 1px solid #cbd5e1;
             border-radius: 8px; box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
@@ -62,47 +70,42 @@
             display: flex; justify-content: space-between; align-items: center; pointer-events: auto;
         }
         #log-panel {
-            height: 45px; padding: 6px 12px; font-size: 10px; overflow-y: auto;
+            height: 40px; padding: 6px 12px; font-size: 10px; overflow-y: auto;
             display: flex; flex-direction: column-reverse; pointer-events: none;
             font-family: monospace; transition: height 0.3s ease;
         }
-        #log-container.expanded #log-panel { height: 160px; pointer-events: auto; }
+        #log-container.expanded #log-panel { height: 150px; pointer-events: auto; }
         .log-entry { margin-bottom: 3px; color: #047857; line-height: 1.2; }
         .log-entry.enemy { color: #b91c1c; }
         .log-entry.system { color: #1d4ed8; }
+        .log-entry.event { color: #d97706; font-weight: bold; }
 
-        /* Нижний пульт управления */
+        /* Пульт управления */
         #control-panel {
             position: absolute; bottom: 8px; left: 8px; right: 8px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 6px; pointer-events: auto;
+            display: flex; flex-direction: column; gap: 5px; pointer-events: auto;
         }
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .btn {
             background: #ffffff; color: #334155; border: 1px solid #cbd5e1;
-            padding: 11px 4px; cursor: pointer; font-size: 10px; font-weight: bold;
+            padding: 10px 4px; cursor: pointer; font-size: 10px; font-weight: bold;
             border-radius: 6px; transition: all 0.15s ease; text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .btn.active { background: #0f766e; color: #ffffff; border-color: #0f766e; box-shadow: 0 0 8px rgba(15,118,110,0.3); }
-        .btn.disabled { opacity: 0.3; cursor: not-allowed; border-color: #e2e8f0; color: #94a3b8; box-shadow: none; }
+        .btn.disabled { opacity: 0.3; cursor: not-allowed; border-color: #e2e8f0; color: #94a3b8; }
         
         .btn-orange { border-color: #ea580c; color: #ea580c; }
         .btn-orange.active { background: #ea580c; color: #fff; }
         
+        .btn-blue { border-color: #2563eb; color: #2563eb; }
+        .btn-blue.active { background: #2563eb; color: #fff; }
+        
         .btn-red { border-color: #dc2626; color: #dc2626; }
         .btn-red.active { background: #dc2626; color: #fff; }
 
-        /* СИЛУЭТЫ ОБЪЕКТОВ (ТЕПЕРЬ НЕ СЛИВАЮТСЯ) */
-        /* Наш дрон — Зеленый Ромб */
-        .uav-icon-player {
-            font-size: 15px; color: #10b981; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            font-weight: bold; text-align: center; width: 20px; height: 20px;
-        }
-        /* Вражеский дрон — Красный Треугольник */
-        .uav-icon-enemy {
-            font-size: 14px; color: #ef4444; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            font-weight: bold; text-align: center; width: 20px; height: 20px;
-        }
+        /* ВЕКТОРНЫЕ СИЛУЭТЫ */
+        .uav-icon-player { font-size: 15px; color: #10b981; text-shadow: 0 1px 2px rgba(0,0,0,0.3); text-align: center; }
+        .uav-icon-enemy { font-size: 14px; color: #ef4444; text-shadow: 0 1px 2px rgba(0,0,0,0.3); text-align: center; }
         .uav-icon-enemy.detected { color: #dc2626; animation: alert-pulse 0.4s infinite alternate; }
         .uav-icon-enemy.detected::before {
             content: ''; position: absolute; top: -3px; left: -1px; width: 16px; height: 16px;
@@ -111,13 +114,13 @@
 
         .missile-icon { font-size: 16px; color: #d97706; font-weight: bold; text-align: center; }
 
-        /* Города и маркеры */
+        /* Маркеры городов */
         .city-marker {
-            background: rgba(255,255,255,0.9); border: 1px solid #475569; color: #1e293b;
-            font-size: 9px; font-weight: bold; border-radius: 4px; padding: 1px 4px;
-            white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.92); border: 1px solid #475569; color: #1e293b;
+            font-size: 9px; font-weight: bold; border-radius: 4px; padding: 2px 5px;
+            white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.1); cursor: pointer !important;
         }
-        .city-marker.enemy { border-color: #dc2626; color: #b91c1c; background: rgba(254,226,226,0.9); }
+        .city-marker.enemy { border-color: #dc2626; color: #b91c1c; background: rgba(254,226,226,0.92); }
         
         .build-marker {
             background: #f8fafc; border: 1px solid #2563eb; color: #2563eb;
@@ -126,6 +129,7 @@
 
         @keyframes alert-pulse { from { opacity: 1; } to { opacity: 0.5; } }
         @keyframes spin-lock { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes slide-in { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -133,8 +137,8 @@
     <div id="monitor-overlay"></div>
 
     <div id="faction-screen">
-        <h3 style="letter-spacing: 2px; margin-bottom: 6px; color: #0f766e;">ЦЕНТР СТРАТЕГИЧЕСКОГО ПЛАНИРОВАНИЯ</h3>
-        <p style="color: #64748b; font-size: 10px; margin-top: 0; margin-bottom: 25px;">МОБИЛЬНАЯ ВЕРСИЯ РЛС v18.0</p>
+        <h3 style="letter-spacing: 1px; margin-bottom: 6px; color: #0f766e;">ЦЕНТР СТРАТЕГИЧЕСКОГО КОМАНДОВАНИЯ</h3>
+        <p style="color: #64748b; font-size: 10px; margin-top: 0; margin-bottom: 25px;">МОДЕРНИЗИРОВАННЫЙ ДВИЖОК ТАКТИКИ v19.0</p>
         <button class="faction-btn" onclick="selectFaction('UA')">КОМАНДОВАНИЕ ЗАПАД [UA]</button>
         <button class="faction-btn" onclick="selectFaction('RU')" style="border-color:#dc2626; color:#dc2626;">КОМАНДОВАНИЕ ВОСТОК [RU]</button>
     </div>
@@ -142,23 +146,25 @@
     <div id="hud-top">
         <div class="hud-row">
             <div>БЮДЖЕТ: <span id="txt-money" class="hud-value">600</span>$</div>
-            <div>РЕЗЕРВ БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
+            <div>В АНГАРЕ: <span id="txt-drones" class="hud-value">0</span> БПЛА</div>
         </div>
         <div class="hud-row" style="margin-top: 2px;">
             <div style="width: 48%;">
-                <div style="font-size:9px; color:#64748b;">НАШИ БАЗЫ: <span id="lbl-hp">100%</span></div>
+                <div style="font-size:9px; color:#64748b;">НАША ОБОРОНА: <span id="lbl-hp">100%</span></div>
                 <div class="hp-bar-container"><div id="bar-player" class="hp-bar-fill hp-player" style="width: 100%;"></div></div>
             </div>
             <div style="width: 48%; text-align: right;">
-                <div style="font-size:9px; color:#64748b;">ЦЕЛИ ИИ: <span id="lbl-enemy-hp">100%</span></div>
+                <div style="font-size:9px; color:#64748b;">СТРУКТУРА ИИ: <span id="lbl-enemy-hp">100%</span></div>
                 <div class="hp-bar-container" style="margin-left: auto;"><div id="bar-enemy" class="hp-bar-fill hp-enemy" style="width: 100%;"></div></div>
             </div>
         </div>
     </div>
 
+    <div id="event-banner"></div>
+
     <div id="log-container">
         <div id="log-header" onclick="toggleLogHeight()">
-            <span>📟 МОНИТОРИНГ УДАРОВ И СОБЫТИЙ</span>
+            <span>📟 РЕГИСТРАТОР СВЯЗИ И ТАКТИЧЕСКИХ СОБЫТИЙ</span>
             <span id="log-arrow">▲ Развернуть</span>
         </div>
         <div id="log-panel"></div>
@@ -169,35 +175,43 @@
             <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($400)</button>
             <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($500) <span id="pvo-counter">0/4</span></button>
         </div>
-        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 ОТПРАВИТЬ ПАРУ БПЛА (-$150)</button>
+        <div class="btn-row">
+            <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 НАЛЁТ ПАРЫ БПЛА (-$150)</button>
+            <button class="btn btn-blue" id="btn-ew-mode" onclick="activateElectronicWarfare()">📡 ИМПУЛЬС РЭБ (-$300)</button>
+        </div>
         <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 СТРАТЕГИЧЕСКИЙ ПУСК (-$2000)</button>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // Добавлены Донецк, Луганск и Ставрополь в список целей Востока
+        // Обновленная география по запросу пользователя
         const CITIES = {
             'UA': [
-                { lat: 50.45, lng: 30.52, name: 'Киев', hp: 100 },
-                { lat: 49.99, lng: 36.23, name: 'Харьков', hp: 100 },
-                { lat: 46.48, lng: 30.72, name: 'Одесса', hp: 100 },
-                { lat: 48.46, lng: 35.04, name: 'Днепр', hp: 100 },
-                { lat: 49.83, lng: 24.01, name: 'Львов', hp: 100 },
-                { lat: 46.97, lng: 31.99, name: 'Николаев', hp: 100 },
-                { lat: 48.62, lng: 22.28, name: 'Ужгород', hp: 100 }
+                { lat: 50.45, lng: 30.52, name: 'Киев', hp: 100, maxHp: 100 },
+                { lat: 49.99, lng: 36.23, name: 'Харьков', hp: 100, maxHp: 100 },
+                { lat: 46.48, lng: 30.72, name: 'Одесса', hp: 100, maxHp: 100 },
+                { lat: 48.46, lng: 35.04, name: 'Днепр', hp: 100, maxHp: 100 },
+                { lat: 49.83, lng: 24.01, name: 'Львов', hp: 100, maxHp: 100 },
+                { lat: 46.97, lng: 31.99, name: 'Николаев', hp: 100, maxHp: 100 },
+                { lat: 48.62, lng: 22.28, name: 'Ужгород', hp: 100, maxHp: 100 },
+                { lat: 50.91, lng: 34.80, name: 'Сумы', hp: 100, maxHp: 100 },          // Добавлено
+                { lat: 46.63, lng: 32.61, name: 'Херсон', hp: 100, maxHp: 100 },        // Добавлено
+                { lat: 47.83, lng: 35.13, name: 'Запорожье', hp: 100, maxHp: 100 }      // Добавлено
             ],
             'RU': [
-                { lat: 55.75, lng: 37.62, name: 'Москва', hp: 100 },
-                { lat: 59.93, lng: 30.33, name: 'С.-Петербург', hp: 100 },
-                { lat: 47.23, lng: 39.70, name: 'Ростов', hp: 100 },
-                { lat: 51.67, lng: 39.18, name: 'Воронеж', hp: 100 },
-                { lat: 50.59, lng: 36.58, name: 'Белгород', hp: 100 },
-                { lat: 45.03, lng: 38.97, name: 'Краснодар', hp: 100 },
-                { lat: 44.61, lng: 33.52, name: 'Севастополь', hp: 100 },
-                { lat: 48.01, lng: 37.80, name: 'Донецк', hp: 100 },
-                { lat: 48.57, lng: 39.31, name: 'Луганск', hp: 100 },
-                { lat: 45.04, lng: 41.97, name: 'Ставрополье', hp: 100 }
+                { lat: 55.75, lng: 37.62, name: 'Москва', hp: 100, maxHp: 100 },
+                { lat: 59.93, lng: 30.33, name: 'С.-Петербург', hp: 100, maxHp: 100 },
+                { lat: 47.23, lng: 39.70, name: 'Ростов', hp: 100, maxHp: 100 },
+                { lat: 51.67, lng: 39.18, name: 'Воронеж', hp: 100, maxHp: 100 },
+                { lat: 50.59, lng: 36.58, name: 'Белгород', hp: 100, maxHp: 100 },
+                { lat: 45.03, lng: 38.97, name: 'Краснодар', hp: 100, maxHp: 100 },
+                { lat: 44.61, lng: 33.52, name: 'Севастополь', hp: 100, maxHp: 100 },
+                { lat: 48.01, lng: 37.80, name: 'Донецк', hp: 100, maxHp: 100 },
+                { lat: 48.57, lng: 39.31, name: 'Луганск', hp: 100, maxHp: 100 },
+                { lat: 45.04, lng: 41.97, name: 'Ставрополье', hp: 100, maxHp: 100 },
+                { lat: 53.25, lng: 34.37, name: 'Брянск', hp: 100, maxHp: 100 },        // Добавлено
+                { lat: 51.73, lng: 36.19, name: 'Курск', hp: 100, maxHp: 100 }          // Добавлено
             ]
         };
 
@@ -210,7 +224,9 @@
         let missiles = [];
         let map, selectedFactory = null;
         
-        const MAX_PVO_LIMIT = 4; // Лимит установленных ПВО
+        let ewActive = false; // Статус действия нашей РЭБ
+        let pvoMalfunction = false; // Сбой РЭБ ИИ против нас
+        const MAX_PVO_LIMIT = 4;
 
         function toggleLogHeight() {
             const container = document.getElementById('log-container');
@@ -231,7 +247,7 @@
 
             document.getElementById('btn-heavy-mode').innerText = playerFaction === 'UA' ? '🚀 ПУСК КР «НЕПТУН-М» (-$2000)' : '🚀 ПУСК БР «ОРЕШНИК» (-$2000)';
 
-            map = L.map('map', { zoomControl: false, minZoom: 4, maxZoom: 8 }).setView([49.5, 36.0], 5);
+            map = L.map('map', { zoomControl: false, minZoom: 4, maxZoom: 8 }).setView([50.0, 35.0], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
             renderOperationalRadar();
@@ -240,20 +256,26 @@
             setInterval(economyCycle, 2500);
             setInterval(radarTick, 45); 
             setInterval(enemyAILogic, 5000);
+            setInterval(randomEventGenerator, 17000); // Таймер случайных ивентов
 
-            addLog("Развернута обновленная тактическая карта.", 'system');
+            addLog("Развернута интерактивная карта боевого управления.", 'system');
             updateUIButtons();
         }
 
         function renderOperationalRadar() {
+            // Наша сторона — города кликабельны для прокачки
             CITIES[playerFaction].forEach(c => {
                 let icon = L.divIcon({ className: 'city-marker', html: `${c.name} [${c.hp}%]`, iconSize: [null, null] });
-                c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map);
+                c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map).on('click', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    upgradeCityStructure(c);
+                });
                 
                 L.circle([c.lat, c.lng], { radius: 75000, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.01, weight: 1, dashArray: '3,4' }).addTo(map);
                 playerPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 75000, ammo: 0, maxAmmo: 0, isCityRadar: true, lastShot: 0 });
             });
 
+            // Сторона ИИ
             CITIES[enemyFaction].forEach(c => {
                 let icon = L.divIcon({ className: 'city-marker enemy', html: c.name, iconSize: [null, null] });
                 L.marker([c.lat, c.lng], { icon: icon }).addTo(map).on('click', function() {
@@ -265,6 +287,83 @@
                 });
                 enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 85000, ammo: 4, maxAmmo: 4, lastShot: 0, isCityRadar: true });
             });
+        }
+
+        // МОДИФИКАЦИЯ БАЗЫ (ГЕЙМПЛЕЙ)
+        function upgradeCityStructure(city) {
+            if (money >= 250) {
+                money -= 250;
+                city.maxHp += 30;
+                city.hp = Math.min(city.maxHp, city.hp + 30);
+                addLog(`[УКРЕПЛЕНИЕ] Город ${city.name} модернизирован: макс. прочность увеличена!`, 'system');
+                updateCityLabels();
+                updateUIButtons();
+            } else {
+                addLog(`Недостаточно средств для улучшения города ${city.name} ($250)!`, 'enemy');
+            }
+        }
+
+        // АКТИВАЦИЯ РЭБ (ГЕЙМПЛЕЙНЫЙ СПЕЦУДАР)
+        function activateElectronicWarfare() {
+            if (money < 300 || ewActive) return;
+            money -= 300;
+            ewActive = true;
+            addLog("📡 РЭБ ЗАПУЩЕНА: Наземные радары противника ослеплены на 7 сек! Ваши БПЛА невидимы.", 'system');
+            
+            showEventBanner("⚡ РЭБ АКТИВИРОВАНА: РАДАРЫ ИИ ПОДАВЛЕНЫ", "#2563eb");
+            
+            setTimeout(() => {
+                ewActive = false;
+                addLog("📡 Действие импульса РЭБ завершено. Радарная сеть ИИ восстановилась.", 'enemy');
+            }, 7000);
+            updateUIButtons();
+        }
+
+        // СИСТЕМА СЛУЧАЙНЫХ СОБЫТИЙ (ГЕЙМПЛЕЙ)
+        function randomEventGenerator() {
+            const events = [
+                {
+                    name: "РЭБ ПРОТИВНИКА",
+                    action: () => {
+                        pvoMalfunction = true;
+                        showEventBanner("⚠️ СБОЙ СВЯЗИ: РАДИУС НАШИХ ПВО СНИЖЕН НА 40%", "#ea580c");
+                        addLog("[ALERT] Враг применил комплексы РЭБ. Эффективность наших ПВО временно упала.", 'event');
+                        setTimeout(() => { pvoMalfunction = false; }, 8000);
+                    }
+                },
+                {
+                    name: "УДАР ПАРТИЗАН",
+                    action: () => {
+                        money += 350;
+                        showEventBanner("💰 УСПЕХ: ДИВЕРСИЯ В ТЫЛУ ИИ (+350$)", "#10b981");
+                        addLog("[ИНЦИДЕНТ] Подпольщики уничтожили склад снабжения ИИ. Получены доп. фонды.", 'event');
+                    }
+                },
+                {
+                    name: "МАССИРОВАННЫЙ НАЛЁТ",
+                    action: () => {
+                        showEventBanner("🚨 КРИТИЧЕСКАЯ УГРОЗА: ЗАФИКСИРОВАН ГРУППОВОЙ ПУСК ИИ", "#dc2626");
+                        addLog("[ALERT] Внимание! ИИ вывел на траекторию сразу несколько волн БПЛА!", 'event');
+                        for(let i=0; i<3; i++) {
+                            let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
+                            let start = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
+                            injectAirTarget(start, target, enemyDrones, false, false);
+                        }
+                    }
+                }
+            ];
+
+            const randomEv = events[Math.floor(Math.random() * events.length)];
+            randomEv.action();
+            updateUIButtons();
+        }
+
+        function showEventBanner(text, bgColor) {
+            const banner = document.getElementById('event-banner');
+            banner.innerText = text;
+            banner.style.background = bgColor;
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.display = 'none'; }, 5000);
         }
 
         function toggleBuildMode(mode) {
@@ -284,16 +383,16 @@
             
             dropModes(); currentMode = 'attack_source';
             document.getElementById('btn-attack-mode').classList.add('active');
-            addLog("Укажите завод [ЗАВ] для вывода звеньев на полетный трек.");
+            addLog("Выберите ваш завод [ЗАВ] для старта группы.");
         }
 
         function toggleHeavyMissileMode() {
             if (currentMode === 'heavy_missile') { dropModes(); return; }
-            if (money < 2000) { addLog("Недостаточно средств для ракетного пуска!", 'enemy'); return; }
+            if (money < 2000) { addLog("Недостаточно средств для пуска ракеты!", 'enemy'); return; }
             
             dropModes(); currentMode = 'heavy_missile';
             document.getElementById('btn-heavy-mode').classList.add('active');
-            addLog("Выберите сектор ИИ на карте для пуска ракеты.");
+            addLog("Укажите сектор ИИ для нанесения удара стратегической ракетой.");
         }
 
         function dropModes() {
@@ -306,7 +405,6 @@
         }
 
         function getPlacedPVOCount() {
-            // Считаем только те ПВО, которые построил игрок (у них isCityRadar === false)
             return playerPVO.filter(p => !p.isCityRadar).length;
         }
 
@@ -315,11 +413,9 @@
             document.getElementById('pvo-counter').innerText = `${pvoCount}/${MAX_PVO_LIMIT}`;
 
             document.getElementById('btn-factory').classList.toggle('disabled', money < 400);
-            
-            // ПВО блокируется при нехватке денег ИЛИ достижении лимита 4 штук
             document.getElementById('btn-pvo').classList.toggle('disabled', money < 500 || pvoCount >= MAX_PVO_LIMIT);
-            
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 150 || droneInventory < 2);
+            document.getElementById('btn-ew-mode').classList.toggle('disabled', money < 300 || ewActive);
             document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 2000);
         }
 
@@ -333,9 +429,12 @@
                     let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [24, 14], iconAnchor: [12, 7] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     let fObj = { lat, lng, marker: m };
-                    m.on('click', function() { if (currentMode === 'attack_source') selectFactoryForLaunch(fObj); });
+                    m.on('click', function(event) { 
+                        L.DomEvent.stopPropagation(event);
+                        if (currentMode === 'attack_source') selectFactoryForLaunch(fObj); 
+                    });
                     playerFactories.push(fObj);
-                    addLog("Построен новый авиационный завод.");
+                    addLog("Построен новый сборочный цех.");
                     dropModes();
                 } else if (currentMode === 'pvo' && money >= 500 && getPlacedPVOCount() < MAX_PVO_LIMIT) {
                     money -= 500;
@@ -351,7 +450,7 @@
 
         function selectFactoryForLaunch(fObj) {
             selectedFactory = fObj; currentMode = 'attack_target';
-            addLog("Целеуказание: выберите город цели на карте.");
+            addLog("Целеуказание: выберите город цели ИИ на карте.");
         }
 
         function dispatchDroneStrike(source, targetCity) {
@@ -363,18 +462,18 @@
 
         function dispatchHeavyStrike(targetCity) {
             money -= 2000;
-            addLog(`Пуск стратегического носителя по району [${targetCity.name}]!`);
+            addLog(`Пуск стратегического ракетного комплекса по [${targetCity.name}]!`);
             injectAirTarget(CITIES[playerFaction][0], targetCity, playerDrones, true, true);
             dropModes();
         }
 
         function enemyAILogic() {
-            enemyMoney += 135;
+            enemyMoney += 145;
 
             if (enemyMoney >= 2000) {
                 enemyMoney -= 2000;
                 let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
-                addLog(`[🚨] ИИ произвел пуск тяжелой ракеты на [${target.name}]`, 'enemy');
+                addLog(`[⚠️ DETECTED] Пуск баллистической ракеты ИИ на [${target.name}]!`, 'enemy');
                 injectAirTarget(CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)], target, enemyDrones, false, true);
                 return;
             }
@@ -382,10 +481,8 @@
             if (enemyMoney >= 240) {
                 enemyMoney -= 150;
                 let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
-                
-                // Случайный выбор аэродрома взлета ИИ (включая Донецк, Луганск, Ставрополь)
                 let startPoint = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
-                addLog(`[⚠️] Налёт ударных БПЛА ИИ из района [${startPoint.name}] на [${target.name}]!`, 'enemy');
+                addLog(`[⚠️] Налёт БПЛА ИИ из района [${startPoint.name}] на [${target.name}]!`, 'enemy');
                 
                 for(let i=0; i<2; i++) {
                     injectAirTarget(startPoint, target, enemyDrones, false, false);
@@ -396,7 +493,6 @@
         function injectAirTarget(start, target, collection, isPlayer, isHeavy) {
             let angle = Math.atan2(target.lng - start.lng, target.lat - start.lat) * (180 / Math.PI);
             
-            // РАЗНЫЕ МАРКЕРЫ: Наш — Ромб (◆), Враг — Треугольник (▲)
             let htmlContent = "";
             if (isHeavy) {
                 htmlContent = `<div class="missile-icon" style="transform: rotate(${angle}deg)">↑</div>`;
@@ -426,18 +522,22 @@
             playerFactories.forEach(() => droneInventory++);
             
             let all = [...CITIES['UA'], ...CITIES['RU']];
-            all.forEach(c => { if(c.hp > 0 && c.hp < 100) c.hp = Math.min(100, c.hp + 1); });
+            all.forEach(c => { if(c.hp > 0 && c.hp < c.maxHp) c.hp = Math.min(c.maxHp, c.hp + 1); });
 
             playerPVO.forEach(p => { if(!p.isCityRadar && p.ammo < p.maxAmmo) p.ammo++; });
             enemyPVO.forEach(p => { if(!p.isCityRadar && p.ammo < p.maxAmmo) p.ammo++; });
 
-            CITIES[playerFaction].forEach(c => {
-                c.markerInstance.setIcon(L.divIcon({ className: 'city-marker', html: `${c.name} [${c.hp}%]` }));
-            });
+            updateCityLabels();
 
             document.getElementById('txt-money').innerText = money;
             document.getElementById('txt-drones').innerText = droneInventory;
             updateUIButtons();
+        }
+
+        function updateCityLabels() {
+            CITIES[playerFaction].forEach(c => {
+                c.markerInstance.setIcon(L.divIcon({ className: 'city-marker', html: `${c.name} [${c.hp}/${c.maxHp}]` }));
+            });
         }
 
         function radarTick() {
@@ -476,12 +576,14 @@
                 }
 
                 if (!isPlayer) {
+                    // Если активирована наша РЭБ, радары ИИ слепнут, но на наше ПВО это не влияет
                     let locked = false;
                     playerPVO.forEach(pvo => {
+                        let finalRange = pvoMalfunction ? pvo.rangeDist * 0.6 : pvo.rangeDist; // Эффект вражеского РЭБ
                         let dist = map.distance([cLat, cLng], [pvo.lat, pvo.lng]);
-                        if (dist <= pvo.rangeDist) {
+                        if (dist <= finalRange) {
                             locked = true;
-                            if (!pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 2000)) {
+                            if (!pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 1900)) {
                                 pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, true);
                             }
                         }
@@ -494,12 +596,15 @@
                         d.marker.setIcon(L.divIcon({ className: 'custom-air-target', html: htmlContent, iconSize: [16, 16], iconAnchor: [8, 8] }));
                     }
                 } else {
-                    enemyPVO.forEach(pvo => {
-                        let dist = map.distance([cLat, cLng], [pvo.lat, pvo.lng]);
-                        if (dist <= pvo.rangeDist && pvo.ammo > 0 && (now - pvo.lastShot > 2000)) {
-                            pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, false);
-                        }
-                    });
+                    // Если НАША РЭБ активна, вражеские ПВО не стреляют по нашим дронам!
+                    if (!ewActive) {
+                        enemyPVO.forEach(pvo => {
+                            let dist = map.distance([cLat, cLng], [pvo.lat, pvo.lng]);
+                            if (dist <= pvo.rangeDist && pvo.ammo > 0 && (now - pvo.lastShot > 2000)) {
+                                pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, false);
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -508,7 +613,7 @@
             let marker = L.circle([pvo.lat, pvo.lng], { radius: 1500, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 1, weight: 1 }).addTo(map);
             missiles.push({
                 marker: marker, lat: pvo.lat, lng: pvo.lng, droneId: target.id,
-                targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.1, isPlayer: isPlayerPVO
+                targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.11, isPlayer: isPlayerPVO
             });
         }
 
@@ -525,7 +630,7 @@
 
                 if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 14000) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
-                    let hitChance = drone.isHeavyMissile ? 0.4 : 0.85;
+                    let hitChance = drone.isHeavyMissile ? 0.35 : 0.85;
 
                     if (Math.random() <= hitChance) {
                         triggerDetonation(drone.currentLat, drone.currentLng, 8000); 
@@ -534,8 +639,8 @@
                         
                         let idx = m.targetCollection.indexOf(drone); if (idx > -1) m.targetCollection.splice(idx, 1);
                         
-                        if (m.isPlayer) addLog("Перехват: цель ликвидирована.", 'system');
-                        else addLog("Потери: БПЛА сбит огнем ПВО противника.", 'enemy');
+                        if (m.isPlayer) addLog("Перехват: цель успешно уничтожена.", 'system');
+                        else addLog("Потери: БПЛА сбит зенитным огнем ИИ.", 'enemy');
                     }
                     break;
                 }
@@ -549,7 +654,7 @@
                 if (faction === playerFaction) {
                     addLog(`Удар по нашему региону [${cityName}]: -${dmg}% ХП`, 'enemy');
                 } else {
-                    let reward = dmg === 40 ? 250 : 110;
+                    let reward = dmg === 40 ? 260 : 120;
                     money += reward;
                     addLog(`Поражение цели [${cityName}]. Военные трофеи: +$${reward}`, 'system');
                 }
@@ -558,20 +663,20 @@
         }
 
         function recalcRadarHUD() {
-            let pTotal = 0, eTotal = 0;
-            CITIES[playerFaction].forEach(c => pTotal += c.hp);
-            CITIES[enemyFaction].forEach(c => eTotal += c.hp);
+            let pTotal = 0, eTotal = 0, pMax = 0, eMax = 0;
+            CITIES[playerFaction].forEach(c => { pTotal += c.hp; pMax += c.maxHp; });
+            CITIES[enemyFaction].forEach(c => { eTotal += c.hp; eMax += c.maxHp; });
 
-            let pAvg = Math.round(pTotal / CITIES[playerFaction].length);
-            let eAvg = Math.round(eTotal / CITIES[enemyFaction].length);
+            let pAvg = Math.round((pTotal / pMax) * 100);
+            let eAvg = Math.round((eTotal / eMax) * 100);
 
             document.getElementById('lbl-hp').innerText = pAvg + "%";
             document.getElementById('lbl-enemy-hp').innerText = eAvg + "%";
             document.getElementById('bar-player').style.width = pAvg + "%";
             document.getElementById('bar-enemy').style.width = eAvg + "%";
 
-            if (pAvg <= 0) { alert("Линия обороны рухнула. Поражение."); location.reload(); }
-            if (eAvg <= 0) { alert("СТРАТЕГИЧЕСКАЯ ПОБЕДА! Все секторы противника подавлены."); location.reload(); }
+            if (pAvg <= 0) { alert("Линия обороны полностью уничтожена. Поражение."); location.reload(); }
+            if (eAvg <= 0) { alert("ПОЛНАЯ СТРАТЕГИЧЕСКАЯ ПОБЕДА!"); location.reload(); }
         }
 
         function triggerDetonation(lat, lng, maxR) {
