@@ -3,240 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sky in Flames - Tactical Map</title>
-    <!-- Подключаем стили и скрипты карты Leaflet -->
+    <title>Sky in Flames - Tactical Confrontation</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; font-family: 'Courier New', Courier, monospace;
+            background: #050805; color: #00ff00;
+        }
+        #map {
+            width: 100%; height: 100%;
+            filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(100%);
             background: #000;
         }
-        /* Стилизация самой карты под военный радар */
-        #map {
-            width: 100%;
-            height: 100%;
-            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        /* Окно выбора фракции */
+        #faction-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 10, 5, 0.95); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        /* Панель управления */
+        .faction-box {
+            display: flex; gap: 40px; margin-top: 30px;
+        }
+        .faction-btn {
+            background: #111; border: 2px solid #00ff00; padding: 20px 40px;
+            color: #00ff00; font-size: 20px; font-family: inherit; cursor: pointer;
+            transition: all 0.3s; box-shadow: 0 0 10px rgba(0,255,0,0.2);
+        }
+        .faction-btn:hover {
+            background: #00ff00; color: #000; box-shadow: 0 0 25px #00ff00;
+        }
+        /* Игровой интерфейс */
+        #top-bar {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(5,10,5,0.85); border: 2px solid #00ff00;
+            padding: 10px 30px; border-radius: 4px; display: flex; gap: 40px;
+            font-size: 16px; font-weight: bold; box-shadow: 0 0 15px rgba(0,255,0,0.3);
+        }
         #control-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(10, 15, 10, 0.85);
-            border: 2px solid #00ff00;
-            padding: 15px;
-            border-radius: 5px;
-            color: #00ff00;
-            display: flex;
-            gap: 15px;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(5,10,5,0.9); border: 2px solid #00ff00;
+            padding: 15px; border-radius: 5px; display: flex; gap: 15px;
+            box-shadow: 0 0 20px rgba(0,255,0,0.4);
         }
         .btn {
-            background: #111;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 8px 15px;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: bold;
+            background: #111; color: #00ff00; border: 1px solid #00ff00;
+            padding: 10px 20px; cursor: pointer; font-family: inherit; font-weight: bold;
         }
-        .btn:hover {
-            background: #00ff00;
-            color: #000;
+        .btn:hover { background: #00ff00; color: #000; }
+        .btn.active { background: #00ff00; color: #000; box-shadow: 0 0 12px #00ff00; }
+        
+        #log-panel {
+            position: absolute; bottom: 25px; left: 25px; z-index: 1000;
+            width: 280px; height: 140px; background: rgba(0,0,0,0.8);
+            border: 1px solid #00ff00; padding: 10px; font-size: 11px;
+            overflow-y: hidden; display: flex; flex-direction: column-reverse;
         }
-        .btn.active {
-            background: #00ff00;
-            color: #000;
-            box-shadow: 0 0 10px #00ff00;
-        }
-        #stats {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: rgba(0,0,0,0.8);
-            border: 1px solid #00ff00;
-            padding: 10px;
-            color: #00ff00;
-        }
+        .log-entry { margin-bottom: 4px; border-left: 2px solid #00ff00; padding-left: 5px; }
+        .log-entry.enemy { border-left-color: #ff0000; color: #ff5555; }
     </style>
 </head>
 <body>
 
-    <div id="stats">
-        <div>ОБЪЕКТЫ ПВО: <span id="pvo-count">0</span></div>
-        <div>ОБНАРУЖЕНО ЦЕЛЕЙ: <span id="drone-count">0</span></div>
+    <div id="faction-screen">
+        <h1 style="font-size: 36px; letter-spacing: 3px;">SKY IN FLAMES: TACTICAL</h1>
+        <p style="font-size: 18px; color: #88ff88;">ВЫБЕРИТЕ СТОРОНУ КОНФЛИКТА</p>
+        <div class="faction-box">
+            <button class="faction-btn" onclick="selectFaction('UA')">УКРАИНА</button>
+            <button class="faction-btn" onclick="selectFaction('RU')">РОССИЯ</button>
+        </div>
+    </div>
+
+    <div id="top-bar">
+        <div>ФРАКЦИЯ: <span id="txt-faction" style="color:#fff;">-</span></div>
+        <div>БЮДЖЕТ: <span id="txt-money">500</span>$</div>
+        <div>ДРОНЫ НА СГЛАДЕ: <span id="txt-drones">0</span> шт.</div>
+        <div>ПРОЧНОСТЬ БАЗЫ: <span id="txt-hp">100%</span></div>
     </div>
 
     <div id="control-panel">
-        <button class="btn" id="btn-pvo" onclick="setMode('pvo')">РАЗВЕРНУТЬ ПВО</button>
-        <button class="btn" id="btn-drone" onclick="setMode('drone')">ЗАПУСТИТЬ РОЙ</button>
-        <button class="btn" onclick="clearMap()">СБРОС СИТУАЦИИ</button>
+        <button class="btn" id="btn-factory" onclick="setMode('factory')">ПОСТРОИТЬ ЗАВОД ДРОНОВ (150$)</button>
+        <button class="btn" id="btn-pvo" onclick="setMode('pvo')">РАЗВЕРНУТЬ ПВО (200$)</button>
+        <button class="btn" id="btn-attack" onclick="setMode('attack')" style="border-color: #ff3333; color: #ff3333;">НАПРАВИТЬ РОЙ НА ВРАГА</button>
     </div>
+
+    <div id="log-panel" id="log-container"></div>
 
     <div id="map"></div>
 
     <script>
-        // Инициализация карты (по умолчанию центрируем на средние широты, зум 11)
-        const map = L.map('map', {
-            zoomControl: false 
-        }).setView([44.63, 41.94], 11); 
+        // Координаты ключевых баз
+        const BASE_COORDS = {
+            'UA': { lat: 50.45, lng: 30.52, name: 'Киев (Штаб Украины)' },
+            'RU': { lat: 55.75, lng: 37.62, name: 'Москва (Штаб России)' }
+        };
 
-        // Загружаем слой темных дорог/карт (используем бесплатный OSM)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
-
+        let playerFaction = null;
+        let enemyFaction = null;
+        let money = 500;
+        let droneInventory = 0;
+        let baseHP = 100;
         let currentMode = null;
+
+        let factories = [];
         let pvoSystems = [];
-        let drones = [];
+        let playerDrones = [];
+        let enemyDrones = [];
 
-        // Переключение режимов установки объектов
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('btn-pvo').classList.remove('active');
-            document.getElementById('btn-drone').classList.remove('active');
-            
-            if (mode) {
-                document.getElementById(`btn-${mode}`).classList.add('active');
-            }
-        }
+        let map, playerBaseMarker, enemyBaseMarker;
 
-        // Клик по карте
-        map.on('click', function(e) {
-            const { lat, lng } = e.latlng;
+        // Инициализация карты
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([53.1, 34.0], 6); // Центр между Киевом и Москвой
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 12,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-            if (currentMode === 'pvo') {
-                deployPVO(lat, lng);
-                setMode(null); // Сбрасываем режим после установки
-            } else if (currentMode === 'drone') {
-                spawnDroneSwarm(lat, lng);
+            // Клик по карте для строительства
+            map.on('click', function(e) {
+                if (!currentMode) return;
+                const { lat, lng } = e.latlng;
+
+                if (currentMode === 'factory') {
+                    buildFactory(lat, lng);
+                } else if (currentMode === 'pvo') {
+                    buildPVO(lat, lng);
+                }
                 setMode(null);
+            });
+        }
+
+        // Выбор фракции при старте
+        function selectFaction(faction) {
+            playerFaction = faction;
+            enemyFaction = faction === 'UA' ? 'RU' : 'UA';
+
+            document.getElementById('faction-screen').style.display = 'none';
+            document.getElementById('txt-faction').innerText = playerFaction === 'UA' ? 'УКРАИНА' : 'РОССИЯ';
+            if(playerFaction === 'RU') document.getElementById('txt-faction').style.color = '#5555ff';
+
+            initMap();
+            spawnStrategicBases();
+            
+            // Запуск экономических и тактических циклов
+            setInterval(economyTick, 2000);
+            setInterval(tacticalTick, 50);
+            setInterval(enemyAI, 7000); // ИИ врага принимает решения каждые 7 сек
+
+            addLog("Операция начата. Командование принято.");
+        }
+
+        // Спавн баз на карте
+        function spawnStrategicBases() {
+            const pData = BASE_COORDS[playerFaction];
+            const eData = BASE_COORDS[enemyFaction];
+
+            // Наша база (Зеленый/Синий маркер)
+            playerBaseMarker = L.circleMarker([pData.lat, pData.lng], {
+                radius: 15, fillColor: "#00ff00", color: "#fff", weight: 3, fillOpacity: 0.9
+            }).addTo(map).bindPopup(`<b>${pData.name}</b>`);
+
+            // Вражеская база (Красный маркер)
+            enemyBaseMarker = L.circleMarker([eData.lat, eData.lng], {
+                radius: 15, fillColor: "#ff0000", color: "#000", weight: 3, fillOpacity: 0.9
+            }).addTo(map).bindPopup(`<b>${eData.name}</b>`);
+        }
+
+        // Смена режимов строительства/атаки
+        function setMode(mode) {
+            if (mode === 'attack') {
+                launchDroneSwarm();
+                return;
             }
-        });
-
-        // Функция установки ПВО
-        function deployPVO(lat, lng) {
-            // Маркер комплекса ПВО (Зеленый круг)
-            const pvoMarker = L.circleMarker([lat, lng], {
-                radius: 8,
-                fillColor: "#00ff00",
-                color: "#00ff00",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(map);
-
-            // Радиус действия радара / поражения ракет
-            const radarRange = L.circle([lat, lng], {
-                radius: 7000, // 7 километров в метрах
-                color: '#00ff00',
-                fillColor: '#00ff00',
-                fillOpacity: 0.05,
-                weight: 1,
-                dashArray: '5, 5'
-            }).addTo(map);
-
-            pvoSystems.push({ marker: pvoMarker, range: radarRange, lat, lng });
-            document.getElementById('pvo-count').innerText = pvoSystems.length;
+            currentMode = mode;
+            document.getElementById('btn-factory').classList.remove('active');
+            document.getElementById('btn-pvo').classList.remove('active');
+            if (mode) document.getElementById(`btn-${mode}`).classList.add('active');
         }
 
-        // Функция спавна дрона
-        function spawnDroneSwarm(lat, lng) {
-            // Создаем маркер вражеского БПЛА (Красный квадрат)
-            const droneMarker = L.circleMarker([lat, lng], {
-                radius: 6,
-                fillColor: "#ff0000",
-                color: "#ff0000",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.9
-            }).addTo(map);
+        // Логика строительства фабрики
+        function buildFactory(lat, lng) {
+            if (money < 150) { addLog("Недостаточно средств для завода!"); return; }
+            money -= 150;
 
-            // Случайная точка назначения (например, чуть в сторону или к ближайшему ПВО)
-            // Для теста сделаем просто медленное движение на север/северо-запад
-            const droneObj = {
-                marker: droneMarker,
-                lat: lat,
-                lng: lng,
-                speedLat: (Math.random() - 0.5) * 0.002 - 0.001, // Направление движения
-                speedLng: (Math.random() - 0.5) * 0.002 - 0.001
-            };
+            const marker = L.circleMarker([lat, lng], {
+                radius: 8, fillColor: "#ffff00", color: "#00ff00", weight: 1, fillOpacity: 0.8
+            }).addTo(map).bindPopup("Завод по сборке БПЛА");
 
-            drones.push(droneObj);
-            document.getElementById('drone-count').innerText = drones.length;
+            factories.push({ lat, lng, marker });
+            addLog("Развернут новый завод дронов.");
         }
 
-        // Тактический цикл (расчет перемещений и перехватов)
+        // Логика строительства ПВО
+        function buildPVO(lat, lng) {
+            if (money < 200) { addLog("Недостаточно средств для ПВО!"); return; }
+            money -= 200;
+
+            const marker = L.circleMarker([lat, lng], {
+                radius: 7, fillColor: "#00ffff", color: "#00ffff", weight: 2, fillOpacity: 0.9
+            }).addTo(map).bindPopup(playerFaction === 'UA' ? "ЗРК Patriot" : "ЗРК С-400");
+
+            const range = L.circle([lat, lng], {
+                radius: 55000, // Радиус действия 55 км
+                color: '#00ffff', fillColor: '#00ffff', fillOpacity: 0.04, weight: 1, dashArray: '4,4'
+            }).addTo(map);
+
+            pvoSystems.push({ lat, lng, marker, range, ammo: 10 });
+            addLog(`Батарея ПВО поставлена на боевое дежурство.`);
+        }
+
+        // Приказ: Запуск роя дронов во вражеский штаб
+        function launchDroneSwarm() {
+            if (droneInventory <= 0) { addLog("На складах нет готовых дронов!"); return; }
+            
+            const startCoords = factories.length > 0 ? factories[Math.floor(Math.random() * factories.length)] : BASE_COORDS[playerFaction];
+            const target = BASE_COORDS[enemyFaction];
+
+            addLog(`Запущен рой из ${droneInventory} дронов на базу врага!`);
+
+            for(let i=0; i < droneInventory; i++) {
+                // Небольшой разброс при старте для эффекта "роя"
+                let sLat = startCoords.lat + (Math.random() - 0.5) * 0.1;
+                let sLng = startCoords.lng + (Math.random() - 0.5) * 0.1;
+
+                let marker = L.circleMarker([sLat, sLng], {
+                    radius: 4, fillColor: "#00ff00", color: "#000", weight: 1, fillOpacity: 1
+                }).addTo(map);
+
+                // Расчет вектора направления движения
+                let angle = Math.atan2(target.lat - sLat, target.lng - sLng);
+                let speed = 0.015 + (Math.random() * 0.005); // Небольшая разница скоростей
+
+                playerDrones.push({
+                    marker, lat: sLat, lng: sLng,
+                    dLat: Math.sin(angle) * speed, dLng: Math.cos(angle) * speed
+                });
+            }
+            droneInventory = 0;
+        }
+
+        // Экономика (прирост денег и производство заводов)
+        function economyTick() {
+            money += 20; // Пассивный доход
+            
+            // Каждый рабочий завод производит по 1 дрону за тик
+            factories.forEach(() => {
+                droneInventory++;
+            });
+
+            document.getElementById('txt-money').innerText = money;
+            document.getElementById('txt-drones').innerText = droneInventory;
+        }
+
+        // Движение объектов, логика перехватов и ударов
         function tacticalTick() {
-            // Двигаем дроны
-            for (let i = drones.length - 1; i >= 0; i--) {
-                let d = drones[i];
-                d.lat += d.speedLat;
-                d.lng += d.speedLng;
+            const enemyTarget = BASE_COORDS[enemyFaction];
+            const playerTarget = BASE_COORDS[playerFaction];
+
+            // 1. Двигаем НАШИ дроны к базе врага
+            for (let i = playerDrones.length - 1; i >= 0; i--) {
+                let d = playerDrones[i];
+                d.lat += d.dLat;
+                d.lng += d.dLng;
                 d.marker.setLatLng([d.lat, d.lng]);
 
-                // Проверяем, вошел ли дрон в зону действия какого-либо ПВО
+                // Проверяем долетел ли до вражеской базы
+                let distToBase = map.distance([d.lat, d.lng], [enemyTarget.lat, enemyTarget.lng]);
+                if (distToBase < 15000) { // 15 км до цели = попадание
+                    createExplosion(d.lat, d.lng, '#ff3300');
+                    map.removeLayer(d.marker);
+                    playerDrones.splice(i, 1);
+                    addLog("Наш дрон нанес удар по штабу врага!", false);
+                    continue;
+                }
+            }
+
+            // 2. Двигаем ВРАЖЕСКИЕ дроны к нашей базе
+            for (let i = enemyDrones.length - 1; i >= 0; i--) {
+                let d = enemyDrones[i];
+                d.lat += d.dLat;
+                d.lng += d.dLng;
+                d.marker.setLatLng([d.lat, d.lng]);
+
+                // Проверяем перехват нашим ПВО
+                let intercepted = false;
                 for (let j = pvoSystems.length - 1; j >= 0; j--) {
                     let pvo = pvoSystems[j];
-                    
-                    // Считаем расстояние между координатами в метрах через метод встроенный в Leaflet
-                    let distance = map.distance([d.lat, d.lng], [pvo.lat, pvo.lng]);
+                    let distToPVO = map.distance([d.lat, d.lng], [pvo.lat, pvo.lng]);
 
-                    if (distance <= 7000) { // Если зашел в радиус 7км
-                        // Имитация пуска ракеты и уничтожения
-                        createExplosion(d.lat, d.lng);
+                    if (distToPVO <= 55000) { // Залетел в зону ПВО
+                        createExplosion(d.lat, d.lng, '#00ffff');
                         map.removeLayer(d.marker);
-                        drones.splice(i, 1);
-                        break; 
+                        enemyDrones.splice(i, 1);
+                        intercepted = true;
+                        addLog("Цель уничтожена силами ПВО.");
+                        break;
+                    }
+                }
+
+                if (intercepted) continue;
+
+                // Проверяем долетел ли враг до НАШЕЙ базы
+                let distToBase = map.distance([d.lat, d.lng], [playerTarget.lat, playerTarget.lng]);
+                if (distToBase < 15000) {
+                    createExplosion(d.lat, d.lng, '#ff3300');
+                    map.removeLayer(d.marker);
+                    enemyDrones.splice(i, 1);
+                    baseHP -= 5;
+                    if(baseHP < 0) baseHP = 0;
+                    document.getElementById('txt-hp').innerText = baseHP + "%";
+                    addLog("ВНИМАНИЕ! Нанесен удар по нашему штабу!", true);
+                    
+                    if(baseHP <= 0) {
+                        alert("Штаб полностью разрушен. Игра окончена.");
+                        location.reload();
                     }
                 }
             }
-            document.getElementById('drone-count').innerText = drones.length;
         }
 
-        // Эффект уничтожения цели
-        function createExplosion(lat, lng) {
+        // Искусственный Интеллект Врага (Генерирует волны атак на игрока)
+        function enemyAI() {
+            const start = BASE_COORDS[enemyFaction];
+            const target = BASE_COORDS[playerFaction];
+            
+            addLog("Разведка: Зафиксирован пуск вражеских БПЛА!", true);
+            
+            let swarmSize = 3 + Math.floor(Math.random() * 5); // Волны от 3 до 8 дронов
+            for(let i=0; i<swarmSize; i++) {
+                let sLat = start.lat + (Math.random() - 0.5) * 0.1;
+                let sLng = start.lng + (Math.random() - 0.5) * 0.1;
+
+                let marker = L.circleMarker([sLat, sLng], {
+                    radius: 4, fillColor: "#ff0000", color: "#000", weight: 1, fillOpacity: 1
+                }).addTo(map);
+
+                let angle = Math.atan2(target.lat - sLat, target.lng - sLng);
+                let speed = 0.012 + (Math.random() * 0.004);
+
+                enemyDrones.push({
+                    marker, lat: sLat, lng: sLng,
+                    dLat: Math.sin(angle) * speed, dLng: Math.cos(angle) * speed
+                });
+            }
+        }
+
+        function createExplosion(lat, lng, color) {
             const exp = L.circle([lat, lng], {
-                radius: 300,
-                color: '#ff6600',
-                fillColor: '#ff3300',
-                fillOpacity: 0.4
+                radius: 1000, color: color, fillColor: color, fillOpacity: 0.6
             }).addTo(map);
-
-            // Анимация затухания взрыва
-            let radius = 300;
-            const interval = setInterval(() => {
-                radius += 100;
-                exp.setRadius(radius);
-                if (radius > 1500) {
-                    clearInterval(interval);
-                    map.removeLayer(exp);
-                }
-            }, 40);
+            let r = 1000;
+            const int = setInterval(() => {
+                r += 3000; exp.setRadius(r);
+                if(r > 20000) { clearInterval(int); map.removeLayer(exp); }
+            }, 30);
         }
 
-        // Очистить всё
-        function clearMap() {
-            pvoSystems.forEach(p => { map.removeLayer(p.marker); map.removeLayer(p.range); });
-            drones.forEach(d => map.removeLayer(d.marker));
-            pvoSystems = [];
-            drones = [];
-            document.getElementById('pvo-count').innerText = 0;
-            document.getElementById('drone-count').innerText = 0;
+        function addLog(text, isEnemy = false) {
+            const log = document.getElementById('log-panel');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${isEnemy ? 'enemy' : ''}`;
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
+            log.insertBefore(entry, log.firstChild);
         }
-
-        // Запуск тактического таймера (обновление каждые 100мс)
-        setInterval(tacticalTick, 100);
     </script>
 </body>
 </html>
