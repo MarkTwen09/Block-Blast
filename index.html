@@ -3,116 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sky in Flames - Tactical Radar Center</title>
+    <title>Sky in Flames - Tactical Command Light</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; font-family: 'Courier New', Courier, monospace;
-            background: #030508; color: #00ffcc; -webkit-user-select: none; user-select: none;
+            overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #eef1f6; color: #1e293b; -webkit-user-select: none; user-select: none;
         }
-        #map { width: 100%; height: 100%; background: #030508; filter: contrast(1.1) brightness(0.9); }
+        #map { width: 100%; height: 100%; background: #dce1e9; }
         
-        /* Сетка поверх карты для эффекта военного монитора */
+        /* Светлое тактическое наложение (эффект матового планшета) */
         #monitor-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 2000;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 4px, 6px 100%;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.05);
         }
 
+        /* Экран выбора фракции */
         #faction-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #06090e; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: #f1f5f9; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+            box-sizing: border-box; text-align: center;
         }
         .faction-btn {
-            background: #0d131a; border: 2px solid #00ffcc; padding: 16px 40px;
-            color: #00ffcc; font-size: 14px; font-weight: bold; cursor: pointer; margin: 12px;
-            border-radius: 4px; width: 280px; letter-spacing: 2px; box-shadow: 0 0 10px rgba(0,255,204,0.1);
+            background: #ffffff; border: 2px solid #0f766e; padding: 14px 20px;
+            color: #0f766e; font-size: 13px; font-weight: bold; cursor: pointer; margin: 8px;
+            border-radius: 6px; width: 100%; max-width: 300px; letter-spacing: 1px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
         }
-        .faction-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; }
+        .faction-btn:hover { background: #0f766e; color: #fff; }
 
-        /* HUD */
+        /* Верхний HUD — Компактный и аккуратный */
         #hud-top {
-            position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
-            background: rgba(4, 7, 12, 0.9); border: 1px solid #00ffcc;
-            border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; pointer-events: none;
+            position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.92); border: 1px solid #cbd5e1;
+            backdrop-filter: blur(8px); border-radius: 8px; padding: 10px 12px;
+            display: flex; flex-direction: column; gap: 4px; font-size: 11px; pointer-events: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .hud-row { display: flex; justify-content: space-between; align-items: center; }
-        .hud-value { font-weight: bold; color: #fff; text-shadow: 0 0 4px #00ffcc; }
-        .hp-bar-container { width: 45%; background: #101520; height: 5px; border-radius: 2px; overflow: hidden; border: 1px solid rgba(0,255,204,0.2); }
+        .hud-value { font-weight: bold; color: #0f766e; font-family: monospace; font-size: 13px; }
+        .hp-bar-container { width: 40%; background: #e2e8f0; height: 5px; border-radius: 3px; overflow: hidden; }
         .hp-bar-fill { height: 100%; transition: width 0.3s ease; }
-        .hp-player { background: #00ffcc; box-shadow: 0 0 6px #00ffcc; }
-        .hp-enemy { background: #ff3355; box-shadow: 0 0 6px #ff3355; }
+        .hp-player { background: #10b981; }
+        .hp-enemy { background: #ef4444; }
 
-        /* Терминал Логов */
+        /* ИНТЕРАКТИВНЫЙ ТЕРМИНАЛ ЛОГОВ (ВЫДВИЖНОЙ ДЛЯ МОБИЛОК) */
+        #log-container {
+            position: absolute; bottom: 130px; left: 8px; right: 8px; z-index: 1001;
+            background: rgba(255, 255, 255, 0.95); border: 1px solid #cbd5e1;
+            border-radius: 8px; box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
+        }
+        #log-header {
+            background: #f8fafc; padding: 6px 12px; font-size: 10px; font-weight: bold;
+            color: #64748b; border-bottom: 1px solid #e2e8f0; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; pointer-events: auto;
+        }
         #log-panel {
-            position: absolute; bottom: 235px; left: 12px; right: 12px; z-index: 1000;
-            height: 75px; background: rgba(3, 5, 8, 0.93); border: 1px solid rgba(0,255,204,0.3);
-            border-radius: 6px; padding: 8px; font-size: 10px; overflow: hidden;
+            height: 45px; padding: 6px 12px; font-size: 10px; overflow-y: auto;
             display: flex; flex-direction: column-reverse; pointer-events: none;
+            font-family: monospace; transition: height 0.3s ease;
         }
-        .log-entry { margin-bottom: 2px; color: #a3e635; }
-        .log-entry.enemy { color: #f87171; }
-        .log-entry.system { color: #38bdf8; }
+        /* Состояние развернутого лога */
+        #log-container.expanded #log-panel { height: 180px; pointer-events: auto; }
+        .log-entry { margin-bottom: 3px; color: #047857; line-height: 1.2; }
+        .log-entry.enemy { color: #b91c1c; }
+        .log-entry.system { color: #1d4ed8; }
 
-        /* Пульт управления */
+        /* Мобильный Нижний пульт управления (Кнопки в ряд, максимум места для карты) */
         #control-panel {
-            position: absolute; bottom: 16px; left: 12px; right: 12px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 6px;
+            position: absolute; bottom: 8px; left: 8px; right: 8px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 6px; pointer-events: auto;
         }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .btn {
-            background: #090d16; color: #00ffcc; border: 1px solid #00ffcc;
-            padding: 14px 8px; cursor: pointer; font-size: 11px; font-weight: bold; font-family: inherit;
-            border-radius: 4px; transition: all 0.15s ease;
+            background: #ffffff; color: #334155; border: 1px solid #cbd5e1;
+            padding: 10px 4px; cursor: pointer; font-size: 10px; font-weight: bold;
+            border-radius: 6px; transition: all 0.15s ease; text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .btn.active { background: #00ffcc; color: #000; box-shadow: 0 0 15px #00ffcc; }
-        .btn.disabled { opacity: 0.25; cursor: not-allowed; border-color: #334155; color: #475569; }
+        .btn.active { background: #0f766e; color: #ffffff; border-color: #0f766e; box-shadow: 0 0 8px rgba(15,118,110,0.3); }
+        .btn.disabled { opacity: 0.3; cursor: not-allowed; border-color: #e2e8f0; color: #94a3b8; box-shadow: none; }
         
-        .btn-orange { border-color: #ff9900; color: #ff9900; }
-        .btn-orange.active { background: #ff9900; color: #000; box-shadow: 0 0 15px #ff9900; }
+        .btn-orange { border-color: #ea580c; color: #ea580c; }
+        .btn-orange.active { background: #ea580c; color: #fff; }
         
-        .btn-red { border-color: #ff3355; color: #ff3355; }
-        .btn-red.active { background: #ff3355; color: #000; box-shadow: 0 0 15px #ff3355; }
+        .btn-red { border-color: #dc2626; color: #dc2626; }
+        .btn-red.active { background: #dc2626; color: #fff; }
 
-        /* КАСТОМНЫЕ ВОЕННЫЕ СИЛУЭТЫ (РЕАЛИЗМ) */
-        /* БПЛА - Треугольное крыло */
+        /* Кастомная векторная графика для карты (Светлый стиль) */
         .uav-icon {
-            font-size: 14px; color: #00ffcc; text-shadow: 0 0 4px #00ffcc;
-            text-align: center; font-weight: bold; width: 20px; height: 20px;
-            transition: transform 0.1s linear;
+            font-size: 14px; color: #059669; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            font-weight: bold; text-align: center; width: 20px; height: 20px;
         }
-        .uav-icon.detected { color: #ff3355; text-shadow: 0 0 6px #ff3355; animation: radar-blink 0.4s infinite alternate; }
+        .uav-icon.detected { color: #dc2626; animation: alert-pulse 0.4s infinite alternate; }
         
-        /* Рамка захвата ПВО вокруг цели */
+        /* Рамка захвата цели */
         .uav-icon.detected::before {
-            content: ''; position: absolute; top: -4px; left: -2px; width: 18px; height: 18px;
-            border: 1px solid #ff3355; border-radius: 2px; animation: rotate-lock 3s linear infinite;
+            content: ''; position: absolute; top: -3px; left: -1px; width: 16px; height: 16px;
+            border: 1px solid #dc2626; border-radius: 2px; animation: spin-lock 4s linear infinite;
         }
 
-        /* Стратегическая ракета - Стрела */
         .missile-icon {
-            font-size: 18px; color: #ffcc00; text-shadow: 0 0 8px #ff5500;
-            font-weight: bold; width: 24px; height: 24px; text-align: center;
+            font-size: 16px; color: #d97706; font-weight: bold; text-align: center;
         }
 
-        /* Маркеры Городов и Баз */
+        /* Города на серой карте */
         .city-marker {
-            background: rgba(4,7,12,0.85); border: 1px solid #00ffcc; color: #00ffcc;
-            font-size: 9px; font-weight: bold; border-radius: 3px; padding: 2px 4px;
-            white-space: nowrap; box-shadow: 0 0 8px rgba(0,255,204,0.2);
+            background: rgba(255,255,255,0.9); border: 1px solid #475569; color: #1e293b;
+            font-size: 9px; font-weight: bold; border-radius: 4px; padding: 1px 4px;
+            white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
-        .city-marker.enemy { border-color: #ff3355; color: #ff3355; }
+        .city-marker.enemy { border-color: #dc2626; color: #b91c1c; background: rgba(254,226,226,0.9); }
+        
         .build-marker {
-            background: #030508; border: 1px solid #38bdf8; color: #38bdf8;
-            font-size: 8px; font-weight: bold; border-radius: 2px; text-align: center; line-height: 14px;
+            background: #f8fafc; border: 1px solid #2563eb; color: #2563eb;
+            font-size: 8px; font-weight: bold; border-radius: 3px; text-align: center; line-height: 12px;
         }
 
-        @keyframes radar-blink { from { opacity: 1; } to { opacity: 0.4; } }
-        @keyframes rotate-lock { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes alert-pulse { from { opacity: 1; } to { opacity: 0.5; } }
+        @keyframes spin-lock { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -120,38 +134,44 @@
     <div id="monitor-overlay"></div>
 
     <div id="faction-screen">
-        <h2 style="letter-spacing: 6px; margin-bottom: 4px; color: #00ffcc; text-shadow: 0 0 8px #00ffcc;">⚡ RADAR COMMAND CENTER</h2>
-        <p style="color: #475569; font-size: 10px; margin-top: 0; margin-bottom: 30px; letter-spacing: 3px;">TACTICAL GRAPHICS ENGINE v16.0</p>
-        <button class="faction-btn" onclick="selectFaction('UA')">ОПЕРАТОР: КОМАНДОВАНИЕ ЗАПАД [UA]</button>
-        <button class="faction-btn" onclick="selectFaction('RU')" style="border-color:#ff3355; color:#ff3355;">ОПЕРАТОР: КОМАНДОВАНИЕ ВОСТОК [RU]</button>
+        <h3 style="letter-spacing: 2px; margin-bottom: 6px; color: #0f766e;">ЦЕНТР СТРАТЕГИЧЕСКОГО ПЛАНИРОВАНИЯ</h3>
+        <p style="color: #64748b; font-size: 10px; margin-top: 0; margin-bottom: 25px;">МОБИЛЬНАЯ ВЕРСИЯ РЛС v17.0</p>
+        <button class="faction-btn" onclick="selectFaction('UA')">КОМАНДОВАНИЕ ЗАПАД [UA]</button>
+        <button class="faction-btn" onclick="selectFaction('RU')" style="border-color:#dc2626; color:#dc2626;">КОМАНДОВАНИЕ ВОСТОК [RU]</button>
     </div>
 
     <div id="hud-top">
         <div class="hud-row">
             <div>БЮДЖЕТ: <span id="txt-money" class="hud-value">600</span>$</div>
-            <div>АНГАР БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
+            <div>РЕЗЕРВ БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
         </div>
-        <div class="hud-row" style="margin-top: 4px;">
+        <div class="hud-row" style="margin-top: 2px;">
             <div style="width: 48%;">
-                <div style="font-size:10px; color:#64748b; letter-spacing: 1px;">ОБЩАЯ СТРУКТУРА НАШИХ БАЗ: <span id="lbl-hp">100%</span></div>
+                <div style="font-size:9px; color:#64748b;">НАШИ БАЗЫ: <span id="lbl-hp">100%</span></div>
                 <div class="hp-bar-container"><div id="bar-player" class="hp-bar-fill hp-player" style="width: 100%;"></div></div>
             </div>
             <div style="width: 48%; text-align: right;">
-                <div style="font-size:10px; color:#64748b; letter-spacing: 1px;">ЦЕЛИ ПРОТИВНИКА: <span id="lbl-enemy-hp">100%</span></div>
+                <div style="font-size:9px; color:#64748b;">ЦЕЛИ ИИ: <span id="lbl-enemy-hp">100%</span></div>
                 <div class="hp-bar-container" style="margin-left: auto;"><div id="bar-enemy" class="hp-bar-fill hp-enemy" style="width: 100%;"></div></div>
             </div>
         </div>
     </div>
 
-    <div id="log-panel"></div>
+    <div id="log-container">
+        <div id="log-header" onclick="toggleLogHeight()">
+            <span>📟 МОНИТОРИНГ УДАРОВ И СОБЫТИЙ</span>
+            <span id="log-arrow">▲ Развернуть</span>
+        </div>
+        <div id="log-panel"></div>
+    </div>
 
     <div id="control-panel">
-        <div class="btn-grid">
-            <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] СБОРОЧНЫЙ ЗАВ ($350)</button>
-            <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] БАТАРЕЯ ПВО ($400)</button>
+        <div class="btn-row">
+            <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($350)</button>
+            <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($400)</button>
         </div>
-        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 СФОРМИРОВАТЬ НАЛЕТ ПАРЫ БПЛА (-$150)</button>
-        <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 АКТИВИРОВАТЬ СТРАТЕГИЧЕСКИЙ ПУСК (-$2000)</button>
+        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 ОТПРАВИТЬ ПАРУ БПЛА (-$150)</button>
+        <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 СТРАТЕГИЧЕСКИЙ ПУСК (-$2000)</button>
     </div>
 
     <div id="map"></div>
@@ -169,8 +189,8 @@
             ],
             'RU': [
                 { lat: 55.75, lng: 37.62, name: 'Москва', hp: 100 },
-                { lat: 59.93, lng: 30.33, name: 'Санкт-Петербург', hp: 100 },
-                { lat: 47.23, lng: 39.70, name: 'Ростов-на-Дону', hp: 100 },
+                { lat: 59.93, lng: 30.33, name: 'С.-Петербург', hp: 100 },
+                { lat: 47.23, lng: 39.70, name: 'Ростов', hp: 100 },
                 { lat: 51.67, lng: 39.18, name: 'Воронеж', hp: 100 },
                 { lat: 50.59, lng: 36.58, name: 'Белгород', hp: 100 },
                 { lat: 45.03, lng: 38.97, name: 'Краснодар', hp: 100 },
@@ -180,48 +200,60 @@
 
         let playerFaction = null, enemyFaction = null;
         let money = 600, droneInventory = 0, currentMode = null;
-        let enemyMoney = 350;
+        let enemyMoney = 300;
 
         let playerFactories = [], playerPVO = [], playerDrones = [];
         let enemyPVO = [], enemyDrones = [];
         let missiles = [];
         let map, selectedFactory = null;
 
+        function toggleLogHeight() {
+            const container = document.getElementById('log-container');
+            const arrow = document.getElementById('log-arrow');
+            if (container.classList.contains('expanded')) {
+                container.classList.remove('expanded');
+                arrow.innerText = "▲ Развернуть";
+            } else {
+                container.classList.add('expanded');
+                arrow.innerText = "▼ Свернуть";
+            }
+        }
+
         function selectFaction(faction) {
             playerFaction = faction;
             enemyFaction = faction === 'UA' ? 'RU' : 'UA';
             document.getElementById('faction-screen').style.display = 'none';
 
-            document.getElementById('btn-heavy-mode').innerText = playerFaction === 'UA' ? '🚀 ПУСК СТРАТ. КР «НЕПТУН-М» (-$2000)' : '🚀 ПУСК СТРАТ. БР «ОРЕШНИК» (-$2000)';
+            document.getElementById('btn-heavy-mode').innerText = playerFaction === 'UA' ? '🚀 ПУСК КР «НЕПТУН-М» (-$2000)' : '🚀 ПУСК БР «ОРЕШНИК» (-$2000)';
 
-            map = L.map('map', { zoomControl: false, minZoom: 4, maxZoom: 9 }).setView([50.5, 34.5], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            // Инициализация карты
+            map = L.map('map', { zoomControl: false, minZoom: 4, maxZoom: 8 }).setView([50.2, 33.5], 5);
+            
+            // ИСПОЛЬЗУЕМ КРАСИВУЮ СВЕТЛО-СЕРУЮ КАРТУ С ЧЕТКИМИ ГРАНИЦАМИ
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
             renderOperationalRadar();
             setupRadarClicks();
 
             setInterval(economyCycle, 2500);
-            setInterval(radarTick, 40); // 25 FPS плавная симуляция полетов
-            setInterval(enemyAILogic, 5000);
+            setInterval(radarTick, 45); 
+            setInterval(enemyAILogic, 5500);
 
-            addLog("[SYSTEM] Тактический радар развернут. Ожидание приказов.", 'system');
+            addLog("Система развернута на светлой карте штаба.", 'system');
             updateUIButtons();
         }
 
         function renderOperationalRadar() {
-            // Отрисовка наших объектов
             CITIES[playerFaction].forEach(c => {
                 let icon = L.divIcon({ className: 'city-marker', html: `${c.name} [${c.hp}%]`, iconSize: [null, null] });
                 c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map);
                 
-                // Пульсирующий круг РЛС обнаружения
-                L.circle([c.lat, c.lng], { radius: 90000, color: '#00ffcc', fillColor: '#00ffcc', fillOpacity: 0.005, weight: 1, dashArray: '2,4' }).addTo(map);
-                playerPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 90000, ammo: 0, maxAmmo: 0, isCityRadar: true, lastShot: 0 });
+                L.circle([c.lat, c.lng], { radius: 80000, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.01, weight: 1, dashArray: '3,4' }).addTo(map);
+                playerPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 80000, ammo: 0, maxAmmo: 0, isCityRadar: true, lastShot: 0 });
             });
 
-            // Отрисовка вражеских секторов
             CITIES[enemyFaction].forEach(c => {
-                let icon = L.divIcon({ className: 'city-marker enemy', html: `🎯 ${c.name}`, iconSize: [null, null] });
+                let icon = L.divIcon({ className: 'city-marker enemy', html: c.name, iconSize: [null, null] });
                 L.marker([c.lat, c.lng], { icon: icon }).addTo(map).on('click', function() {
                     if (currentMode === 'attack_target' && selectedFactory) {
                         dispatchDroneStrike(selectedFactory, c);
@@ -229,7 +261,7 @@
                         dispatchHeavyStrike(c);
                     }
                 });
-                enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 100000, ammo: 4, maxAmmo: 4, lastShot: 0, isCityRadar: true });
+                enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 90000, ammo: 4, maxAmmo: 4, lastShot: 0, isCityRadar: true });
             });
         }
 
@@ -246,20 +278,20 @@
 
         function toggleAttackMode() {
             if (currentMode === 'attack_source' || currentMode === 'attack_target') { dropModes(); return; }
-            if (money < 150 || droneInventory < 2) { addLog("[ERROR] Отмена: Недостаточно БПЛА или бюджета ($150)", 'enemy'); return; }
+            if (money < 150 || droneInventory < 2) { addLog("Недостаточно ресурсов!", 'enemy'); return; }
             
             dropModes(); currentMode = 'attack_source';
             document.getElementById('btn-attack-mode').classList.add('active');
-            addLog("[INFO] Укажите точку взлета: выберите ваш завод [ЗАВ].");
+            addLog("Выберите ваш сборочный завод [ЗАВ] для пуска.");
         }
 
         function toggleHeavyMissileMode() {
             if (currentMode === 'heavy_missile') { dropModes(); return; }
-            if (money < 2000) { addLog("[ERROR] Отмена: Мало средств для стратегического пуска ($2000)", 'enemy'); return; }
+            if (money < 2000) { addLog("Не хватает бюджета на пуск ракеты!", 'enemy'); return; }
             
             dropModes(); currentMode = 'heavy_missile';
             document.getElementById('btn-heavy-mode').classList.add('active');
-            addLog("[INFO] Выберите координату удара: кликните по городу врага.");
+            addLog("Укажите вражеский город для нанесения удара.");
         }
 
         function dropModes() {
@@ -285,20 +317,20 @@
 
                 if (currentMode === 'factory' && money >= 350) {
                     money -= 350;
-                    let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [26, 16], iconAnchor: [13, 8] });
+                    let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [24, 14], iconAnchor: [12, 7] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     let fObj = { lat, lng, marker: m };
                     m.on('click', function() { if (currentMode === 'attack_source') selectFactoryForLaunch(fObj); });
                     playerFactories.push(fObj);
-                    addLog("[FACTORY] Развернуты сборочные цеха. Конвейер БПЛА запущен.");
+                    addLog("Построен новый авиационный завод.");
                     dropModes();
                 } else if (currentMode === 'pvo' && money >= 400) {
                     money -= 400;
-                    let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [26, 16], iconAnchor: [13, 8] });
+                    let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [24, 14], iconAnchor: [12, 7] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
-                    L.circle([lat, lng], { radius: 150000, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.01, weight: 1 }).addTo(map);
-                    playerPVO.push({ lat, lng, marker: m, rangeDist: 150000, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false });
-                    addLog("[AIR-DEFENSE] Позиционный район ПВО подключен к радарной сети.");
+                    L.circle([lat, lng], { radius: 140000, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.01, weight: 1 }).addTo(map);
+                    playerPVO.push({ lat, lng, marker: m, rangeDist: 140000, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false });
+                    addLog("Узел ПВО развернут и подключен к сети.");
                     dropModes();
                 }
             });
@@ -306,38 +338,38 @@
 
         function selectFactoryForLaunch(fObj) {
             selectedFactory = fObj; currentMode = 'attack_target';
-            addLog("[INFO] Носители заправлены. Выберите цель штурма.");
+            addLog("Целеуказание: Выберите город противника на карте.");
         }
 
         function dispatchDroneStrike(source, targetCity) {
             money -= 150; droneInventory -= 2;
-            addLog(`[LAUNCH] На полетный трек выведено звено БПЛА -> [${targetCity.name}].`);
+            addLog(`Запуск пары БПЛА на сектор [${targetCity.name}].`);
             for(let i=0; i<2; i++) injectAirTarget(source, targetCity, playerDrones, true, false);
             dropModes();
         }
 
         function dispatchHeavyStrike(targetCity) {
             money -= 2000;
-            addLog(`[MISSILE] Зафиксирован выход тяжелого носителя на баллистическую траекторию -> [${targetCity.name}]!`);
+            addLog(`Стратегический пуск по региону [${targetCity.name}]!`);
             injectAirTarget(CITIES[playerFaction][0], targetCity, playerDrones, true, true);
             dropModes();
         }
 
         function enemyAILogic() {
-            enemyMoney += 120;
+            enemyMoney += 125;
 
             if (enemyMoney >= 2000) {
                 enemyMoney -= 2000;
                 let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
-                addLog(`[⚠️ ALERT] Обнаружен пуск стратегической гиперзвуковой ракеты ИИ! Траектория: [${target.name}]`, 'enemy');
+                addLog(`Критическая угроза: Зафиксирована ракета ИИ на [${target.name}]`, 'enemy');
                 injectAirTarget(CITIES[enemyFaction][0], target, enemyDrones, false, true);
                 return;
             }
 
-            if (enemyMoney >= 250) {
+            if (enemyMoney >= 240) {
                 enemyMoney -= 150;
                 let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
-                addLog(`[⚠️ DETECTED] Группа низколетящих БПЛА ИИ прорывает периметр в направлении [${target.name}]!`, 'enemy');
+                addLog(`РЛС: Налет ударных БПЛА ИИ на [${target.name}]!`, 'enemy');
                 for(let i=0; i<2; i++) {
                     let start = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
                     injectAirTarget(start, target, enemyDrones, false, false);
@@ -345,22 +377,19 @@
             }
         }
 
-        // РЕАЛИСТИЧНЫЙ ИНЖЕКТ КУРСА ПОЛЕТА
         function injectAirTarget(start, target, collection, isPlayer, isHeavy) {
-            // Расчет угла поворота силуэта (Реализм тригонометрии)
             let angle = Math.atan2(target.lng - start.lng, target.lat - start.lat) * (180 / Math.PI);
             
-            // Вместо кругов генерируем HTML силуэт (самолет или стрела)
             let htmlContent = isHeavy 
                 ? `<div class="missile-icon" style="transform: rotate(${angle}deg)">↑</div>`
                 : `<div class="uav-icon" style="transform: rotate(${angle}deg)">▲</div>`;
 
             let marker = L.marker([start.lat, start.lng], {
-                icon: L.divIcon({ className: 'custom-air-target', html: htmlContent, iconSize: [20, 20], iconAnchor: [10, 10] })
+                icon: L.divIcon({ className: 'custom-air-target', html: htmlContent, iconSize: [16, 16], iconAnchor: [8, 8] })
             }).addTo(map);
 
-            let curve = (Math.random() * 0.1) * (Math.random() > 0.5 ? 1 : -1);
-            let speed = isHeavy ? 0.0050 : (isPlayer ? 0.0022 : 0.0009);
+            let curve = (Math.random() * 0.08) * (Math.random() > 0.5 ? 1 : -1);
+            let speed = isHeavy ? 0.0055 : (isPlayer ? 0.0024 : 0.0010);
 
             collection.push({
                 id: Math.random().toString(36).substr(2, 9), marker: marker, angle: angle,
@@ -374,7 +403,7 @@
             money += 45 + (playerFactories.length * 35);
             playerFactories.forEach(() => droneInventory++);
             
-            // Ремонтные бригады в тылу (Интерес к удержанию)
+            // Автоматическое восстановление городов
             let all = [...CITIES['UA'], ...CITIES['RU']];
             all.forEach(c => { if(c.hp > 0 && c.hp < 100) c.hp = Math.min(100, c.hp + 1); });
 
@@ -402,7 +431,7 @@
                 let d = list[i]; d.progress += d.speed;
 
                 if (d.progress >= 1) {
-                    triggerDetonation(d.targetLat, d.targetLng, d.isHeavyMissile ? 38000 : 15000);
+                    triggerDetonation(d.targetLat, d.targetLng, d.isHeavyMissile ? 30000 : 12000);
                     map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
                     list.splice(i, 1);
                     applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.isHeavyMissile ? 40 : 15, isPlayer);
@@ -416,40 +445,37 @@
                 
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
-                // Инверсионные тепловые следы БПЛА/Ракет (Красивый визуал)
-                if (Math.random() > 0.5) {
+                if (Math.random() > 0.6) {
                     let dot = L.circle([cLat, cLng], {
-                        radius: d.isHeavyMissile ? 4000 : 1500, color: isPlayer ? '#00ffcc' : '#ff3355', 
-                        fillColor: isPlayer ? '#00ffcc' : '#ff3355', fillOpacity: 0.15, weight: 0
+                        radius: d.isHeavyMissile ? 3000 : 1000, color: isPlayer ? '#10b981' : '#ef4444', 
+                        fillColor: isPlayer ? '#10b981' : '#ef4444', fillOpacity: 0.2, weight: 0
                     }).addTo(map);
                     d.trails.push(dot);
-                    if (d.trails.length > 6) map.removeLayer(d.trails.shift());
+                    if (d.trails.length > 5) map.removeLayer(d.trails.shift());
                 }
 
-                // Логика захвата радарами ПВО
                 if (!isPlayer) {
                     let locked = false;
                     playerPVO.forEach(pvo => {
                         let dist = map.distance([cLat, cLng], [pvo.lat, pvo.lng]);
                         if (dist <= pvo.rangeDist) {
                             locked = true;
-                            if (!pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 2200)) {
+                            if (!pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 2000)) {
                                 pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, true);
                             }
                         }
                     });
                     if (locked && !d.detected) {
                         d.detected = true;
-                        // Меняем класс на detected — включается рамка захвата цели и мигание
                         let htmlContent = d.isHeavyMissile 
                             ? `<div class="missile-icon" style="transform: rotate(${d.angle}deg)">↑</div>`
                             : `<div class="uav-icon detected" style="transform: rotate(${d.angle}deg)">▲</div>`;
-                        d.marker.setIcon(L.divIcon({ className: 'custom-air-target', html: htmlContent, iconSize: [20, 20], iconAnchor: [10, 10] }));
+                        d.marker.setIcon(L.divIcon({ className: 'custom-air-target', html: htmlContent, iconSize: [16, 16], iconAnchor: [8, 8] }));
                     }
                 } else {
                     enemyPVO.forEach(pvo => {
                         let dist = map.distance([cLat, cLng], [pvo.lat, pvo.lng]);
-                        if (dist <= pvo.rangeDist && pvo.ammo > 0 && (now - pvo.lastShot > 2200)) {
+                        if (dist <= pvo.rangeDist && pvo.ammo > 0 && (now - pvo.lastShot > 2000)) {
                             pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, false);
                         }
                     });
@@ -458,10 +484,10 @@
         }
 
         function fireInterceptor(pvo, target, isPlayerPVO) {
-            let marker = L.circle([pvo.lat, pvo.lng], { radius: 2000, color: '#fff', fillColor: '#fff', fillOpacity: 1, weight: 1 }).addTo(map);
+            let marker = L.circle([pvo.lat, pvo.lng], { radius: 1500, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 1, weight: 1 }).addTo(map);
             missiles.push({
                 marker: marker, lat: pvo.lat, lng: pvo.lng, droneId: target.id,
-                targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.08, isPlayer: isPlayerPVO
+                targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.09, isPlayer: isPlayerPVO
             });
         }
 
@@ -476,19 +502,19 @@
                 let mLng = m.lng + (drone.currentLng - m.lng) * m.progress;
                 m.marker.setLatLng([mLat, mLng]);
 
-                if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 15000) {
+                if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 14000) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
-                    let hitChance = drone.isHeavyMissile ? 0.35 : 0.85;
+                    let hitChance = drone.isHeavyMissile ? 0.4 : 0.85;
 
                     if (Math.random() <= hitChance) {
-                        triggerDetonation(drone.currentLat, drone.currentLng, 10000); 
+                        triggerDetonation(drone.currentLat, drone.currentLng, 8000); 
                         map.removeLayer(drone.marker);
                         drone.trails.forEach(t => map.removeLayer(t));
                         
                         let idx = m.targetCollection.indexOf(drone); if (idx > -1) m.targetCollection.splice(idx, 1);
                         
-                        if (m.isPlayer) addLog("[SUCCESS] ПВО: Цель успешно ликвидирована в воздухе.", 'system');
-                        else addLog("[LOSS] Внимание: Наш штурмовик уничтожен огнем вражеского ПВО.", 'enemy');
+                        if (m.isPlayer) addLog("Перехват: Цель уничтожена противоракетой.", 'system');
+                        else addLog("Потери: Наш дрон сбит огнем вражеского ПВО.", 'enemy');
                     }
                     break;
                 }
@@ -501,11 +527,11 @@
                 city.hp = Math.max(0, city.hp - dmg);
                 
                 if (faction === playerFaction) {
-                    addLog(`[💥 COMPROMISED] Нанесен удар по нашему сектору [${cityName}]. Урон: -${dmg}%`, 'enemy');
+                    addLog(`Удар по нашему региону [${cityName}]: -${dmg}% ХП`, 'enemy');
                 } else {
                     let reward = dmg === 40 ? 250 : 110;
                     money += reward;
-                    addLog(`[💰 TROPHY] Подтверждено попадание по [${cityName}]. Трофеи: +$${reward}`, 'system');
+                    addLog(`Поражение цели [${cityName}]. Трофеи: +$${reward}`, 'system');
                 }
                 recalcRadarHUD();
             }
@@ -524,19 +550,18 @@
             document.getElementById('bar-player').style.width = pAvg + "%";
             document.getElementById('bar-enemy').style.width = eAvg + "%";
 
-            if (pAvg <= 0) { alert("Связь потеряна. Оборона прорвана."); location.reload(); }
-            if (eAvg <= 0) { alert("КОНТРОЛЬ СЕКТОРА УСТАНОВЛЕН. ПОЛНАЯ ПОБЕДА!"); location.reload(); }
+            if (pAvg <= 0) { alert("Оборона прорвана. Капитуляция."); location.reload(); }
+            if (eAvg <= 0) { alert("ПОЛНАЯ СТРАТЕГИЧЕСКАЯ ПОБЕДА!"); location.reload(); }
         }
 
-        // РЕАЛИСТИЧНАЯ СВЕТОВАЯ ВСПЫШКА ВЗРЫВА
         function triggerDetonation(lat, lng, maxR) {
-            let flash = L.circle([lat, lng], { radius: 500, color: '#fff', fillColor: '#ffaa00', fillOpacity: 0.9, weight: 1 }).addTo(map);
-            let r = 500;
+            let flash = L.circle([lat, lng], { radius: 400, color: '#f97316', fillColor: '#ef4444', fillOpacity: 0.8, weight: 1 }).addTo(map);
+            let r = 400;
             let loop = setInterval(() => {
-                r += 3000; 
+                r += 2500; 
                 let ratio = r / maxR;
                 flash.setRadius(r);
-                flash.setStyle({ fillOpacity: 0.9 * (1 - ratio), color: ratio > 0.5 ? '#ff3300' : '#fff' });
+                flash.setStyle({ fillOpacity: 0.8 * (1 - ratio) });
                 if(r > maxR) { clearInterval(loop); map.removeLayer(flash); }
             }, 30);
         }
@@ -545,7 +570,7 @@
             const log = document.getElementById('log-panel');
             const entry = document.createElement('div');
             entry.className = `log-entry ${type}`;
-            entry.innerText = `[${new Date().toLocaleTimeString()}] ${text}`;
+            entry.innerText = `[${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}] ${text}`;
             log.insertBefore(entry, log.firstChild);
         }
     </script>
