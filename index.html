@@ -14,12 +14,45 @@
         }
         
         #viewport-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
-        #map { flex-grow: 1; width: 100%; height: 100%; background: #05070f; z-index: 1; }
+        #map { flex-grow: 1; width: 100%; height: 100%; background: #05070f; z-index: 1; position: relative; }
         
         #monitor-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 2000;
             box-shadow: inset 0 0 80px rgba(0,0,0,0.7);
+        }
+
+        /* КЛИМАТИЧЕСКИЕ И ВРЕМЕННЫЕ ОВЕРЛЕИ */
+        #weather-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10; transition: all 1s ease-in-out;
+        }
+        
+        /* Эффект дождя */
+        .weather-rain {
+            background-image: url('https://www.transparenttextures.com/patterns/60-lines.png');
+            opacity: 0; animation: rain-anim 0.3s linear infinite;
+        }
+        @keyframes rain-anim {
+            0% { background-position: 0px 0px; }
+            100% { background-position: 20px 400px; }
+        }
+
+        /* Эффект тумана */
+        .weather-fog {
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+            opacity: 0; animation: fog-pulse 4s ease-in-out infinite alternate;
+        }
+        @keyframes fog-pulse {
+            0% { opacity: 0.2; filter: blur(2px); }
+            100% { opacity: 0.5; filter: blur(5px); }
+        }
+
+        /* Эффект ночи */
+        #time-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9; transition: background 2s ease-in-out;
+            background: rgba(0, 0, 0, 0);
         }
 
         #faction-screen {
@@ -51,6 +84,9 @@
         .hp-bar-fill { height: 100%; width: 100%; transition: width 0.4s ease; }
         .hp-player { background: #00f2fe; box-shadow: 0 0 6px #00f2fe; }
         .hp-enemy { background: #ff0055; box-shadow: 0 0 6px #ff0055; }
+        
+        /* Виджет погоды */
+        #weather-widget { font-weight: bold; padding: 2px 5px; border-radius: 3px; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,242,254,0.2); }
 
         /* СВОРАЧИВАЕМАЯ ПАНЕЛЬ СНИЗУ */
         #bottom-ui-wrapper {
@@ -124,7 +160,7 @@
         .city-marker {
             background: rgba(6, 9, 19, 0.9); border: 1px solid rgba(56, 189, 248, 0.5);
             color: #e2e8f0; font-size: 9px; font-weight: bold; border-radius: 3px; padding: 2px 4px;
-            white-space: nowrap; box-shadow: 0 0 6px rgba(0,0,0,0.8);
+            white-space: nowrap; box-shadow: 0 0 6px rgba(0,0,0,0.8); z-index: 500 !important;
         }
         .city-marker.enemy { border-color: rgba(255, 0, 85, 0.6); color: #fecdd3; }
         
@@ -133,7 +169,7 @@
         .build-marker {
             background: #060913; border: 1px solid #38bdf8; color: #38bdf8;
             font-size: 8px; font-weight: bold; border-radius: 2px; text-align: center; line-height: 12px;
-            padding: 0 3px; box-shadow: 0 0 6px rgba(56,189,248,0.4);
+            padding: 0 3px; box-shadow: 0 0 6px rgba(56,189,248,0.4); z-index: 500 !important;
         }
 
         .damage-popup {
@@ -178,6 +214,7 @@
         <div id="hud-top">
             <div class="hud-row">
                 <div>БЮДЖЕТ: <span id="txt-money" class="hud-value">600</span>$</div>
+                <div id="weather-widget">☀️ ЯСНО | ДЕНЬ</div>
                 <div>АНГАР БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
             </div>
             <div class="hud-row" style="margin-top: 2px;">
@@ -192,7 +229,10 @@
             </div>
         </div>
 
-        <div id="map"></div>
+        <div id="map">
+            <div id="weather-overlay"></div>
+            <div id="time-overlay"></div>
+        </div>
 
         <div id="bottom-ui-wrapper" class="ui-collapsed">
             <button id="toggle-ui-btn" onclick="toggleUIPanel()">🎛️ ПУЛЬТ УПРАВЛЕНИЯ (НАЖАТЬ)</button>
@@ -251,7 +291,7 @@
 
         let playerFaction = null, enemyFaction = null;
         let money = 600, droneInventory = 0, currentMode = null;
-        let enemyMoney = 600; // Подняли стартовый капитал врага
+        let enemyMoney = 600;
 
         let playerFactories = [], playerPVO = [], playerDrones = [];
         let enemyPVO = [], enemyDrones = [];
@@ -259,6 +299,10 @@
         let map, selectedFactory = null;
         
         const MAX_PVO_LIMIT = 4;
+
+        // Погодные переменные
+        let currentWeather = 'clear'; // clear, rain, fog
+        let currentPeriod = 'day';     // day, night
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="28" height="28" style="filter: drop-shadow(0 0 5px #ff0055); fill: #1e293b; stroke: #ff0055; stroke-width: 5;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="filter: drop-shadow(0 0 5px #00f2fe); fill: rgba(0,242,254,0.2); stroke: #00f2fe; stroke-width: 6;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -284,10 +328,51 @@
 
             setInterval(economyCycle, 2500);
             setInterval(radarTick, 50); 
-            setInterval(enemyAILogic, 4000); // Враг думает чаще
+            setInterval(enemyAILogic, 4000); 
+            
+            // Цикл погоды: каждые 40 секунд меняем условия
+            setInterval(changeWeatherCycle, 40000);
 
             addLog("КРИТИЧЕСКИЕ СИСТЕМЫ ВВЕДЕНЫ В БОЕВОЙ РЕЖИМ.", 'system');
             updateUIButtons();
+        }
+
+        // Логика циклической смены погоды и времени суток
+        function changeWeatherCycle() {
+            const weathers = ['clear', 'rain', 'fog'];
+            const periods = ['day', 'night'];
+            
+            currentWeather = weathers[Math.floor(Math.random() * weathers.length)];
+            currentPeriod = periods[Math.floor(Math.random() * periods.length)];
+
+            // Обновляем визуальные классы слоев
+            const wOverlay = document.getElementById('weather-overlay');
+            const tOverlay = document.getElementById('time-overlay');
+            const widget = document.getElementById('weather-widget');
+
+            wOverlay.className = ''; // Сброс классов погоды
+            
+            let weatherText = '☀️ ЯСНО';
+            if (currentWeather === 'rain') {
+                wOverlay.classList.add('weather-rain');
+                weatherText = '🌧️ ЛИВЕНЬ';
+                addLog("⚠️ ФРОНТ ПЛОХОЙ ПОГОДЫ: СКОРОСТЬ БПЛА СНИЖЕНА.", 'system');
+            } else if (currentWeather === 'fog') {
+                wOverlay.classList.add('weather-fog');
+                weatherText = '🌫️ ТУМАН';
+                addLog("⚠️ ГУСТОЙ ТУМАН: РАДИУС ДЕЙСТВИЯ ПВО СНИЖЕН.", 'system');
+            }
+
+            let periodText = 'ДЕНЬ';
+            if (currentPeriod === 'night') {
+                tOverlay.style.background = 'rgba(6, 12, 36, 0.45)';
+                periodText = 'НОЧЬ';
+                addLog("🌙 НАСТУПИЛА НОЧЬ: ЭФФЕКТИВНОСТЬ ПВО СНИЖЕНА НА 40%.", 'system');
+            } else {
+                tOverlay.style.background = 'rgba(0,0,0,0)';
+            }
+
+            widget.innerText = `${weatherText} | ${periodText}`;
         }
 
         function renderOperationalRadar() {
@@ -414,7 +499,6 @@
             document.getElementById('btn-interceptor').classList.toggle('disabled', money < 2200 || enemyDrones.length === 0);
         }
 
-        // Ракеты-перехватчики дальнего радиуса действия
         function buyInterceptorRocket() {
             if (money < 2200) return;
             if (enemyDrones.length === 0) {
@@ -422,7 +506,6 @@
                 return;
             }
 
-            // Ищем ближайшую к нашим городам угрозу
             let closestDrone = null;
             let minDist = Infinity;
             let sampleCity = CITIES[playerFaction][0];
@@ -439,7 +522,6 @@
                 money -= 2200;
                 addLog("🚀 ЗАПУЩЕНА СВЕРХДАЛЬНЯЯ РАКЕТА ПЕРЕХВАТЧИК!", 'system');
                 
-                // Создаем красивый мгновенный перехват
                 triggerBlast(closestDrone.currentLat, closestDrone.currentLng, 15000, '#00f2fe');
                 map.removeLayer(closestDrone.marker);
                 closestDrone.trails.forEach(t => map.removeLayer(t));
@@ -447,7 +529,6 @@
                 let idx = enemyDrones.indexOf(closestDrone);
                 if (idx > -1) enemyDrones.splice(idx, 1);
                 
-                // Награда за сбитие перехватчиком
                 let reward = closestDrone.type === 'heavy' ? 200 : 50;
                 money += reward;
                 addLog(`ЦЕЛЬ УНИЧТОЖЕНА ПЕРЕХВАТЧИКОМ. МИЛ-БОНУС: +$${reward}`, 'system');
@@ -516,9 +597,8 @@
             dropModes();
         }
 
-        // Агрессивный интеллект врага (Атакует регулярно)
         function enemyAILogic() {
-            enemyMoney += 380; // Враг получает больше денег для частых атак
+            enemyMoney += 380;
 
             if (enemyMoney >= 4000 && Math.random() > 0.4) {
                 enemyMoney -= 4000;
@@ -548,6 +628,12 @@
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
             let speed = type === 'heavy' ? 0.007 : (type === 'bomber' ? 0.002 : 0.003);
+            
+            // Модификатор скорости из-за дождя (-30% скорости)
+            if (currentWeather === 'rain') {
+                speed *= 0.7;
+            }
+
             let hp = type === 'bomber' ? 4 : 1;
 
             let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : (type === 'heavy' ? HEAVY_SVG : BOMBER_SVG);
@@ -566,7 +652,6 @@
         }
 
         function economyCycle() {
-            // Приток денег и экспортный контракт
             let exportBonus = playerFactories.length * 40;
             money += 50 + (playerFactories.length * 35) + exportBonus;
             
@@ -606,7 +691,7 @@
                         applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, 60);
                     } else if (d.type === 'heavy') {
                         triggerBlast(d.targetLat, d.targetLng, 35000, '#f97316');
-                        applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, 80); // Урон х2 для КР (80%)
+                        applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, 80); 
                     } else {
                         triggerBlast(d.targetLat, d.targetLng, 12000, '#ff0055');
                         applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, 15);
@@ -625,11 +710,20 @@
                     d.trails.push(dot); if (d.trails.length > 2) map.removeLayer(d.trails.shift());
                 }
 
+                // Модификаторы ПВО из-за Тумана и Ночи
+                let shootDelay = 1400;
+                if (currentWeather === 'rain') shootDelay = 1900; // Дождь замедляет темп стрельбы
+
                 if (!isPlayer) {
                     playerPVO.forEach(pvo => {
                         let dLat = cLat - pvo.lat; let dLng = cLng - pvo.lng;
                         let approxDist = (dLat * dLat) + (dLng * dLng);
-                        if (approxDist <= (pvo.rangeDist * pvo.rangeDist) && !pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 1400)) {
+                        
+                        // В тумане радиус ПВО режется на 25%
+                        let currentRange = pvo.rangeDist;
+                        if (currentWeather === 'fog') currentRange *= 0.75;
+
+                        if (approxDist <= (currentRange * currentRange) && !pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > shootDelay)) {
                             pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, true);
                         }
                     });
@@ -637,7 +731,11 @@
                     enemyPVO.forEach(pvo => {
                         let dLat = cLat - pvo.lat; let dLng = cLng - pvo.lng;
                         let approxDist = (dLat * dLat) + (dLng * dLng);
-                        if (approxDist <= (pvo.rangeDist * pvo.rangeDist) && pvo.ammo > 0 && (now - pvo.lastShot > 1600)) {
+                        
+                        let currentRange = pvo.rangeDist;
+                        if (currentWeather === 'fog') currentRange *= 0.75;
+
+                        if (approxDist <= (currentRange * currentRange) && pvo.ammo > 0 && (now - pvo.lastShot > shootDelay + 200)) {
                             pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, false);
                         }
                     });
@@ -665,14 +763,19 @@
 
                 if (Math.abs(mLat - drone.currentLat) < 0.1 && Math.abs(mLng - drone.currentLng) < 0.1) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
-                    if (Math.random() <= (drone.type === 'heavy' ? 0.45 : 0.85)) {
+                    
+                    // Шанс попадания
+                    let hitChance = drone.type === 'heavy' ? 0.45 : 0.85;
+                    // Если ночь — обычное ПВО мажет на 40% чаще
+                    if (currentPeriod === 'night') hitChance -= 0.40;
+
+                    if (Math.random() <= hitChance) {
                         drone.hp--;
                         triggerBlast(drone.currentLat, drone.currentLng, 6000, '#38bdf8');
                         if (drone.hp <= 0) {
                             map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
                             let idx = m.targetCollection.indexOf(drone); if (idx > -1) m.targetCollection.splice(idx, 1);
                             
-                            // Зарабатываем деньги за успешное сбитие обычным ПВО!
                             if (m.isPlayer) {
                                 let reward = drone.type === 'heavy' ? 200 : (drone.type === 'bomber' ? 150 : 50);
                                 money += reward;
@@ -681,6 +784,8 @@
                                 addLog("НАШ БПЛА СБИТ ПВО ПРОТИВНИКА.", 'enemy');
                             }
                         }
+                    } else {
+                        if (m.isPlayer) addLog("РАДАР ПОТЕРЯЛ ЦЕЛЬ В ТЕМНОТЕ/ОБЛАКАХ (ПРОМАХ).", 'enemy');
                     }
                     break;
                 }
