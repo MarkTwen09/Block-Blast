@@ -2,479 +2,255 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Светский Клин — Неоновый Азарт</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky in Flames - Mini 2D</title>
     <style>
-        :root {
-            --bg-main: #02040a;
-            --bg-glow: radial-gradient(circle at 50% 35%, #0b1026 0%, #02040a 85%);
-            --card-active: rgba(255, 255, 255, 0.07);
-            --card-disabled: rgba(255, 255, 255, 0.015);
-            --accent-gold: #f59e0b;
-            --gold-glow: rgba(245, 158, 11, 0.5);
-            --text-main: #ffffff;
-            --neon-blue: #00f0ff;
-            --profit-green: #10b981;
-            --hyper-purple: #a855f7;
-            --cheat-red: #ef4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            touch-action: manipulation;
-        }
-
         body {
-            background: var(--bg-main);
-            background-image: var(--bg-glow);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-            padding: 16px;
-            perspective: 1000px;
+            margin: 0;
+            background-color: #111;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            user-select: none;
         }
-
-        .container {
-            width: 100%;
-            max-width: 430px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        /* --- HEADER & STATS --- */
-        .app-header { text-align: center; margin-top: 5px; }
-        .app-title {
-            font-size: 24px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
-            background: linear-gradient(135deg, #fff 20%, var(--accent-gold) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .stat-panel {
-            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;
-        }
-        .stat-info { display: flex; flex-direction: column; }
-        .stat-label { font-size: 9px; color: #6b7280; text-transform: uppercase; }
-        .stat-value { font-size: 14px; font-weight: 700; }
-
-        /* --- ИНФО-ПАНЕЛИ (КОМБО И ИВЕНТЫ) --- */
-        .status-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 35px;
-            justify-content: center;
-            position: relative;
-        }
-
-        .badge {
-            font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
-            padding: 4px 14px; border-radius: 20px; opacity: 0; transform: scale(0.8);
-            position: absolute; transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1);
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
             pointer-events: none;
         }
-        .badge.active { opacity: 1; transform: scale(1); z-index: 10; }
-
-        .combo-badge { background: linear-gradient(90deg, var(--neon-blue), #3b82f6); box-shadow: 0 0 10px rgba(0,240,255,0.3); }
-        .hyper-badge { background: linear-gradient(90deg, var(--accent-gold), var(--hyper-purple)); box-shadow: 0 0 15px var(--gold-glow); animation: pulse 0.4s infinite alternate; }
-        .event-badge { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 0 15px rgba(16,185,129,0.4); color: white; }
-        .cheat-badge { background: var(--cheat-red); box-shadow: 0 0 25px rgba(239,68,68,0.8); color: white; animation: shake 0.2s infinite; }
-
-        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.06); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
-
-        /* --- БАЛАНС --- */
-        .balance-section { text-align: center; }
-        .balance-amount { font-size: 46px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .premium-coin {
-            width: 38px; height: 38px; background: radial-gradient(circle at 30% 30%, #ffe082 0%, #ffb300 60%, #ff8f00 100%);
-            border-radius: 50%; box-shadow: 0 0 12px rgba(255, 179, 0, 0.25), inset 0 2px 4px #fff;
-            display: flex; justify-content: center; align-items: center;
+        canvas {
+            display: block;
+            cursor: crosshair;
         }
-        .premium-coin::after { content: '⚜'; font-size: 18px; color: #fff; }
-
-        /* --- СГЛАЖЕННЫЙ 3D КЛИКЕР --- */
-        .clicker-container { display: flex; justify-content: center; position: relative; margin: 8px 0; }
-        .sphere-outer {
-            width: 225px; height: 225px; border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #111836 0%, #070a14 70%, #000 100%);
-            border: 2px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 25px 55px rgba(0,0,0,0.8), inset 0 4px 20px rgba(255,255,255,0.02);
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            transform-style: preserve-3d; position: relative; will-change: transform;
-            transform: rotateX(0deg) rotateY(0deg) translateZ(0px);
-            transition: filter 0.2s, border-color 0.2s;
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0,0,0,0.9);
+            padding: 30px;
+            border: 2px solid #ff0000;
         }
-
-        /* Эффект заморозки при читерстве */
-        .sphere-outer.frozen { border-color: var(--cheat-red) !important; box-shadow: 0 0 40px rgba(239,68,68,0.6) !important; filter: saturate(0.2) brightness(0.7); }
-
-        .shockwave { position: absolute; border-radius: 50%; border: 2px solid rgba(0, 240, 255, 0.35); width: 100%; height: 100%; opacity: 0; pointer-events: none; }
-        @keyframes wave { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.35); opacity: 0; } }
-
-        /* ТРЁХМЕРНЫЙ КРИСТАЛЛ */
-        .crystal-mesh { width: 76px; height: 96px; position: relative; transform-style: preserve-3d; transform: translateZ(35px); pointer-events: none; }
-        .facet { position: absolute; top: 0; width: 38px; height: 96px; }
-        .f-left { left: 0; background: linear-gradient(135deg, #fcd34d 0%, #d97706 100%); clip-path: polygon(100% 0, 100% 100%, 0 85%); -webkit-clip-path: polygon(100% 0, 100% 100%, 0 85%); }
-        .f-right { left: 38px; background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); clip-path: polygon(0 0, 100% 85%, 0 100%); -webkit-clip-path: polygon(0 0, 100% 85%, 0 100%); }
-
-        /* Вспышка крита */
-        .sphere-outer.crit-flash .f-left { background: #fff !important; filter: drop-shadow(0 0 20px #fff); }
-        .sphere-outer.crit-flash .f-right { background: #e0e0e0 !important; filter: drop-shadow(0 0 20px #fff); }
-
-        /* Режим золотой лихорадки */
-        .sphere-outer.fever-mode { border-color: #10b981; box-shadow: 0 0 35px rgba(16,185,129,0.3); }
-        .sphere-outer.fever-mode .f-left { background: linear-gradient(135deg, #6ee7b7 0%, #059669 100%); }
-        .sphere-outer.fever-mode .f-right { background: linear-gradient(135deg, #34d399 0%, #047857 100%); }
-
-        /* --- ЭНЕРГИЯ --- */
-        .energy-container { background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 10px 16px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; }
-        .energy-header { display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; font-weight: 600; }
-        .energy-bar-outer { width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
-        .energy-bar-inner { height: 100%; width: 100%; background: linear-gradient(90deg, var(--neon-blue), #3b82f6); box-shadow: 0 0 10px rgba(0,240,255,0.25); transition: width 0.1s linear; }
-
-        /* --- ТАБЫ И КАРТОЧКИ --- */
-        .tabs-menu { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: rgba(0, 0, 0, 0.4); padding: 4px; border-radius: 12px; }
-        .tab-btn { background: transparent; border: none; color: #4b5563; padding: 10px; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; }
-        .tab-btn.active { background: rgba(255, 255, 255, 0.06); color: #fff; }
-
-        .upgrades-container { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .upgrades-container.active { display: grid; }
-
-        .card { background: var(--card-active); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
-        .card.disabled { opacity: 0.2; cursor: not-allowed; }
-        .card-top { display: flex; align-items: center; gap: 10px; }
-        .card-icon-box { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; display: flex; justify-content: center; align-items: center; }
-        .card-title { font-size: 11px; font-weight: 700; color: #fff; }
-        .card-level { font-size: 10px; color: var(--accent-gold); }
-        .card-profit-row { font-size: 10px; color: var(--profit-green); font-weight: 600; }
-        .card-price-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: auto; }
-
-        /* --- КИНЕМАТОГРАФИЧНЫЕ ЧАСТИЦЫ --- */
-        .floating-num {
-            position: absolute; font-size: 30px; font-weight: 900; pointer-events: none; z-index: 1000;
-            animation: float 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform, opacity;
+        button {
+            background: #222;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: inherit;
         }
-        .crit-text { color: #fff !important; text-shadow: 0 0 20px #fff, 0 0 40px var(--accent-gold); font-size: 38px !important; }
-        .fever-text { color: #10b981 !important; text-shadow: 0 0 15px rgba(16,185,129,0.6); }
-
-        @keyframes float {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8) rotate(-5deg); }
-            30% { transform: translate(-50%, -50%) translateY(-30px) scale(1.2) rotate(3deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-100px) scale(0.9) rotate(8deg); }
-        }
-
-        .mini-coin {
-            position: absolute; width: 12px; height: 12px; background: radial-gradient(circle at 30% 30%, #ffe082, #ffb300);
-            border-radius: 50%; pointer-events: none; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-            animation: explode 0.7s cubic-bezier(0.1, 0.8, 0.25, 1) forwards;
-        }
-        @keyframes explode {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--mx), var(--my)) rotateX(360deg) rotateY(360deg); }
-        }
+        button:hover { background: #00ff00; color: #000; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header class="app-header"><h1 class="app-title">Светский Клин</h1></header>
-
-        <div class="stats-grid">
-            <div class="stat-panel">⚡&nbsp;<div class="stat-info"><span class="stat-label">Клик</span><span class="stat-value" id="pqc-txt">+1</span></div></div>
-            <div class="stat-panel">📈&nbsp;<div class="stat-info"><span class="stat-label">Доход/сек</span><span class="stat-value" id="pps-txt">+0</span></div></div>
-        </div>
-
-        <div class="status-container">
-            <div class="badge combo-badge" id="badge-combo">Combo x2 🔥</div>
-            <div class="badge hyper-badge" id="badge-hyper">ГИПЕР КЛИК x5 👑</div>
-            <div class="badge event-badge" id="badge-fever">ЗОЛОТАЯ ЛИХОРАДКА ⚡</div>
-            <div class="badge cheat-badge" id="badge-cheat">⚠️ СИСТЕМА ПЕРЕГРУЖЕНА (ЧИТ)</div>
-        </div>
-
-        <div class="balance-section">
-            <div class="balance-amount"><div class="premium-coin"></div><span id="balance-val">0</span></div>
-        </div>
-
-        <div class="clicker-container" id="click-zone">
-            <div class="sphere-outer" id="sphere-btn">
-                <div class="shockwave" id="wave-fx"></div>
-                <div class="crystal-mesh">
-                    <div class="facet f-left"></div>
-                    <div class="facet f-right"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="energy-container">
-            <div class="energy-header"><span>Энергия</span><span><span id="energy-current">1000</span>/<span id="energy-max">1000</span></span></div>
-            <div class="energy-bar-outer"><div class="energy-bar-inner" id="energy-fill"></div></div>
-        </div>
-
-        <nav class="tabs-menu">
-            <button class="tab-btn active" onclick="switchTab('biz', event)">Бизнес</button>
-            <button class="tab-btn" onclick="switchTab('invest', event)">Инвестиции</button>
-            <button class="tab-btn" onclick="switchTab('power', event)">Влияние</button>
-        </nav>
-
-        <div class="upgrades-container active" id="tab-biz"></div>
-        <div class="upgrades-container" id="tab-invest"></div>
-        <div class="upgrades-container" id="tab-power"></div>
+    <div id="ui">
+        <div>СЧЕТ: <span id="score">0</span></div>
+        <div>ПРОЧНОСТЬ БАЗЫ: <span id="health">100</span>%</div>
+        <div>ЗАРЯДЫ ПВО: <span id="ammo">30</span></div>
     </div>
 
+    <div id="game-over">
+        <h1 style="color: #ff0000;">БАЗА УНИЧТОЖЕНА</h1>
+        <p>Система ПВО пала. Рой дронов прорвал оборону.</p>
+        <button onclick="resetGame()">Перезапустить систему</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
     <script>
-        const dbUpgrades = [
-            { id: 0, tab: 'biz', name: 'Кофейный Бренд', icon: '☕', baseCost: 40, costMult: 1.3, profit: 1, level: 0 },
-            { id: 1, tab: 'biz', name: 'Сеть Бутиков', icon: '👜', baseCost: 350, costMult: 1.32, profit: 8, level: 0 },
-            { id: 2, tab: 'biz', name: 'Частная Авиация', icon: '🛩️', baseCost: 2000, costMult: 1.35, profit: 45, level: 0 },
-            { id: 3, tab: 'invest', name: 'Венчурный Фонд', icon: '📊', baseCost: 100, costMult: 1.28, profit: 3, level: 0 },
-            { id: 4, tab: 'invest', name: 'Акции Гигантов', icon: '💎', baseCost: 800, costMult: 1.33, profit: 22, level: 0 },
-            { id: 5, tab: 'power', name: 'Элитный Чат', icon: '💬', baseCost: 60, costMult: 1.25, profit: 2, level: 0 },
-            { id: 6, tab: 'power', name: 'Медиа-Империя', icon: '📢', baseCost: 1200, costMult: 1.34, profit: 35, level: 0 }
-        ];
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        let state = { balance: 0, clickPower: 1, passiveIncomePerSec: 0, energy: 1000, maxEnergy: 1000, energyRegen: 3, upgrades: JSON.parse(JSON.stringify(dbUpgrades)) };
-        
-        let combo = 0, lastClick = 0, isFever = false, isFrozen = false, freezeUntil = 0;
-        
-        // Массивы хранения истории для математического анализа античита
-        let clickIntervals = []; 
-        let clickPositions = [];
-        let lastClickTimeSystem = 0;
-
-        let rX = 0, rY = 0, tX = 0, tY = 0, zX = 0, tz = 0;
-        const SAVE_KEY = 'svet_klin_v8_anti';
-        let uiBal = 0;
-
-        function init() {
-            loadGame(); renderCards(); recalculateStats(); uiBal = state.balance;
-            setInterval(passiveLoop, 100);
-            setInterval(regenLoop, 1000);
-            setInterval(randomEventTrigger, 1000);
-            loop();
+        // Адаптация под размер экрана
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
+        window.addEventListener('resize', resize);
+        resize();
 
-        function renderCards() {
-            ['biz', 'invest', 'power'].forEach(tab => {
-                const c = document.getElementById(`tab-${tab}`); c.innerHTML = '';
-                state.upgrades.filter(u => u.tab === tab).forEach(up => {
-                    const cost = Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
-                    const d = document.createElement('div'); d.className = 'card'; d.id = `card-${up.id}`;
-                    d.onclick = () => { if(state.balance >= cost) { state.balance -= cost; up.level++; renderCards(); recalculateStats(); } };
-                    d.innerHTML = `<div class="card-top"><div class="card-icon-box">${up.icon}</div><div><div class="card-title">${up.name}</div><div class="card-level">Лвл ${up.level}</div></div></div><div class="card-profit-row">+$${up.profit}/с</div><div class="card-price-row"><span style="color:#6b7280;font-size:9px;">ЦЕНА</span><span style="font-weight:700;">${cost.toLocaleString()}</span></div>`;
-                    c.appendChild(d);
-                });
-            });
-        }
+        // Игровые переменные
+        let score = 0;
+        let baseHealth = 100;
+        let ammo = 30;
+        let gameOver = false;
 
-        function recalculateStats() {
-            let p = 0; state.upgrades.forEach(u => p += u.level * u.profit); state.passiveIncomePerSec = p;
-            state.clickPower = 1 + Math.floor(state.passiveIncomePerSec / 10);
-            document.getElementById('pqc-txt').innerText = `+${state.clickPower}`;
-            document.getElementById('pps-txt').innerText = `+${state.passiveIncomePerSec.toLocaleString()}`;
-        }
+        const pvoStation = { x: canvas.width / 2, y: canvas.height - 30, r: 20 };
+        let drones = [];
+        let missiles = [];
+        let explosions = [];
 
-        function loop() {
-            rX += (tX - rX) * 0.25; rY += (tY - rY) * 0.25; zX += (tz - zX) * 0.3;
-            tX *= 0.85; tY *= 0.85; tz *= 0.7;
+        // Управление кликом (Пуск ракеты)
+        canvas.addEventListener('click', (e) => {
+            if (gameOver || ammo <= 0) return;
+
+            // Расчет угла полета ракеты к точке клика
+            const targetX = e.clientX;
+            const targetY = e.clientY;
             
-            document.getElementById('sphere-btn').style.transform = `rotateX(${Math.max(-25, Math.min(25, rX))}deg) rotateY(${Math.max(-25, Math.min(25, rY))}deg) translateZ(${zX}px)`;
-
-            uiBal += (state.balance - uiBal) * 0.25;
-            document.getElementById('balance-val').innerText = Math.floor(uiBal).toLocaleString('ru-RU');
-
-            state.upgrades.forEach(u => {
-                const cost = Math.floor(u.baseCost * Math.pow(u.costMult, u.level));
-                const el = document.getElementById(`card-${u.id}`);
-                if(el) state.balance < cost ? el.classList.add('disabled') : el.classList.remove('disabled');
+            const startX = canvas.width / 2;
+            const startY = canvas.height - 30;
+            
+            const angle = Math.atan2(targetY - startY, targetX - startX);
+            
+            missiles.push({
+                x: startX,
+                y: startY,
+                targetX: targetX,
+                targetY: targetY,
+                speed: 7,
+                dx: Math.cos(angle) * 7,
+                dy: Math.sin(angle) * 7
             });
 
-            document.getElementById('energy-current').innerText = Math.floor(state.energy);
-            document.getElementById('energy-fill').style.width = `${(state.energy / state.maxEnergy) * 100}%`;
-
-            if(Date.now() - lastClick > 1200 && combo > 0) { combo = Math.max(0, combo - 1); updateUIBadges(); }
-
-            if(isFrozen && Date.now() > freezeUntil) { 
-                isFrozen = false; 
-                document.getElementById('sphere-btn').classList.remove('frozen'); 
-                clickIntervals = [];
-                clickPositions = [];
-                updateUIBadges(); 
-            }
-
-            requestAnimationFrame(loop);
-        }
-
-        function processClick(cX, cY) {
-            if (isFrozen) return;
-
-            const now = Date.now();
-            
-            // Защита от сверхчеловеческой скорости (менее 45 мс между тапами)
-            if (lastClickTimeSystem > 0 && (now - lastClickTimeSystem) < 45) {
-                triggerFreeze(now);
-                return;
-            }
-
-            if (lastClickTimeSystem > 0) {
-                const currentInterval = now - lastClickTimeSystem;
-                clickIntervals.push(currentInterval);
-                clickPositions.push({x: cX, y: cY});
-
-                if (clickIntervals.length > 12) {
-                    clickIntervals.shift();
-                    clickPositions.shift();
-                }
-
-                // Математический анализ на монотонность (когда накопилось больше 8 кликов)
-                if (clickIntervals.length >= 8) {
-                    // 1. Считаем среднее значение интервала
-                    const sum = clickIntervals.reduce((a, b) => a + b, 0);
-                    const avg = sum / clickIntervals.length;
-
-                    // 2. Считаем дисперсию (разброс) интервалов
-                    const variance = clickIntervals.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / clickIntervals.length;
-
-                    // 3. Анализируем разброс координат тачей
-                    let totalDist = 0;
-                    for(let i = 1; i < clickPositions.length; i++) {
-                        totalDist += Math.hypot(clickPositions[i].x - clickPositions[i-1].x, clickPositions[i].y - clickPositions[i-1].y);
-                    }
-                    const avgDistance = totalDist / (clickPositions.length - 1);
-
-                    // Условия детекта: среднее отклонение времени меньше 6мс ИЛИ среднее смещение пальца меньше 0.8 пикселя
-                    if (variance < 35 || avgDistance < 0.8) {
-                        triggerFreeze(now);
-                        return;
-                    }
-                }
-            }
-
-            lastClickTimeSystem = now;
-
-            if (!isFever && state.energy < state.clickPower) return;
-
-            lastClick = now;
-            combo++;
-            updateUIBadges();
-
-            let mult = combo >= 25 ? 5 : (combo >= 12 ? 3 : (combo >= 5 ? 2 : 1));
-            if (isFever) mult = 4;
-
-            let isCrit = Math.random() < 0.07;
-            let critMult = isCrit ? Math.floor(Math.random() * 5) + 6 : 1;
-
-            let reward = state.clickPower * mult * critMult;
-            
-            if(!isFever) state.energy -= state.clickPower;
-            state.balance += reward;
-
-            const rect = document.getElementById('sphere-btn').getBoundingClientRect();
-            tX = ((cY - (rect.top + rect.height/2)) / (rect.height/2)) * -30;
-            tY = ((cX - (rect.left + rect.width/2)) / (rect.width/2)) * 30;
-            tz = -15;
-
-            const fx = document.getElementById('wave-fx'); fx.style.animation = 'none'; fx.offsetHeight; fx.style.animation = 'wave 0.4s ease-out';
-
-            if(isCrit) {
-                document.getElementById('sphere-btn').classList.add('crit-flash');
-                setTimeout(() => document.getElementById('sphere-btn').classList.remove('crit-flash'), 120);
-            }
-
-            createParticle(cX, cY, reward, isCrit);
-        }
-
-        function triggerFreeze(now) {
-            isFrozen = true;
-            freezeUntil = now + 5000; // Наказание: бан кликов на 5 секунд
-            document.getElementById('sphere-btn').classList.add('frozen');
-            combo = 0;
-            updateUIBadges();
-        }
-
-        function updateUIBadges() {
-            document.querySelectorAll('.badge').forEach(b => b.classList.remove('active'));
-            if (isFrozen) { document.getElementById('badge-cheat').classList.add('active'); return; }
-            if (isFever) { document.getElementById('badge-fever').classList.add('active'); return; }
-
-            if (combo >= 25) {
-                document.getElementById('badge-hyper').classList.add('active');
-            } else if (combo >= 5) {
-                const b = document.getElementById('badge-combo');
-                b.innerText = `Комбо x${combo >= 12 ? 3 : 2} 🔥`;
-                b.classList.add('active');
-            }
-        }
-
-        function randomEventTrigger() {
-            if(!isFever && !isFrozen && Math.random() < 0.015) {
-                isFever = true;
-                updateUIBadges();
-                setTimeout(() => { isFever = false; updateUIBadges(); }, 8000);
-            }
-        }
-
-        function createParticle(cX, cY, r, isCrit) {
-            const rect = document.getElementById('click-zone').getBoundingClientRect();
-            const x = cX - rect.left, y = cY - rect.top;
-
-            const n = document.createElement('div');
-            n.className = `floating-num ${isCrit ? 'crit-text' : (isFever ? 'fever-text' : '')}`;
-            n.innerText = isCrit ? `CRIT! +${r}` : `+${r}`;
-            n.style.left = `${x}px`; n.style.top = `${y}px`;
-            document.getElementById('click-zone').appendChild(n);
-            n.addEventListener('animationend', () => n.remove());
-
-            for (let i = 0; i < 4; i++) {
-                const c = document.createElement('div'); c.className = 'mini-coin';
-                c.style.left = `${x}px`; c.style.top = `${y}px`;
-                c.style.setProperty('--mx', (Math.random() - 0.5) * 160 + 'px');
-                c.style.setProperty('--my', (Math.random() - 0.5) * 160 - 40 + 'px');
-                document.getElementById('click-zone').appendChild(c);
-                c.addEventListener('animationend', () => c.remove());
-            }
-        }
-
-        function passiveLoop() { state.balance += state.passiveIncomePerSec * 0.1; }
-        function regenLoop() { if(state.energy < state.maxEnergy) state.energy = Math.min(state.maxEnergy, state.energy + state.energyRegen); }
-        function switchTab(t, e) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.upgrades-container').forEach(c => c.classList.remove('active'));
-            e.target.classList.add('active'); document.getElementById(`tab-${t}`).classList.add('active');
-        }
-
-        // Слушатели событий с передачей координат
-        document.getElementById('sphere-btn').addEventListener('touchstart', (e) => { 
-            e.preventDefault(); 
-            if(e.touches.length > 0) {
-                processClick(e.touches[0].clientX, e.touches[0].clientY); 
-            }
-        }, { passive: false });
-
-        document.getElementById('sphere-btn').addEventListener('mousedown', (e) => { 
-            if ('ontouchstart' in window) return; 
-            processClick(e.clientX, e.clientY); 
+            ammo--;
+            document.getElementById('ammo').innerText = ammo;
         });
 
-        function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify({ balance: state.balance, upgrades: state.upgrades.map(u => ({ id: u.id, level: u.level })) })); }
-        function loadGame() {
-            const raw = localStorage.getItem(SAVE_KEY); if (!raw) return;
-            try {
-                const p = JSON.parse(raw); state.balance = p.balance || 0;
-                if(p.upgrades) p.upgrades.forEach(pu => { const t = state.upgrades.find(u => u.id === pu.id); if(t) t.level = pu.level || 0; });
-            } catch(e) {}
+        // Спавн дронов
+        function spawnDrone() {
+            if (gameOver) return;
+            const x = Math.random() * (canvas.width - 40) + 20;
+            const speed = Math.random() * 1.5 + 1; // Скорость падения
+            drones.push({ x: x, y: 0, speed: speed, r: 12 });
+            
+            // Время между спавном уменьшается со временем (усложнение)
+            setTimeout(spawnDrone, Math.max(800 - score * 5, 300));
         }
-        window.onload = init;
+        spawnDrone();
+
+        // Пассивное пополнение припасов (Логистика)
+        setInterval(() => {
+            if (!gameOver && ammo < 50) {
+                ammo += 5;
+                if (ammo > 50) ammo = 50;
+                document.getElementById('ammo').innerText = ammo;
+            }
+        }, 3000); // Раз в 3 секунды подвозят 5 ракет
+
+        // Главный игровой цикл
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Отрисовка базы/города снизу
+            ctx.fillStyle = '#333';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            
+            // Отрисовка ПВО
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height - 20, 25, Math.PI, 0);
+            ctx.fill();
+
+            // Обновление и отрисовка ракет
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                let m = missiles[i];
+                m.x += m.dx;
+                m.y += m.dy;
+
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(m.x, m.y);
+                ctx.lineTo(m.x - m.dx * 2, m.y - m.dy * 2);
+                ctx.stroke();
+
+                // Проверяем достижение цели (дистанция до точки клика)
+                let distToTarget = Math.hypot(m.x - m.targetX, m.y - m.targetY);
+                if (distToTarget < 10 || m.y < 0) {
+                    explosions.push({ x: m.targetX, y: m.targetY, r: 5, maxR: 40 });
+                    missiles.splice(i, 1);
+                }
+            }
+
+            // Обновление и отрисовка взрывов
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                let exp = explosions[i];
+                exp.r += 2;
+
+                ctx.fillStyle = `rgba(255, 100, 0, ${1 - exp.r / exp.maxR})`;
+                ctx.beginPath();
+                ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Проверка коллизии взрыва с дронами
+                for (let j = drones.length - 1; j >= 0; j--) {
+                    let d = drones[j];
+                    let dist = Math.hypot(d.x - exp.x, d.y - exp.y);
+                    if (dist < exp.r + d.r) {
+                        drones.splice(j, 1);
+                        score += 10;
+                        document.getElementById('score').innerText = score;
+                    }
+                }
+
+                if (exp.r >= exp.maxR) {
+                    explosions.splice(i, 1);
+                }
+            }
+
+            // Обновление и отрисовка дронов
+            for (let i = drones.length - 1; i >= 0; i--) {
+                let d = drones[i];
+                d.y += d.speed;
+
+                // Рисуем дрон (схематичный силуэт)
+                ctx.fillStyle = '#ff3333';
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+                ctx.fill();
+                // Крылья
+                ctx.fillRect(d.x - 20, d.y - 2, 40, 4);
+
+                // Дрон долетел до земли
+                if (d.y > canvas.height - 20) {
+                    drones.splice(i, 1);
+                    baseHealth -= 10;
+                    document.getElementById('health').innerText = baseHealth;
+
+                    if (baseHealth <= 0) {
+                        endGame();
+                    }
+                }
+            }
+
+            if (!gameOver) {
+                requestAnimationFrame(update);
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        function resetGame() {
+            score = 0;
+            baseHealth = 100;
+            ammo = 30;
+            drones = [];
+            missiles = [];
+            explosions = [];
+            gameOver = false;
+            document.getElementById('score').innerText = score;
+            document.getElementById('health').innerText = baseHealth;
+            document.getElementById('ammo').innerText = ammo;
+            document.getElementById('game-over').style.display = 'none';
+            update();
+        }
+
+        // Старт игры
+        update();
     </script>
 </body>
 </html>
