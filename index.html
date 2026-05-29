@@ -202,7 +202,7 @@
                         <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 АВИАЦИЯ (-$2200)</button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 РАКЕТНЫЙ УДАР (-$3800)</button>
+                        <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 ОРЕШНИК (-$3800)</button>
                         <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$1500)</button>
                     </div>
                     <div class="btn-row">
@@ -250,7 +250,7 @@
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
         let aiActive = false;
-        let safeStartCountdown = 30;
+        let safeStartCountdown = 15; // Уменьшили подготовку, чтобы экшен начинался быстрее
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -274,7 +274,7 @@
 
             setInterval(economyCycle, 2500);
             setInterval(radarTick, 50); 
-            setInterval(enemyAILogic, 4500); 
+            setInterval(enemyAILogic, 2500); // ИИ теперь думает и атакует НАМНОГО чаще (было 4500)
             setInterval(changeWeatherCycle, 40000);
 
             addLog(`СИСТЕМА: СТАРТ ЧЕРЕЗ ${safeStartCountdown} СЕК.`, 'system');
@@ -491,7 +491,6 @@
                         radius: 120000, color: '#38bdf8', weight: 1, fillOpacity: 0.01, dashArray: '3,3'
                     }).addTo(map);
 
-                    // У ПВО теперь ОГРАНИЧЕННЫЙ боезапас (5 ракет)
                     playerPVO.push({ lat: lat, lng: lng, marker: m, rangeDist: 1.7, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false, circle: visualCircle });
                     dropModes();
                 }
@@ -521,35 +520,40 @@
             dropModes();
         }
 
-        /* УМНАЯ НЕЙРОСЕТЬ ВРАГА (РЕАЛИСТИЧНЫЙ ИИ) */
+        /* АГРЕССИВНАЯ И УМНАЯ ЛОГИКА ИИ */
         function enemyAILogic() {
             if (!aiActive) return;
-            enemyMoney += 110; // Стабильный, умеренный доход ИИ
+            
+            // Враг получает стабильный приток средств для обеспечения плотного огня
+            enemyMoney += 180; 
 
-            // Анализ слабых мест игрока
-            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 40);
+            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 50);
             let target = brokenCity || CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
-            // Приоритеты ИИ:
-            // 1. Если у игрока много заводов, заглушить экономику ударом ракеты
-            if (playerFactories.length >= 2 && enemyMoney >= 3800) {
+            // Агрессивный приоритет 1: Выкашивать заводы игрока Орешником, ломая экономику
+            if (playerFactories.length > 0 && enemyMoney >= 3800 && Math.random() > 0.4) {
                 enemyMoney -= 3800;
                 let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
-                addLog(`⚠️ ВРАГ: Точечный ракетный удар по вашей инфраструктуре!`, 'enemy');
+                addLog(`⚠️ ВРАГ: Запуск гиперзвукового Орешника по промышленному объекту!`, 'enemy');
                 injectAirTarget(source, {lat: targetFactory.lat, lng: targetFactory.lng, name: 'Завод'}, enemyDrones, false, 'heavy');
-                return;
+                return; 
             }
 
-            // 2. Добивание слабых секторов
+            // Агрессивный приоритет 2: Добивать поврежденные сектора авиацией не дожидаясь ремонта
             if (brokenCity && enemyMoney >= 2200) {
                 enemyMoney -= 2200;
-                addLog(`⚠️ ВРАГ: Попытка подавления аварийного сектора [${brokenCity.name}] авиацией!`, 'enemy');
+                addLog(`⚠️ ВРАГ: Штурмовая авиация направлена на критический сектор [${brokenCity.name}]!`, 'enemy');
                 injectAirTarget(source, brokenCity, enemyDrones, false, 'bomber');
+                // Комбо-атака: если остались деньги, ИИ сразу кидает дроны вдогонку
+                if (enemyMoney >= 250) {
+                    enemyMoney -= 250;
+                    injectAirTarget(source, brokenCity, enemyDrones, false, 'drone');
+                }
                 return;
             }
 
-            // 3. Стандартный прощупывающий налет
+            // Агрессивный приоритет 3: Постоянный спам и прощупывание обороны дронами
             if (enemyMoney >= 250) {
                 enemyMoney -= 250;
                 injectAirTarget(source, target, enemyDrones, false, 'drone');
@@ -559,8 +563,10 @@
         function injectAirTarget(start, target, collection, isPlayer, type) {
             let dLng = target.lng - start.lng, dLat = target.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
-            let speed = type === 'heavy' ? 0.007 : (type === 'bomber' ? 0.0025 : 0.0035);
-            if (currentWeather === 'rain') speed *= 0.75;
+            
+            // РЕАЛИСТИЧНЫЙ ГИПЕРЗВУК: Орешник (heavy) теперь летит невероятно быстро!
+            let speed = type === 'heavy' ? 0.025 : (type === 'bomber' ? 0.0028 : 0.0038);
+            if (currentWeather === 'rain') speed *= 0.8;
 
             let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : (type === 'heavy' ? HEAVY_SVG : BOMBER_SVG);
             let modelHtml = `<div class="drone-container"><div class="rotator" style="transform: rotate(${angle}deg);">${svgMarkup}</div></div>`;
@@ -578,14 +584,12 @@
         }
 
         function economyCycle() {
-            // ЖЕСТКИЙ БАЛАНС: Базово 75, заводы дают +50
             money += 75 + (playerFactories.length * 50);
             playerFactories.forEach(() => droneInventory++);
             
             let all = [...CITIES['UA'], ...CITIES['RU']];
             all.forEach(c => { if(c.hp > 0 && c.hp < 100) c.hp = Math.min(100, c.hp + 1); });
             
-            // Медленная перезарядка ПВО (раз в 2.5 сек по 1 снаряду)
             playerPVO.forEach(p => { if(!p.isCityRadar && p.ammo < p.maxAmmo) p.ammo++; });
 
             CITIES[playerFaction].forEach(c => {
@@ -611,8 +615,9 @@
                 let d = list[i]; d.progress += d.speed;
 
                 if (d.progress >= 1) {
-                    let dmg = d.type === 'heavy' ? 65 : (d.type === 'bomber' ? 45 : 15);
-                    triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy' ? 25000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
+                    // Увеличили урон от Орешника до 85% за счет бешеной кинетической энергии
+                    let dmg = d.type === 'heavy' ? 85 : (d.type === 'bomber' ? 45 : 15);
+                    triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy' ? 30000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
                     applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.targetLat, d.targetLng, dmg);
                     map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
                     list.splice(i, 1); continue;
@@ -662,8 +667,10 @@
                 if (Math.abs(mLat - drone.currentLat) < 0.08 && Math.abs(mLng - drone.currentLng) < 0.08) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
                     
-                    let chance = currentPeriod === 'night' ? 0.5 : 0.85;
-                    if (Math.random() <= chance) {
+                    // Проверка перехвата: Орешник сбить автоматическим ПВО крайне сложно (шанс снижен до 15%)
+                    let targetChance = drone.type === 'heavy' ? 0.15 : (currentPeriod === 'night' ? 0.5 : 0.85);
+                    
+                    if (Math.random() <= targetChance) {
                         drone.hp--;
                         triggerBlast(drone.currentLat, drone.currentLng, 4000, '#38bdf8');
                         if (drone.hp <= 0) {
@@ -674,6 +681,8 @@
                             money += reward;
                             addLog(`🎯 ПВО ликвидировала цель! Награда: +$${reward}`, 'system');
                         }
+                    } else if (drone.type === 'heavy') {
+                        addLog(`⚡ ОРЕШНИК пробил противоракетный купол ПВО!`, 'enemy');
                     }
                     break;
                 }
@@ -681,7 +690,6 @@
         }
 
         function applyRadarDamage(faction, cityName, lat, lng, dmg) {
-            // Проверка: попали в конкретный город или это был удар по заводу
             if (cityName === 'Завод' && faction === playerFaction) {
                 let closeFactory = playerFactories.find(f => Math.abs(f.lat - lat) < 0.05 && Math.abs(f.lng - lng) < 0.05);
                 if (closeFactory) {
@@ -704,7 +712,7 @@
                 setTimeout(() => map.removeLayer(pMarker), 600);
                 
                 if (faction !== playerFaction) {
-                    let attackReward = dmg * 6; // Сбалансированный доход от атак
+                    let attackReward = dmg * 6; 
                     money += attackReward;
                     addLog(`Удар по сектору врага: +$${attackReward}`, 'system');
                 }
