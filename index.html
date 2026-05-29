@@ -158,7 +158,7 @@
     <div id="viewport-wrapper">
         <div id="hud-top">
             <div class="hud-row">
-                <div>БЮДЖЕТ: <span id="txt-money" class="hud-value">600</span>$</div>
+                <div>БЮДЖЕТ: <span id="txt-money" class="hud-value">400</span>$</div>
                 <div id="weather-widget">☀️ ЯСНО</div>
                 <div>АНГАР БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
             </div>
@@ -194,19 +194,19 @@
 
                 <div id="control-panel">
                     <div class="btn-row">
-                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($450)</button>
-                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($600) <span id="pvo-counter">0/5</span></button>
+                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($500)</button>
+                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($750) <span id="pvo-counter">0/5</span></button>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 НАЛЕТ ПАРЫ (-$250)</button>
-                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 АВИАЦИЯ (-$2500)</button>
+                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 АВИАЦИЯ (-$2200)</button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 РАКЕТНЫЙ УДАР (-$4000)</button>
-                        <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$2200)</button>
+                        <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 РАКЕТНЫЙ УДАР (-$3800)</button>
+                        <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$1500)</button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$1500)</button>
+                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$2000)</button>
                     </div>
                 </div>
             </div>
@@ -238,8 +238,8 @@
         };
 
         let playerFaction = null, enemyFaction = null;
-        let money = 600, droneInventory = 0, currentMode = null;
-        let enemyMoney = 600;
+        let money = 400, droneInventory = 0, currentMode = null;
+        let enemyMoney = 400;
 
         let playerFactories = [], playerPVO = [], playerDrones = [];
         let enemyPVO = [], enemyDrones = [];
@@ -250,7 +250,7 @@
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
         let aiActive = false;
-        let safeStartCountdown = 40;
+        let safeStartCountdown = 30;
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -274,7 +274,7 @@
 
             setInterval(economyCycle, 2500);
             setInterval(radarTick, 50); 
-            setInterval(enemyAILogic, 4000); 
+            setInterval(enemyAILogic, 4500); 
             setInterval(changeWeatherCycle, 40000);
 
             addLog(`СИСТЕМА: СТАРТ ЧЕРЕЗ ${safeStartCountdown} СЕК.`, 'system');
@@ -284,7 +284,7 @@
                     addLog(`ДО АТАКЫ ВРАГА: ${safeStartCountdown} СЕК.`, 'system');
                 } else {
                     aiActive = true;
-                    addLog("⚠️ ФАЗА ПОДГОТОВКИ ЗАВЕРШЕНА. ВРАГ АКТИВЕН.", 'enemy');
+                    addLog("⚠️ СЕКТОР ВРАГА АКТИВИРОВАН. НАЧАЛО ОПЕРАЦИИ.", 'enemy');
                     clearInterval(countdownTimer);
                 }
             }, 5000);
@@ -334,7 +334,7 @@
                     L.DomEvent.stopPropagation(e);
                     handleTargetSelection(c);
                 });
-                enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 1.3, ammo: 4, maxAmmo: 4, lastShot: 0, isCityRadar: true, circle: null });
+                enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 1.3, ammo: 3, maxAmmo: 3, lastShot: 0, isCityRadar: true, circle: null });
             });
         }
 
@@ -344,7 +344,7 @@
             container.innerHTML = '';
 
             if (currentMode === 'repair_sector') {
-                title.innerText = "ВЫБЕРИТЕ СЕКТОР ДЛЯ РЕМОНТА (+35%):";
+                title.innerText = "ВЫБЕРИТЕ СЕКТОР ДЛЯ РЕМОНТА (+25%):";
                 title.style.color = "#38bdf8";
                 CITIES[playerFaction].forEach(city => {
                     const btn = document.createElement('button'); btn.className = 'target-btn';
@@ -371,7 +371,7 @@
         }
 
         function toggleRepairMode() {
-            if (money < 1500) return; // Снижено с 2700
+            if (money < 2000) return;
             if (currentMode === 'repair_sector') { dropModes(); return; }
             dropModes(); currentMode = 'repair_sector';
             document.getElementById('btn-repair-mode').classList.add('active');
@@ -382,18 +382,18 @@
         }
 
         function executeSectorRepair(city) {
-            if (money < 1500 || city.hp >= 100) return;
-            money -= 1500; city.hp = Math.min(100, city.hp + 35);
-            addLog(`🛠️ Ремонт [${city.name}]: +35% HP`, 'system');
+            if (money < 2000 || city.hp >= 100) return;
+            money -= 2000; city.hp = Math.min(100, city.hp + 25);
+            addLog(`🛠️ Ремонт [${city.name}]: +25% HP`, 'system');
 
-            let pMarker = L.marker([city.lat + 0.04, city.lng], { icon: L.divIcon({ className: 'heal-popup', html: `+35%` }) }).addTo(map);
+            let pMarker = L.marker([city.lat + 0.04, city.lng], { icon: L.divIcon({ className: 'heal-popup', html: `+25%` }) }).addTo(map);
             setTimeout(() => map.removeLayer(pMarker), 600);
             dropModes(); recalcRadarHUD();
         }
 
         function toggleBuildMode(mode) {
-            if (mode === 'factory' && money < 450) return;
-            if (mode === 'pvo' && (money < 600 || getPlacedPVOCount() >= MAX_PVO_LIMIT)) return;
+            if (mode === 'factory' && money < 500) return;
+            if (mode === 'pvo' && (money < 750 || getPlacedPVOCount() >= MAX_PVO_LIMIT)) return;
             let last = currentMode; dropModes();
             if (last !== mode) {
                 currentMode = mode;
@@ -411,7 +411,7 @@
 
         function toggleBomberMode() {
             if (currentMode === 'bomber_strike') { dropModes(); return; }
-            if (money < 2500) return;
+            if (money < 2200) return;
             dropModes(); currentMode = 'bomber_strike';
             document.getElementById('btn-bomber-mode').classList.add('active');
             updateTargetPanelGrid(); showTargetSelector(true);
@@ -419,7 +419,7 @@
 
         function toggleHeavyMissileMode() {
             if (currentMode === 'heavy_missile') { dropModes(); return; }
-            if (money < 4000) return;
+            if (money < 3800) return;
             dropModes(); currentMode = 'heavy_missile';
             document.getElementById('btn-heavy-mode').classList.add('active');
             updateTargetPanelGrid(); showTargetSelector(true);
@@ -443,27 +443,26 @@
         function updateUIButtons() {
             let pvoCount = getPlacedPVOCount();
             document.getElementById('pvo-counter').innerText = `${pvoCount}/${MAX_PVO_LIMIT}`;
-            document.getElementById('btn-factory').classList.toggle('disabled', money < 450);
-            document.getElementById('btn-pvo').classList.toggle('disabled', money < 600 || pvoCount >= MAX_PVO_LIMIT);
+            document.getElementById('btn-factory').classList.toggle('disabled', money < 500);
+            document.getElementById('btn-pvo').classList.toggle('disabled', money < 750 || pvoCount >= MAX_PVO_LIMIT);
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 250 || droneInventory < 2);
-            document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2500);
-            document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 4000);
-            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 2200 || enemyDrones.length === 0);
-            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 1500);
+            document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2200);
+            document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 3800);
+            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 1500 || enemyDrones.length === 0);
+            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2000);
         }
 
         function buyInterceptorRocket() {
-            if (money < 2200 || enemyDrones.length === 0) return;
+            if (money < 1500 || enemyDrones.length === 0) return;
             let closestDrone = enemyDrones[0];
-            money -= 2200;
+            money -= 1500;
             triggerBlast(closestDrone.currentLat, closestDrone.currentLng, 12000, '#38bdf8');
             map.removeLayer(closestDrone.marker); closestDrone.trails.forEach(t => map.removeLayer(t));
             
-            // Баланс: Повышенные награды при ручном перехвате
-            let reward = closestDrone.type === 'heavy' ? 800 : (closestDrone.type === 'bomber' ? 400 : 150);
+            let reward = closestDrone.type === 'heavy' ? 400 : (closestDrone.type === 'bomber' ? 200 : 60);
             enemyDrones.splice(enemyDrones.indexOf(closestDrone), 1);
             money += reward; 
-            addLog(`🛡️ Перехват ракетой: +$${reward}`, 'system');
+            addLog(`🛡️ Ручной перехват: +$${reward}`, 'system');
             dropModes();
         }
 
@@ -472,8 +471,8 @@
                 if (currentMode === 'attack_target' || currentMode === 'heavy_missile' || currentMode === 'bomber_strike' || currentMode === 'repair_sector') return;
                 const { lat, lng } = e.latlng;
 
-                if (currentMode === 'factory' && money >= 450) {
-                    money -= 450;
+                if (currentMode === 'factory' && money >= 500) {
+                    money -= 500;
                     let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [24, 14] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     let fObj = { lat, lng, marker: m };
@@ -483,8 +482,8 @@
                     });
                     playerFactories.push(fObj);
                     dropModes();
-                } else if (currentMode === 'pvo' && money >= 600 && getPlacedPVOCount() < MAX_PVO_LIMIT) {
-                    money -= 600;
+                } else if (currentMode === 'pvo' && money >= 750 && getPlacedPVOCount() < MAX_PVO_LIMIT) {
+                    money -= 750;
                     let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [24, 14] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     
@@ -492,6 +491,7 @@
                         radius: 120000, color: '#38bdf8', weight: 1, fillOpacity: 0.01, dashArray: '3,3'
                     }).addTo(map);
 
+                    // У ПВО теперь ОГРАНИЧЕННЫЙ боезапас (5 ракет)
                     playerPVO.push({ lat: lat, lng: lng, marker: m, rangeDist: 1.7, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false, circle: visualCircle });
                     dropModes();
                 }
@@ -510,30 +510,47 @@
         }
 
         function dispatchBomberStrike(targetCity) {
-            money -= 2500;
+            money -= 2200;
             injectAirTarget(CITIES[playerFaction][0], targetCity, playerDrones, true, 'bomber');
             dropModes();
         }
 
         function dispatchHeavyStrike(targetCity) {
-            money -= 4000;
+            money -= 3800;
             injectAirTarget(CITIES[playerFaction][0], targetCity, playerDrones, true, 'heavy');
             dropModes();
         }
 
+        /* УМНАЯ НЕЙРОСЕТЬ ВРАГА (РЕАЛИСТИЧНЫЙ ИИ) */
         function enemyAILogic() {
             if (!aiActive) return;
-            enemyMoney += 380;
-            let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
+            enemyMoney += 110; // Стабильный, умеренный доход ИИ
+
+            // Анализ слабых мест игрока
+            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 40);
+            let target = brokenCity || CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
-            if (enemyMoney >= 4000 && Math.random() > 0.6) {
-                enemyMoney -= 4000; addLog(`🚀 Пуск ракеты на [${target.name}]`, 'enemy');
-                injectAirTarget(source, target, enemyDrones, false, 'heavy');
-            } else if (enemyMoney >= 2500 && Math.random() > 0.6) {
-                enemyMoney -= 2500; addLog(`💥 Авианалет на [${target.name}]`, 'enemy');
-                injectAirTarget(source, target, enemyDrones, false, 'bomber');
-            } else if (enemyMoney >= 250) {
+            // Приоритеты ИИ:
+            // 1. Если у игрока много заводов, заглушить экономику ударом ракеты
+            if (playerFactories.length >= 2 && enemyMoney >= 3800) {
+                enemyMoney -= 3800;
+                let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
+                addLog(`⚠️ ВРАГ: Точечный ракетный удар по вашей инфраструктуре!`, 'enemy');
+                injectAirTarget(source, {lat: targetFactory.lat, lng: targetFactory.lng, name: 'Завод'}, enemyDrones, false, 'heavy');
+                return;
+            }
+
+            // 2. Добивание слабых секторов
+            if (brokenCity && enemyMoney >= 2200) {
+                enemyMoney -= 2200;
+                addLog(`⚠️ ВРАГ: Попытка подавления аварийного сектора [${brokenCity.name}] авиацией!`, 'enemy');
+                injectAirTarget(source, brokenCity, enemyDrones, false, 'bomber');
+                return;
+            }
+
+            // 3. Стандартный прощупывающий налет
+            if (enemyMoney >= 250) {
                 enemyMoney -= 250;
                 injectAirTarget(source, target, enemyDrones, false, 'drone');
             }
@@ -561,12 +578,14 @@
         }
 
         function economyCycle() {
-            // Баланс: Было 50 + заводы * 45. Стало базово 150 + заводы * 100!
-            money += 150 + (playerFactories.length * 100);
+            // ЖЕСТКИЙ БАЛАНС: Базово 75, заводы дают +50
+            money += 75 + (playerFactories.length * 50);
             playerFactories.forEach(() => droneInventory++);
             
             let all = [...CITIES['UA'], ...CITIES['RU']];
             all.forEach(c => { if(c.hp > 0 && c.hp < 100) c.hp = Math.min(100, c.hp + 1); });
+            
+            // Медленная перезарядка ПВО (раз в 2.5 сек по 1 снаряду)
             playerPVO.forEach(p => { if(!p.isCityRadar && p.ammo < p.maxAmmo) p.ammo++; });
 
             CITIES[playerFaction].forEach(c => {
@@ -592,9 +611,9 @@
                 let d = list[i]; d.progress += d.speed;
 
                 if (d.progress >= 1) {
-                    let dmg = d.type === 'heavy' ? 75 : (d.type === 'bomber' ? 50 : 15);
+                    let dmg = d.type === 'heavy' ? 65 : (d.type === 'bomber' ? 45 : 15);
                     triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy' ? 25000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
-                    applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, dmg);
+                    applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.targetLat, d.targetLng, dmg);
                     map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
                     list.splice(i, 1); continue;
                 }
@@ -614,7 +633,7 @@
                         let range = pvo.rangeDist; 
                         if (currentWeather === 'fog') range *= 0.75;
 
-                        if (approxDist <= Math.pow(range, 2) && !pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 1300)) {
+                        if (approxDist <= Math.pow(range, 2) && !pvo.isCityRadar && pvo.ammo > 0 && (now - pvo.lastShot > 1400)) {
                             pvo.ammo--; pvo.lastShot = now; fireInterceptor(pvo, d, true);
                         }
                     });
@@ -651,10 +670,9 @@
                             map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
                             m.targetCollection.splice(m.targetCollection.indexOf(drone), 1);
                             
-                            // Баланс: Повышенные награды за автоматическое сбитие ПВО
-                            let reward = drone.type === 'heavy' ? 800 : (drone.type === 'bomber' ? 400 : 150);
+                            let reward = drone.type === 'heavy' ? 400 : (drone.type === 'bomber' ? 200 : 60);
                             money += reward;
-                            addLog(`🎯 Цель уничтожена ПВО! Бонус: +$${reward}`, 'system');
+                            addLog(`🎯 ПВО ликвидировала цель! Награда: +$${reward}`, 'system');
                         }
                     }
                     break;
@@ -662,7 +680,19 @@
             }
         }
 
-        function applyRadarDamage(faction, cityName, dmg) {
+        function applyRadarDamage(faction, cityName, lat, lng, dmg) {
+            // Проверка: попали в конкретный город или это был удар по заводу
+            if (cityName === 'Завод' && faction === playerFaction) {
+                let closeFactory = playerFactories.find(f => Math.abs(f.lat - lat) < 0.05 && Math.abs(f.lng - lng) < 0.05);
+                if (closeFactory) {
+                    map.removeLayer(closeFactory.marker);
+                    playerFactories.splice(playerFactories.indexOf(closeFactory), 1);
+                    addLog(`💥 СИСТЕМА: Ваш завод был полностью уничтожен ударом врага!`, 'enemy');
+                    recalcRadarHUD();
+                    return;
+                }
+            }
+
             let city = CITIES[faction].find(c => c.name === cityName);
             if (city) {
                 city.hp = Math.max(0, city.hp - dmg);
@@ -673,11 +703,10 @@
                 let pMarker = L.marker([city.lat + 0.04, city.lng], { icon: L.divIcon({ className: 'damage-popup', html: `-${dmg}%` }) }).addTo(map);
                 setTimeout(() => map.removeLayer(pMarker), 600);
                 
-                // Награда за успешное поражение врага (пропорционально урону)
                 if (faction !== playerFaction) {
-                    let attackReward = dmg * 12; // Было *6, теперь *12!
+                    let attackReward = dmg * 6; // Сбалансированный доход от атак
                     money += attackReward;
-                    addLog(`Успешный удар по врагу: +$${attackReward}`, 'system');
+                    addLog(`Удар по сектору врага: +$${attackReward}`, 'system');
                 }
                 recalcRadarHUD();
             }
