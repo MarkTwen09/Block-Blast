@@ -13,8 +13,8 @@
             background: #060913; color: #00f2fe; -webkit-user-select: none; user-select: none;
         }
         
-        #viewport-wrapper { width: 100%; height: 100%; }
-        #map { width: 100%; height: 100%; background: #05070f; }
+        #viewport-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
+        #map { flex-grow: 1; width: 100%; height: 100%; background: #05070f; z-index: 1; }
         
         #monitor-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -39,71 +39,87 @@
         }
         .faction-btn:hover { background: rgba(0, 242, 254, 0.15); box-shadow: 0 0 15px #00f2fe; }
 
-        /* ИНТЕРФЕЙС HUD */
+        /* ВЕРХНИЙ HUD — КОМПАКТНЫЙ ДЛЯ МОБИЛОК */
         #hud-top {
-            position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
-            background: rgba(10, 15, 30, 0.9); border: 1px solid rgba(0, 242, 254, 0.4);
-            backdrop-filter: blur(10px); border-radius: 4px; padding: 12px; font-size: 11px; pointer-events: none;
+            position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000;
+            background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 242, 254, 0.3);
+            backdrop-filter: blur(8px); border-radius: 4px; padding: 8px; font-size: 10px; pointer-events: none;
         }
-        .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .hud-value { font-weight: bold; color: #fff; text-shadow: 0 0 8px #00f2fe; }
-        .hp-bar-container { width: 100%; background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; overflow: hidden; margin-top: 3px; }
+        .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .hud-value { font-weight: bold; color: #fff; text-shadow: 0 0 6px #00f2fe; }
+        .hp-bar-container { width: 100%; background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; overflow: hidden; margin-top: 2px; }
         .hp-bar-fill { height: 100%; width: 100%; transition: width 0.4s ease; }
-        .hp-player { background: #00f2fe; box-shadow: 0 0 8px #00f2fe; }
-        .hp-enemy { background: #ff0055; box-shadow: 0 0 8px #ff0055; }
+        .hp-player { background: #00f2fe; box-shadow: 0 0 6px #00f2fe; }
+        .hp-enemy { background: #ff0055; box-shadow: 0 0 6px #ff0055; }
 
-        /* Лог */
-        #log-container {
-            position: absolute; bottom: 185px; left: 12px; right: 12px; z-index: 1010;
-            background: rgba(10, 15, 30, 0.9); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 4px; overflow: hidden;
+        /* МОБИЛЬНЫЙ КОНТЕНТ: СВОРАЧИВАЕМАЯ ПАНЕЛЬ ИЗ-ЗА КОТОРОЙ ВСЁ ПЕРЕКРЫВАЛОСЬ */
+        #bottom-ui-wrapper {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; flex-direction: column; background: rgba(6, 9, 19, 0.95);
+            border-top: 1px solid rgba(0, 242, 254, 0.3); backdrop-filter: blur(10px);
+            transition: transform 0.3s ease-in-out;
         }
-        #log-header {
-            background: rgba(255,255,255,0.03); padding: 8px 12px; font-size: 10px; font-weight: bold;
-            color: #64748b; border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+        
+        /* Состояние скрытого пульта */
+        .ui-collapsed { transform: translateY(calc(100% - 35px)); }
+
+        #toggle-ui-btn {
+            height: 35px; background: rgba(10, 15, 30, 0.9); color: #00f2fe;
+            border: none; border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+            font-family: inherit; font-size: 11px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; letter-spacing: 2px;
+        }
+
+        #inner-ui-content { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+        /* Лог уведомлений */
+        #log-container {
+            background: rgba(10, 15, 30, 0.5); border: 1px solid rgba(0, 242, 254, 0.15); border-radius: 4px; overflow: hidden;
         }
         #log-panel {
-            height: 55px; padding: 6px 12px; font-size: 10px; overflow-y: auto;
-            display: flex; flex-direction: column-reverse; pointer-events: none; line-height: 1.4;
+            height: 45px; padding: 4px 8px; font-size: 9px; overflow-y: auto;
+            display: flex; flex-direction: column-reverse; pointer-events: none; line-height: 1.3;
         }
-        .log-entry { margin-bottom: 2px; color: #00f2fe; }
+        .log-entry { margin-bottom: 1px; color: #00f2fe; }
         .log-entry.enemy { color: #ff0055; }
         .log-entry.system { color: #eab308; }
 
-        /* Пульт управления */
-        #control-panel {
-            position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 6px;
-        }
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        /* Кнопки управления */
+        #control-panel { display: flex; flex-direction: column; gap: 5px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .btn {
-            background: rgba(15, 23, 42, 0.8); color: #94a3b8; border: 1px solid rgba(0, 242, 254, 0.3);
-            padding: 13px 4px; cursor: pointer; font-size: 10px; font-weight: bold;
-            border-radius: 4px; font-family: inherit; transition: all 0.15s; letter-spacing: 1px;
+            background: rgba(15, 23, 42, 0.8); color: #94a3b8; border: 1px solid rgba(0, 242, 254, 0.25);
+            padding: 10px 3px; cursor: pointer; font-size: 9px; font-weight: bold;
+            border-radius: 4px; font-family: inherit; transition: all 0.15s; letter-spacing: 0.5px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .btn:hover:not(.disabled) { background: rgba(0, 242, 254, 0.1); color: #fff; }
-        .btn.active { background: rgba(0, 242, 254, 0.15); color: #fff; border-color: #00f2fe; box-shadow: 0 0 12px rgba(0, 242, 254, 0.3); }
+        .btn.active { background: rgba(0, 242, 254, 0.15); color: #fff; border-color: #00f2fe; box-shadow: 0 0 8px rgba(0, 242, 254, 0.3); }
         .btn.disabled { opacity: 0.2; cursor: not-allowed; border-color: transparent; }
         
-        .btn-orange { border-color: rgba(249, 115, 22, 0.4); color: #f97316; }
-        .btn-orange.active { background: rgba(249,115,22,0.15); border-color: #f97316; box-shadow: 0 0 12px #f97316; }
+        .btn-orange { border-color: rgba(249, 115, 22, 0.3); color: #f97316; }
+        .btn-orange.active { background: rgba(249,115,22,0.15); border-color: #f97316; box-shadow: 0 0 8px #f97316; }
         
-        .btn-purple { border-color: rgba(168, 85, 247, 0.4); color: #a855f7; }
-        .btn-purple.active { background: rgba(168,85,247,0.15); border-color: #a855f7; box-shadow: 0 0 15px #a855f7; color: #fff; }
+        .btn-purple { border-color: rgba(168, 85, 247, 0.3); color: #a855f7; }
+        .btn-purple.active { background: rgba(168,85,247,0.15); border-color: #a855f7; box-shadow: 0 0 10px #a855f7; }
         
-        .btn-red { border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
-        .btn-red.active { background: rgba(239,68,68,0.15); border-color: #ef4444; box-shadow: 0 0 12px #ef4444; color: #fff; }
+        .btn-red { border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
+        .btn-red.active { background: rgba(239,68,68,0.15); border-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
 
-        /* ИГРОВЫЕ ТЕКСТУРЫ И КОНТЕЙНЕРЫ ДЛЯ ВРАЩЕНИЯ */
+        /* ВЕКТОРНЫЕ КОНТЕЙНЕРЫ (ИСПРАВЛЕНО ВРАЩЕНИЕ НА 100%) */
         .drone-container {
             width: 32px; height: 32px;
             display: flex; align-items: center; justify-content: center;
-            transition: transform 0.1s linear;
+        }
+        .rotator {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%;
         }
 
         /* Маркеры городов */
         .city-marker {
             background: rgba(6, 9, 19, 0.9); border: 1px solid rgba(56, 189, 248, 0.5);
-            color: #e2e8f0; font-size: 10px; font-weight: bold; border-radius: 3px; padding: 3px 6px;
+            color: #e2e8f0; font-size: 9px; font-weight: bold; border-radius: 3px; padding: 2px 4px;
             white-space: nowrap; box-shadow: 0 0 6px rgba(0,0,0,0.8);
         }
         .city-marker.enemy { border-color: rgba(255, 0, 85, 0.6); color: #fecdd3; }
@@ -112,32 +128,32 @@
 
         .build-marker {
             background: #060913; border: 1px solid #38bdf8; color: #38bdf8;
-            font-size: 9px; font-weight: bold; border-radius: 2px; text-align: center; line-height: 14px;
-            padding: 0 4px; box-shadow: 0 0 8px rgba(56,189,248,0.4);
+            font-size: 8px; font-weight: bold; border-radius: 2px; text-align: center; line-height: 12px;
+            padding: 0 3px; box-shadow: 0 0 6px rgba(56,189,248,0.4);
         }
 
         .damage-popup {
-            font-size: 12px; font-weight: bold; color: #ff0055; text-shadow: 0 0 4px #000;
+            font-size: 11px; font-weight: bold; color: #ff0055; text-shadow: 0 0 3px #000;
             animation: float-damage 0.6s ease-out forwards;
         }
 
         @keyframes hard-shake {
             0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-3px, 2px); }
-            40% { transform: translate(3px, -2px); }
-            60% { transform: translate(-1px, -3px); }
-            80% { transform: translate(2px, 2px); }
+            20% { transform: translate(-2px, 1px); }
+            40% { transform: translate(2px, -1px); }
+            60% { transform: translate(-1px, -2px); }
+            80% { transform: translate(1px, 1px); }
         }
         @keyframes float-damage {
             0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-25px); opacity: 0; }
+            100% { transform: translateY(-20px); opacity: 0; }
         }
         @keyframes global-screen-shake {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            20% { transform: translate(-4px, 2px) rotate(-0.5deg); }
-            40% { transform: translate(4px, -2px) rotate(0.5deg); }
-            60% { transform: translate(-2px, -4px) rotate(-0.2deg); }
-            80% { transform: translate(3px, 3px) rotate(0.3deg); }
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-3px, 1px); }
+            40% { transform: translate(3px, -1px); }
+            60% { transform: translate(-1px, -3px); }
+            80% { transform: translate(2px, 2px); }
         }
     </style>
 </head>
@@ -147,8 +163,8 @@
 
     <div id="faction-screen">
         <div class="cyber-panel">
-            <h2 style="letter-spacing: 2px; margin: 0 0 8px 0; font-size: 15px; color: #fff;">СТРАТЕГИЧЕСКАЯ МАТРИЦА</h2>
-            <p style="color: #475569; font-size: 9px; margin: 0 0 25px 0;">ВЫБЕРИТЕ СВОЮ ФРАКЦИЮ</p>
+            <h2 style="letter-spacing: 2px; margin: 0 0 8px 0; font-size: 14px; color: #fff;">СТРАТЕГИЧЕСКАЯ МАТРИЦА</h2>
+            <p style="color: #475569; font-size: 9px; margin: 0 0 20px 0;">ВЫБЕРИТЕ СВОЮ ФРАКЦИЮ</p>
             <button class="faction-btn" onclick="selectFaction('UA')">КОМАНДОВАНИЕ [UA]</button>
             <button class="faction-btn" onclick="selectFaction('RU')" style="border-color:#ff0055; color:#ff0055;">КОМАНДОВАНИЕ [RU]</button>
         </div>
@@ -160,42 +176,43 @@
                 <div>БЮДЖЕТ: <span id="txt-money" class="hud-value">600</span>$</div>
                 <div>АНГАР БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
             </div>
-            <div class="hud-row" style="margin-top: 4px;">
+            <div class="hud-row" style="margin-top: 2px;">
                 <div style="width: 48%;">
-                    <div style="font-size:9px; color:#64748b;">ЦЕЛОСТНОСТЬ БАЗ: <span id="lbl-hp">100%</span></div>
+                    <div style="font-size:8px; color:#64748b;">НАШИ БАЗЫ: <span id="lbl-hp">100%</span></div>
                     <div class="hp-bar-container"><div id="bar-player" class="hp-bar-fill hp-player" style="width: 100%;"></div></div>
                 </div>
                 <div style="width: 48%; text-align: right;">
-                    <div style="font-size:9px; color:#64748b;">УНИЧТОЖЕНИЕ ПРОТИВНИКА: <span id="lbl-enemy-hp">100%</span></div>
+                    <div style="font-size:8px; color:#64748b;">ПРОТИВНИК: <span id="lbl-enemy-hp">100%</span></div>
                     <div class="hp-bar-container" style="margin-left: auto;"><div id="bar-enemy" class="hp-bar-fill hp-enemy" style="width: 100%;"></div></div>
                 </div>
             </div>
         </div>
 
-        <div id="log-container">
-            <div id="log-header">
-                <span>📟 МОНИТОР СИТУАЦИОННОГО ЦЕНТРА</span>
-            </div>
-            <div id="log-panel"></div>
-        </div>
-
-        <div id="control-panel">
-            <div class="btn-row">
-                <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] СБОРОЧНЫЙ ЗАВ ($350)</button>
-                <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] БАТАРЕЯ ПВО ($400) <span id="pvo-counter">0/4</span></button>
-            </div>
-            <div class="btn-row">
-                <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 НАЛЕТ ПАРЫ БПЛА (-$150)</button>
-                <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 АВИАУДАР: ФАБ-1500 (-$1500)</button>
-            </div>
-            <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 СТРАТЕГИЧЕСКИЙ РАКЕТНЫЙ УДАР (-$2000)</button>
-        </div>
-
         <div id="map"></div>
+
+        <div id="bottom-ui-wrapper" class="ui-collapsed">
+            <button id="toggle-ui-btn" onclick="toggleUIPanel()">🎛️ ПУЛЬТ УПРАВЛЕНИЯ (НАЖАТЬ)</button>
+            <div id="inner-ui-content">
+                <div id="log-container">
+                    <div id="log-panel"></div>
+                </div>
+
+                <div id="control-panel">
+                    <div class="btn-row">
+                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($350)</button>
+                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($400) <span id="pvo-counter">0/4</span></button>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 НАЛЕТ ПАРЫ (-$150)</button>
+                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 ФАБ-1500 (-$1500)</button>
+                    </div>
+                    <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 СТРАТЕГИЧЕСКИЙ РАКЕТНЫЙ УДАР (-$2000)</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // База городов на карте
         const CITIES = {
             'UA': [
                 { lat: 50.45, lng: 30.52, name: 'Киев', hp: 100 },
@@ -230,10 +247,16 @@
         
         const MAX_PVO_LIMIT = 4;
 
-        // Векторные SVG модели, которые загружаются мгновенно и без ошибок
-        const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="32" height="32" style="filter: drop-shadow(0 0 5px #ff0055);"><path d="M50,15 L90,85 L75,85 L70,75 L30,75 L25,85 L10,85 Z" fill="#6b7280" stroke="#ff0055" stroke-width="3"/><circle cx="50" cy="80" r="4" fill="#ef4444"/><path d="M50,15 L50,55" stroke="#ef4444" stroke-width="2"/></svg>`;
-        const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="filter: drop-shadow(0 0 4px #00f2fe);"><path d="M50,10 L85,80 L50,60 L15,80 Z" fill="rgba(0, 242, 254, 0.2)" stroke="#00f2fe" stroke-width="4"/></svg>`;
-        const MISSILE_SVG = `<svg viewBox="0 0 20 40" width="6" height="12"><rect x="8" y="0" width="4" height="30" fill="#38bdf8" rx="2"/><path d="M6,25 L14,25 L10,40 Z" fill="#f97316"/></svg>`;
+        // Векторные SVG без единой внешней ссылки (0 ошибок загрузки)
+        const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="28" height="28" style="filter: drop-shadow(0 0 5px #ff0055); fill: #1e293b; stroke: #ff0055; stroke-width: 5;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
+        const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="filter: drop-shadow(0 0 5px #00f2fe); fill: rgba(0,242,254,0.2); stroke: #00f2fe; stroke-width: 6;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
+        const HEAVY_SVG = `<svg viewBox="0 0 100 100" width="26" height="26"><path d="M50,2 L65,35 L98,50 L65,65 L50,98 L35,65 L2,50 L35,35 Z" fill="#f97316" style="filter: drop-shadow(0 0 6px #f97316);"/></svg>`;
+        const BOMBER_SVG = `<svg viewBox="0 0 100 100" width="28" height="28"><path d="M50,5 L95,55 L50,40 L5,55 Z" fill="#a855f7" style="filter: drop-shadow(0 0 8px #a855f7);"/></svg>`;
+
+        function toggleUIPanel() {
+            const panel = document.getElementById('bottom-ui-wrapper');
+            panel.classList.toggle('ui-collapsed');
+        }
 
         function selectFaction(faction) {
             playerFaction = faction;
@@ -295,6 +318,7 @@
             dropModes(); currentMode = 'attack_source';
             document.getElementById('btn-attack-mode').classList.add('active');
             addLog("ВЫБЕРИТЕ СБОРОЧНЫЙ ЗАВ НА КАРТЕ.");
+            if(document.getElementById('bottom-ui-wrapper').classList.contains('ui-collapsed') === false) toggleUIPanel();
         }
 
         function toggleBomberMode() {
@@ -304,6 +328,7 @@
             dropModes(); currentMode = 'bomber_strike';
             document.getElementById('btn-bomber-mode').classList.add('active');
             addLog("ВЫБЕРИТЕ КРАСНЫЙ ГОРОД ДЛЯ УДАРA ФАБ-1500.");
+            if(document.getElementById('bottom-ui-wrapper').classList.contains('ui-collapsed') === false) toggleUIPanel();
         }
 
         function toggleHeavyMissileMode() {
@@ -313,6 +338,7 @@
             dropModes(); currentMode = 'heavy_missile';
             document.getElementById('btn-heavy-mode').classList.add('active');
             addLog("УКАЖИТЕ ЦЕЛЬ ДЛЯ СТРАТЕГИЧЕСКОГО ПУСКА.");
+            if(document.getElementById('bottom-ui-wrapper').classList.contains('ui-collapsed') === false) toggleUIPanel();
         }
 
         function dropModes() {
@@ -347,7 +373,7 @@
 
                 if (currentMode === 'factory' && money >= 350) {
                     money -= 350;
-                    let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [32, 16], iconAnchor: [16, 8] });
+                    let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [28, 14], iconAnchor: [14, 7] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     let fObj = { lat, lng, marker: m };
                     m.on('click', function(event) { 
@@ -359,7 +385,7 @@
                     dropModes();
                 } else if (currentMode === 'pvo' && money >= 400 && getPlacedPVOCount() < MAX_PVO_LIMIT) {
                     money -= 400;
-                    let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [32, 16], iconAnchor: [16, 8] });
+                    let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [28, 14], iconAnchor: [14, 7] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     playerPVO.push({ lat: lat, lng: lng, marker: m, rangeDist: 130000, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false });
                     addLog("РАСЧЕТ ПВО ЗАНЯЛ ПОЗИЦИЮ.");
@@ -382,7 +408,7 @@
 
         function dispatchBomberStrike(targetCity) {
             money -= 1500;
-            addLog(`💥 ТУ-95МС ВЫШЕЛ НА РУБЕЖ ПУСКА ПО [${targetCity.name}].`, 'system');
+            addLog(`💥 ВЫЛЕТ ТАКТИЧЕСКОГО СТРАТЕГА К [${targetCity.name}].`, 'system');
             let start = CITIES[playerFaction][0]; 
             injectAirTarget(start, targetCity, playerDrones, true, 'bomber');
             dropModes();
@@ -400,33 +426,38 @@
             if (enemyMoney >= 2000) {
                 enemyMoney -= 2000;
                 let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
-                addLog(`[🚨] РАКЕТНАЯ ОПАСНОСТЬ: ТАКТИЧЕСКИЙ ПУСК НА [${target.name}]!`, 'enemy');
+                addLog(`[🚨] РАКЕТНАЯ ОПАСНОСТЬ: КР ИДЕТ НА [${target.name}]!`, 'enemy');
                 injectAirTarget(CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)], target, enemyDrones, false, 'heavy');
                 return;
             }
             if (enemyMoney >= 240) {
                 enemyMoney -= 150;
                 let target = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
-                addLog(`[⚠️] ОБНАРУЖЕНЫ ДРОНЫ-КАМИКАДЗЕ В НАПРАВЛЕНИИ [${target.name}]!`, 'enemy');
+                addLog(`[⚠️] ОБНАРУЖЕНЫ ШАХЕДЫ В НАПРАВЛЕНИИ [${target.name}]!`, 'enemy');
                 injectAirTarget(CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)], target, enemyDrones, false, 'drone');
             }
         }
 
         function injectAirTarget(start, target, collection, isPlayer, type) {
-            let angle = Math.atan2(target.lng - start.lng, target.lat - start.lat) * (180 / Math.PI);
+            // Исправленный расчет угла для Leaflet (отрицательный Y идет вверх)
+            let dLng = target.lng - start.lng;
+            let dLat = target.lat - start.lat;
+            let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
+            
             let speed = type === 'heavy' ? 0.006 : (type === 'bomber' ? 0.0015 : 0.0025);
             let hp = type === 'bomber' ? 4 : 1;
 
-            let modelHtml = "";
+            let svgMarkup = "";
             if (type === 'drone') {
-                // Если летит враг — это Шахед, если игрок — наш дрон. Угол правится динамически
-                let svg = isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG;
-                let correction = isPlayer ? 0 : 0; 
-                modelHtml = `<div class="drone-container" style="transform: rotate(${angle + 90}deg);">${svg}</div>`;
+                svgMarkup = isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG;
+            } else if (type === 'heavy') {
+                svgMarkup = HEAVY_SVG;
             } else {
-                let color = type === 'heavy' ? '#f97316' : '#a855f7';
-                modelHtml = `<div class="drone-container" style="transform: rotate(${angle + 90}deg);"><svg viewBox="0 0 100 100" width="24" height="24"><path d="M50,5 L60,40 L90,50 L60,60 L50,95 L40,60 L10,50 L40,40 Z" fill="${color}"/></svg></div>`;
+                svgMarkup = BOMBER_SVG;
             }
+
+            // Нос SVG изначально смотрит строго вверх (0 градусов), поворачиваем на вычисленный угол
+            let modelHtml = `<div class="drone-container"><div class="rotator" style="transform: rotate(${angle}deg);">${svgMarkup}</div></div>`;
 
             let marker = L.marker([start.lat, start.lng], {
                 icon: L.divIcon({ className: 'custom-track', html: modelHtml, iconSize: [32, 32], iconAnchor: [16, 16] })
@@ -489,8 +520,8 @@
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
                 if (Math.random() > 0.5) {
-                    let dot = L.circle([cLat, cLng], { radius: 1000, color: isPlayer ? '#00f2fe' : '#ff0055', weight: 0, fillOpacity: 0.3 }).addTo(map);
-                    d.trails.push(dot); if (d.trails.length > 5) map.removeLayer(d.trails.shift());
+                    let dot = L.circle([cLat, cLng], { radius: 800, color: isPlayer ? '#00f2fe' : '#ff0055', weight: 0, fillOpacity: 0.25 }).addTo(map);
+                    d.trails.push(dot); if (d.trails.length > 4) map.removeLayer(d.trails.shift());
                 }
 
                 if (!isPlayer) {
@@ -513,9 +544,9 @@
 
         function fireInterceptor(pvo, target, isPlayerPVO) {
             let marker = L.marker([pvo.lat, pvo.lng], {
-                icon: L.divIcon({ className: 'interceptor-track', html: MISSILE_SVG, iconSize: [6, 12], iconAnchor: [3, 6] })
+                icon: L.divIcon({ className: 'interceptor-track', html: `<div style="width:4px; height:4px; background:#38bdf8; border-radius:50%; box-shadow:0 0 6px #38bdf8;"></div>`, iconSize: [4, 4] })
             }).addTo(map);
-            missiles.push({ marker: marker, lat: pvo.lat, lng: pvo.lng, droneId: target.id, targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.14, isPlayer: isPlayerPVO });
+            missiles.push({ marker: marker, lat: pvo.lat, lng: pvo.lng, droneId: target.id, targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.15, isPlayer: isPlayerPVO });
         }
 
         function processInterceptors() {
@@ -529,7 +560,7 @@
                 let mLng = m.lng + (drone.currentLng - m.lng) * m.progress;
                 m.marker.setLatLng([mLat, mLng]);
 
-                if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 16000) {
+                if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 15000) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
                     if (Math.random() <= (drone.type === 'heavy' ? 0.4 : 0.85)) {
                         drone.hp--;
@@ -537,7 +568,7 @@
                         if (drone.hp <= 0) {
                             map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
                             let idx = m.targetCollection.indexOf(drone); if (idx > -1) m.targetCollection.splice(idx, 1);
-                            addLog(m.isPlayer ? "КОНТР-ПЕРЕХВАТ УСПЕШЕН." : "ХАРДПОИНТ УТЕРЯН.", m.isPlayer ? 'system' : 'enemy');
+                            addLog(m.isPlayer ? "КОНТР-ПЕРЕХВАТ УСПЕШЕН." : "БПЛА ПОТЕРЯН.", m.isPlayer ? 'system' : 'enemy');
                         }
                     }
                     break;
@@ -552,11 +583,11 @@
                 let el = city.markerInstance.getElement();
                 if (el) { el.classList.add('shake-hit'); setTimeout(() => el.classList.remove('shake-hit'), 400); }
 
-                let pMarker = L.marker([city.lat + 0.08, city.lng], { icon: L.divIcon({ className: 'damage-popup', html: `-${dmg}%` }) }).addTo(map);
+                let pMarker = L.marker([city.lat + 0.05, city.lng], { icon: L.divIcon({ className: 'damage-popup', html: `-${dmg}%` }) }).addTo(map);
                 setTimeout(() => map.removeLayer(pMarker), 600);
 
                 if (faction === playerFaction) addLog(`УДАР ПО СЕКТОРУ [${cityName.toUpperCase()}]: -${dmg}%`, 'enemy');
-                else { money += dmg * 7; addLog(`МАТРИЦА СЕКТОРА СЛОМАНА: +$${dmg * 7}`, 'system'); }
+                else { money += dmg * 7; addLog(`ЦЕЛЬ ПОРАЖЕНА: +$${dmg * 7}`, 'system'); }
                 recalcRadarHUD();
             }
         }
@@ -578,8 +609,8 @@
         }
 
         function triggerBlast(lat, lng, maxR, color) {
-            let flash = L.circle([lat, lng], { radius: 400, color: color, fillColor: color, fillOpacity: 0.8, weight: 1 }).addTo(map);
-            let r = 400;
+            let flash = L.circle([lat, lng], { radius: 300, color: color, fillColor: color, fillOpacity: 0.8, weight: 1 }).addTo(map);
+            let r = 300;
             let loop = setInterval(() => {
                 r += 2500; flash.setRadius(r); flash.setStyle({ fillOpacity: 0.8 * (1 - r/maxR) });
                 if(r >= maxR) { clearInterval(loop); map.removeLayer(flash); }
@@ -591,9 +622,9 @@
             w.style.animation = "global-screen-shake 0.4s ease-in-out infinite";
             for(let i = 0; i < 4; i++) {
                 setTimeout(() => {
-                    let rLat = lat + (Math.random() - 0.5) * 0.06;
-                    let rLng = lng + (Math.random() - 0.5) * 0.06;
-                    triggerBlast(rLat, rLng, 40000, '#a855f7');
+                    let rLat = lat + (Math.random() - 0.5) * 0.05;
+                    let rLng = lng + (Math.random() - 0.5) * 0.05;
+                    triggerBlast(rLat, rLng, 35000, '#a855f7');
                 }, i * 180);
             }
             setTimeout(() => { w.style.animation = "none"; }, 750);
