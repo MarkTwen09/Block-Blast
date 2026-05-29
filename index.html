@@ -39,7 +39,7 @@
         }
         .faction-btn:hover { background: rgba(0, 242, 254, 0.15); box-shadow: 0 0 15px #00f2fe; }
 
-        /* ВЕРХНИЙ HUD — КОМПАКТНЫЙ ДЛЯ МОБИЛОК */
+        /* ВЕРХНИЙ HUD */
         #hud-top {
             position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000;
             background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 242, 254, 0.3);
@@ -52,15 +52,14 @@
         .hp-player { background: #00f2fe; box-shadow: 0 0 6px #00f2fe; }
         .hp-enemy { background: #ff0055; box-shadow: 0 0 6px #ff0055; }
 
-        /* МОБИЛЬНЫЙ КОНТЕНТ: СВОРАЧИВАЕМАЯ ПАНЕЛЬ ИЗ-ЗА КОТОРОЙ ВСЁ ПЕРЕКРЫВАЛОСЬ */
+        /* СВОРАЧИВАЕМАЯ ПАНЕЛЬ СНИЗУ */
         #bottom-ui-wrapper {
             position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
             display: flex; flex-direction: column; background: rgba(6, 9, 19, 0.95);
             border-top: 1px solid rgba(0, 242, 254, 0.3); backdrop-filter: blur(10px);
-            transition: transform 0.3s ease-in-out;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        /* Состояние скрытого пульта */
         .ui-collapsed { transform: translateY(calc(100% - 35px)); }
 
         #toggle-ui-btn {
@@ -77,7 +76,7 @@
             background: rgba(10, 15, 30, 0.5); border: 1px solid rgba(0, 242, 254, 0.15); border-radius: 4px; overflow: hidden;
         }
         #log-panel {
-            height: 45px; padding: 4px 8px; font-size: 9px; overflow-y: auto;
+            height: 50px; padding: 4px 8px; font-size: 9px; overflow-y: auto;
             display: flex; flex-direction: column-reverse; pointer-events: none; line-height: 1.3;
         }
         .log-entry { margin-bottom: 1px; color: #00f2fe; }
@@ -106,15 +105,8 @@
         .btn-red { border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
         .btn-red.active { background: rgba(239,68,68,0.15); border-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
 
-        /* ВЕКТОРНЫЕ КОНТЕЙНЕРЫ (ИСПРАВЛЕНО ВРАЩЕНИЕ НА 100%) */
-        .drone-container {
-            width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .rotator {
-            display: flex; align-items: center; justify-content: center;
-            width: 100%; height: 100%;
-        }
+        .drone-container { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; will-change: transform; }
+        .rotator { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
         /* Маркеры городов */
         .city-marker {
@@ -247,7 +239,6 @@
         
         const MAX_PVO_LIMIT = 4;
 
-        // Векторные SVG без единой внешней ссылки (0 ошибок загрузки)
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="28" height="28" style="filter: drop-shadow(0 0 5px #ff0055); fill: #1e293b; stroke: #ff0055; stroke-width: 5;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="filter: drop-shadow(0 0 5px #00f2fe); fill: rgba(0,242,254,0.2); stroke: #00f2fe; stroke-width: 6;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
         const HEAVY_SVG = `<svg viewBox="0 0 100 100" width="26" height="26"><path d="M50,2 L65,35 L98,50 L65,65 L50,98 L35,65 L2,50 L35,35 Z" fill="#f97316" style="filter: drop-shadow(0 0 6px #f97316);"/></svg>`;
@@ -281,7 +272,13 @@
             CITIES[playerFaction].forEach(c => {
                 let icon = L.divIcon({ className: 'city-marker', html: `${c.name} [100%]`, iconSize: [null, null] });
                 c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map);
-                playerPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 75000, ammo: 0, maxAmmo: 0, isCityRadar: true, lastShot: 0 });
+                
+                // Радарные круги вокруг городов (мирные зеленые зоны покрытия)
+                let visualCircle = L.circle([c.lat, c.lng], {
+                    radius: 75000, color: '#38bdf8', weight: 1, fillOpacity: 0.03, dashArray: '4,4'
+                }).addTo(map);
+
+                playerPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 75000, ammo: 0, maxAmmo: 0, isCityRadar: true, lastShot: 0, circle: visualCircle });
             });
 
             CITIES[enemyFaction].forEach(c => {
@@ -296,7 +293,12 @@
                         dispatchBomberStrike(c);
                     }
                 });
-                enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 90000, ammo: 4, maxAmmo: 4, lastShot: 0, isCityRadar: true });
+                
+                let visualCircle = L.circle([c.lat, c.lng], {
+                    radius: 90000, color: '#ff0055', weight: 1, fillOpacity: 0.02, dashArray: '4,4'
+                }).addTo(map);
+
+                enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 90000, ammo: 4, maxAmmo: 4, lastShot: 0, isCityRadar: true, circle: visualCircle });
             });
         }
 
@@ -387,7 +389,13 @@
                     money -= 400;
                     let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [28, 14], iconAnchor: [14, 7] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
-                    playerPVO.push({ lat: lat, lng: lng, marker: m, rangeDist: 130000, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false });
+                    
+                    // Круг радиуса действия для установленного ПВО игрока
+                    let visualCircle = L.circle([lat, lng], {
+                        radius: 130000, color: '#00f2fe', weight: 1.5, fillOpacity: 0.04, dashArray: '5,5'
+                    }).addTo(map);
+
+                    playerPVO.push({ lat: lat, lng: lng, marker: m, rangeDist: 130000, ammo: 5, maxAmmo: 5, lastShot: 0, isCityRadar: false, circle: visualCircle });
                     addLog("РАСЧЕТ ПВО ЗАНЯЛ ПОЗИЦИЮ.");
                     dropModes();
                 }
@@ -439,7 +447,6 @@
         }
 
         function injectAirTarget(start, target, collection, isPlayer, type) {
-            // Исправленный расчет угла для Leaflet (отрицательный Y идет вверх)
             let dLng = target.lng - start.lng;
             let dLat = target.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
@@ -456,7 +463,6 @@
                 svgMarkup = BOMBER_SVG;
             }
 
-            // Нос SVG изначально смотрит строго вверх (0 градусов), поворачиваем на вычисленный угол
             let modelHtml = `<div class="drone-container"><div class="rotator" style="transform: rotate(${angle}deg);">${svgMarkup}</div></div>`;
 
             let marker = L.marker([start.lat, start.lng], {
@@ -519,9 +525,10 @@
                 let cLng = d.lng + (d.targetLng - d.lng) * d.progress;
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
-                if (Math.random() > 0.5) {
-                    let dot = L.circle([cLat, cLng], { radius: 800, color: isPlayer ? '#00f2fe' : '#ff0055', weight: 0, fillOpacity: 0.25 }).addTo(map);
-                    d.trails.push(dot); if (d.trails.length > 4) map.removeLayer(d.trails.shift());
+                // Оптимизация лагов: реже спавним точки инверсионного следа
+                if (Math.random() > 0.75) {
+                    let dot = L.circle([cLat, cLng], { radius: 700, color: isPlayer ? '#00f2fe' : '#ff0055', weight: 0, fillOpacity: 0.2 }).addTo(map);
+                    d.trails.push(dot); if (d.trails.length > 3) map.removeLayer(d.trails.shift());
                 }
 
                 if (!isPlayer) {
@@ -560,18 +567,21 @@
                 let mLng = m.lng + (drone.currentLng - m.lng) * m.progress;
                 m.marker.setLatLng([mLat, mLng]);
 
-                if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 15000) {
-                    map.removeLayer(m.marker); missiles.splice(i, 1);
-                    if (Math.random() <= (drone.type === 'heavy' ? 0.4 : 0.85)) {
-                        drone.hp--;
-                        triggerBlast(drone.currentLat, drone.currentLng, 6000, '#38bdf8');
-                        if (drone.hp <= 0) {
-                            map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
-                            let idx = m.targetCollection.indexOf(drone); if (idx > -1) m.targetCollection.splice(idx, 1);
-                            addLog(m.isPlayer ? "КОНТР-ПЕРЕХВАТ УСПЕШЕН." : "БПЛА ПОТЕРЯН.", m.isPlayer ? 'system' : 'enemy');
+                // Оптимизация детекции перехвата ради уменьшения микрофризов
+                if (Math.abs(mLat - drone.currentLat) < 0.15 && Math.abs(mLng - drone.currentLng) < 0.15) {
+                    if (map.distance([mLat, mLng], [drone.currentLat, drone.currentLng]) < 15000) {
+                        map.removeLayer(m.marker); missiles.splice(i, 1);
+                        if (Math.random() <= (drone.type === 'heavy' ? 0.4 : 0.85)) {
+                            drone.hp--;
+                            triggerBlast(drone.currentLat, drone.currentLng, 6000, '#38bdf8');
+                            if (drone.hp <= 0) {
+                                map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
+                                let idx = m.targetCollection.indexOf(drone); if (idx > -1) m.targetCollection.splice(idx, 1);
+                                addLog(m.isPlayer ? "КОНТР-ПЕРЕХВАТ УСПЕШЕН." : "БПЛА ПОТЕРЯН.", m.isPlayer ? 'system' : 'enemy');
+                            }
                         }
+                        break;
                     }
-                    break;
                 }
             }
         }
