@@ -194,7 +194,7 @@
 
                 <div id="control-panel">
                     <div class="btn-row">
-                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($500)</button>
+                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($500) <span id="factory-counter">0/10</span></button>
                         <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($750) <span id="pvo-counter">0/5</span></button>
                     </div>
                     <div class="btn-row">
@@ -203,10 +203,10 @@
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 ОРЕШНИК (-$3800)</button>
-                        <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$1500)</button>
+                        <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$1700)</button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$2000)</button>
+                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$2400)</button>
                     </div>
                 </div>
             </div>
@@ -247,10 +247,11 @@
         let map, selectedFactory = null;
         
         const MAX_PVO_LIMIT = 5;
+        const MAX_FACTORY_LIMIT = 10; // ЖЕСТКИЙ ЛИМИТ НА ЗАВОДЫ
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
         let aiActive = false;
-        let safeStartCountdown = 15; // Уменьшили подготовку, чтобы экшен начинался быстрее
+        let safeStartCountdown = 15; 
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -274,7 +275,7 @@
 
             setInterval(economyCycle, 2500);
             setInterval(radarTick, 50); 
-            setInterval(enemyAILogic, 2500); // ИИ теперь думает и атакует НАМНОГО чаще (было 4500)
+            setInterval(enemyAILogic, 2500); 
             setInterval(changeWeatherCycle, 40000);
 
             addLog(`СИСТЕМА: СТАРТ ЧЕРЕЗ ${safeStartCountdown} СЕК.`, 'system');
@@ -371,7 +372,7 @@
         }
 
         function toggleRepairMode() {
-            if (money < 2000) return;
+            if (money < 2400) return; // Новая цена ремонта $2400
             if (currentMode === 'repair_sector') { dropModes(); return; }
             dropModes(); currentMode = 'repair_sector';
             document.getElementById('btn-repair-mode').classList.add('active');
@@ -382,8 +383,8 @@
         }
 
         function executeSectorRepair(city) {
-            if (money < 2000 || city.hp >= 100) return;
-            money -= 2000; city.hp = Math.min(100, city.hp + 25);
+            if (money < 2400 || city.hp >= 100) return; // Новая цена ремонта $2400
+            money -= 2400; city.hp = Math.min(100, city.hp + 25);
             addLog(`🛠️ Ремонт [${city.name}]: +25% HP`, 'system');
 
             let pMarker = L.marker([city.lat + 0.04, city.lng], { icon: L.divIcon({ className: 'heal-popup', html: `+25%` }) }).addTo(map);
@@ -392,7 +393,7 @@
         }
 
         function toggleBuildMode(mode) {
-            if (mode === 'factory' && money < 500) return;
+            if (mode === 'factory' && (money < 500 || playerFactories.length >= MAX_FACTORY_LIMIT)) return;
             if (mode === 'pvo' && (money < 750 || getPlacedPVOCount() >= MAX_PVO_LIMIT)) return;
             let last = currentMode; dropModes();
             if (last !== mode) {
@@ -442,20 +443,24 @@
 
         function updateUIButtons() {
             let pvoCount = getPlacedPVOCount();
+            let factoryCount = playerFactories.length;
+            
             document.getElementById('pvo-counter').innerText = `${pvoCount}/${MAX_PVO_LIMIT}`;
-            document.getElementById('btn-factory').classList.toggle('disabled', money < 500);
+            document.getElementById('factory-counter').innerText = `${factoryCount}/${MAX_FACTORY_LIMIT}`;
+            
+            document.getElementById('btn-factory').classList.toggle('disabled', money < 500 || factoryCount >= MAX_FACTORY_LIMIT);
             document.getElementById('btn-pvo').classList.toggle('disabled', money < 750 || pvoCount >= MAX_PVO_LIMIT);
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 250 || droneInventory < 2);
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2200);
             document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 3800);
-            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 1500 || enemyDrones.length === 0);
-            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2000);
+            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 1700 || enemyDrones.length === 0); // Новая цена перехвата $1700
+            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2400); // Новая цена ремонта $2400
         }
 
         function buyInterceptorRocket() {
-            if (money < 1500 || enemyDrones.length === 0) return;
+            if (money < 1700 || enemyDrones.length === 0) return; // Новая цена перехвата $1700
             let closestDrone = enemyDrones[0];
-            money -= 1500;
+            money -= 1700;
             triggerBlast(closestDrone.currentLat, closestDrone.currentLng, 12000, '#38bdf8');
             map.removeLayer(closestDrone.marker); closestDrone.trails.forEach(t => map.removeLayer(t));
             
@@ -471,7 +476,7 @@
                 if (currentMode === 'attack_target' || currentMode === 'heavy_missile' || currentMode === 'bomber_strike' || currentMode === 'repair_sector') return;
                 const { lat, lng } = e.latlng;
 
-                if (currentMode === 'factory' && money >= 500) {
+                if (currentMode === 'factory' && money >= 500 && playerFactories.length < MAX_FACTORY_LIMIT) {
                     money -= 500;
                     let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [24, 14] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
@@ -520,18 +525,15 @@
             dropModes();
         }
 
-        /* АГРЕССИВНАЯ И УМНАЯ ЛОГИКА ИИ */
         function enemyAILogic() {
             if (!aiActive) return;
             
-            // Враг получает стабильный приток средств для обеспечения плотного огня
             enemyMoney += 180; 
 
             let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 50);
             let target = brokenCity || CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
-            // Агрессивный приоритет 1: Выкашивать заводы игрока Орешником, ломая экономику
             if (playerFactories.length > 0 && enemyMoney >= 3800 && Math.random() > 0.4) {
                 enemyMoney -= 3800;
                 let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
@@ -540,12 +542,10 @@
                 return; 
             }
 
-            // Агрессивный приоритет 2: Добивать поврежденные сектора авиацией не дожидаясь ремонта
             if (brokenCity && enemyMoney >= 2200) {
                 enemyMoney -= 2200;
                 addLog(`⚠️ ВРАГ: Штурмовая авиация направлена на критический сектор [${brokenCity.name}]!`, 'enemy');
                 injectAirTarget(source, brokenCity, enemyDrones, false, 'bomber');
-                // Комбо-атака: если остались деньги, ИИ сразу кидает дроны вдогонку
                 if (enemyMoney >= 250) {
                     enemyMoney -= 250;
                     injectAirTarget(source, brokenCity, enemyDrones, false, 'drone');
@@ -553,7 +553,6 @@
                 return;
             }
 
-            // Агрессивный приоритет 3: Постоянный спам и прощупывание обороны дронами
             if (enemyMoney >= 250) {
                 enemyMoney -= 250;
                 injectAirTarget(source, target, enemyDrones, false, 'drone');
@@ -564,7 +563,6 @@
             let dLng = target.lng - start.lng, dLat = target.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
-            // РЕАЛИСТИЧНЫЙ ГИПЕРЗВУК: Орешник (heavy) теперь летит невероятно быстро!
             let speed = type === 'heavy' ? 0.025 : (type === 'bomber' ? 0.0028 : 0.0038);
             if (currentWeather === 'rain') speed *= 0.8;
 
@@ -615,7 +613,6 @@
                 let d = list[i]; d.progress += d.speed;
 
                 if (d.progress >= 1) {
-                    // Увеличили урон от Орешника до 85% за счет бешеной кинетической энергии
                     let dmg = d.type === 'heavy' ? 85 : (d.type === 'bomber' ? 45 : 15);
                     triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy' ? 30000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
                     applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.targetLat, d.targetLng, dmg);
@@ -667,7 +664,6 @@
                 if (Math.abs(mLat - drone.currentLat) < 0.08 && Math.abs(mLng - drone.currentLng) < 0.08) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
                     
-                    // Проверка перехвата: Орешник сбить автоматическим ПВО крайне сложно (шанс снижен до 15%)
                     let targetChance = drone.type === 'heavy' ? 0.15 : (currentPeriod === 'night' ? 0.5 : 0.85);
                     
                     if (Math.random() <= targetChance) {
