@@ -153,6 +153,8 @@
         .btn-red.active { background: rgba(239,68,68,0.15); border-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
 
         .btn-cyan { border-color: rgba(6, 182, 212, 0.4); color: #06b6d4; }
+        .btn-blue { border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; }
+        .btn-blue.active { background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
 
         .drone-container { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; will-change: transform; }
         .rotator { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
@@ -163,6 +165,7 @@
             white-space: nowrap; box-shadow: 0 0 6px rgba(0,0,0,0.8); z-index: 500 !important;
         }
         .city-marker.enemy { border-color: rgba(255, 0, 85, 0.6); color: #fecdd3; }
+        .city-marker.repair-highlight { border-color: #38bdf8 !important; box-shadow: 0 0 12px #38bdf8 !important; background: rgba(14, 116, 144, 0.4); }
         
         .shake-hit { animation: hard-shake 0.3s ease-in-out; border-color: #ff0055 !important; }
 
@@ -174,6 +177,10 @@
 
         .damage-popup {
             font-size: 11px; font-weight: bold; color: #ff0055; text-shadow: 0 0 3px #000;
+            animation: float-damage 0.6s ease-out forwards;
+        }
+        .heal-popup {
+            font-size: 11px; font-weight: bold; color: #10b981; text-shadow: 0 0 3px #000;
             animation: float-damage 0.6s ease-out forwards;
         }
 
@@ -239,7 +246,7 @@
             <div id="inner-ui-content">
                 
                 <div id="target-selector-panel">
-                    <div style="font-size: 10px; font-weight: bold; color: #ff0055;">ВЫБЕРИТЕ ЦЕЛЬ ДЛЯ АТАКЫ:</div>
+                    <div id="target-title-text" style="font-size: 10px; font-weight: bold; color: #ff0055;">ВЫБЕРИТЕ ЦЕЛЬ ДЛЯ АТАКЫ:</div>
                     <div class="target-grid" id="target-buttons-container"></div>
                 </div>
 
@@ -259,6 +266,9 @@
                     <div class="btn-row">
                         <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 РАКЕТНЫЙ УДАР (-$4000)</button>
                         <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ РАКЕТА-ПЕРЕХВАТ (-$2200)</button>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$2700)</button>
                     </div>
                 </div>
             </div>
@@ -300,9 +310,11 @@
         
         const MAX_PVO_LIMIT = 4;
 
-        // Погодные переменные
-        let currentWeather = 'clear'; // clear, rain, fog
-        let currentPeriod = 'day';     // day, night
+        // Погода и Тайминги ИИ
+        let currentWeather = 'clear'; 
+        let currentPeriod = 'day';     
+        let aiActive = false;
+        let safeStartCountdown = 30;
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="28" height="28" style="filter: drop-shadow(0 0 5px #ff0055); fill: #1e293b; stroke: #ff0055; stroke-width: 5;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="filter: drop-shadow(0 0 5px #00f2fe); fill: rgba(0,242,254,0.2); stroke: #00f2fe; stroke-width: 6;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -329,15 +341,24 @@
             setInterval(economyCycle, 2500);
             setInterval(radarTick, 50); 
             setInterval(enemyAILogic, 4000); 
-            
-            // Цикл погоды: каждые 40 секунд меняем условия
             setInterval(changeWeatherCycle, 40000);
 
-            addLog("КРИТИЧЕСКИЕ СИСТЕМЫ ВВЕДЕНЫ В БОЕВОЙ РЕЖИМ.", 'system');
+            // Обратный отсчет подготовки ИИ врага
+            addLog(`ПОДГОТОВКА СИСТЕМ: ДО ПЕРВОЙ АТАКИ ВРАГА ${safeStartCountdown} СЕК.`, 'system');
+            let countdownTimer = setInterval(() => {
+                safeStartCountdown -= 5;
+                if (safeStartCountdown > 0) {
+                    addLog(`ДО СТАРТА БОЕВЫХ ОПЕРАЦИЙ ВРАГА: ${safeStartCountdown} СЕК.`, 'system');
+                } else {
+                    aiActive = true;
+                    addLog("🚨 БЕЗОПАСНАЯ ФАЗА ЗАВЕРШЕНА! ВРАГ НАЧАЛ РАЗВЕРТЫВАНИЕ СИСТЕМ.", 'enemy');
+                    clearInterval(countdownTimer);
+                }
+            }, 5000);
+
             updateUIButtons();
         }
 
-        // Логика циклической смены погоды и времени суток
         function changeWeatherCycle() {
             const weathers = ['clear', 'rain', 'fog'];
             const periods = ['day', 'night'];
@@ -345,12 +366,11 @@
             currentWeather = weathers[Math.floor(Math.random() * weathers.length)];
             currentPeriod = periods[Math.floor(Math.random() * periods.length)];
 
-            // Обновляем визуальные классы слоев
             const wOverlay = document.getElementById('weather-overlay');
             const tOverlay = document.getElementById('time-overlay');
             const widget = document.getElementById('weather-widget');
 
-            wOverlay.className = ''; // Сброс классов погоды
+            wOverlay.className = ''; 
             
             let weatherText = '☀️ ЯСНО';
             if (currentWeather === 'rain') {
@@ -378,7 +398,12 @@
         function renderOperationalRadar() {
             CITIES[playerFaction].forEach(c => {
                 let icon = L.divIcon({ className: 'city-marker', html: `${c.name} [100%]`, iconSize: [null, null] });
-                c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map);
+                c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map).on('click', function(e) {
+                    L.DomEvent.stopPropagation(e);
+                    if (currentMode === 'repair_sector') {
+                        executeSectorRepair(c);
+                    }
+                });
                 
                 let visualCircle = L.circle([c.lat, c.lng], {
                     radius: 75000, color: '#38bdf8', weight: 1, fillOpacity: 0.02, dashArray: '4,4'
@@ -403,15 +428,37 @@
         }
 
         function buildMobileTargetPanel() {
+            updateTargetPanelGrid();
+        }
+
+        function updateTargetPanelGrid() {
             const container = document.getElementById('target-buttons-container');
+            const title = document.getElementById('target-title-text');
             container.innerHTML = '';
-            CITIES[enemyFaction].forEach(city => {
-                const btn = document.createElement('button');
-                btn.className = 'target-btn';
-                btn.innerText = city.name.toUpperCase();
-                btn.onclick = () => handleTargetSelection(city);
-                container.appendChild(btn);
-            });
+
+            if (currentMode === 'repair_sector') {
+                title.innerText = "ВЫБЕРИТЕ СВОЙ ГОРОД ДЛЯ РЕМОНТА (+35% HP):";
+                title.style.color = "#38bdf8";
+                CITIES[playerFaction].forEach(city => {
+                    const btn = document.createElement('button');
+                    btn.className = 'target-btn';
+                    btn.style.borderColor = '#38bdf8';
+                    btn.style.color = '#e2e8f0';
+                    btn.innerText = `${city.name.toUpperCase()} (${city.hp}%)`;
+                    btn.onclick = () => executeSectorRepair(city);
+                    container.appendChild(btn);
+                });
+            } else {
+                title.innerText = "ВЫБЕРИТЕ ЦЕЛЬ ДЛЯ АТАКЫ:";
+                title.style.color = "#ff0055";
+                CITIES[enemyFaction].forEach(city => {
+                    const btn = document.createElement('button');
+                    btn.className = 'target-btn';
+                    btn.innerText = city.name.toUpperCase();
+                    btn.onclick = () => handleTargetSelection(city);
+                    container.appendChild(btn);
+                });
+            }
         }
 
         function handleTargetSelection(city) {
@@ -422,6 +469,44 @@
             } else if (currentMode === 'bomber_strike') {
                 dispatchBomberStrike(city);
             }
+        }
+
+        function toggleRepairMode() {
+            if (money < 2700) { addLog("НЕДОСТАТОЧНО СРЕДСТВ ДЛЯ ПРОВЕДЕНИЯ РЕМОНТА.", 'enemy'); return; }
+            if (currentMode === 'repair_sector') { dropModes(); return; }
+
+            dropModes();
+            currentMode = 'repair_sector';
+            document.getElementById('btn-repair-mode').classList.add('active');
+            
+            // Визуально подсвечиваем наши города
+            CITIES[playerFaction].forEach(c => {
+                if(c.markerInstance && c.markerInstance.getElement()) {
+                    c.markerInstance.getElement().classList.add('repair-highlight');
+                }
+            });
+
+            addLog("РЕЖИМ ВОССТАНОВЛЕНИЯ. ВЫБЕРИТЕ ПОВРЕЖДЕННЫЙ ГОРОД.");
+            updateTargetPanelGrid();
+            showTargetSelector(true);
+        }
+
+        function executeSectorRepair(city) {
+            if (money < 2700) return;
+            if (city.hp >= 100) {
+                addLog(`СЕКТОР [${city.name.toUpperCase()}] НЕ НУЖДАЕТСЯ В РЕМОНТЕ.`, 'system');
+                return;
+            }
+
+            money -= 2700;
+            city.hp = Math.min(100, city.hp + 35);
+            addLog(`🛠️ ИНЖЕНЕРЫ ПРОВЕЛИ РЕМОНТ [${city.name.toUpperCase()}]: +35% HP`, 'system');
+
+            let pMarker = L.marker([city.lat + 0.05, city.lng], { icon: L.divIcon({ className: 'heal-popup', html: `+35%` }) }).addTo(map);
+            setTimeout(() => map.removeLayer(pMarker), 600);
+
+            dropModes();
+            recalcRadarHUD();
         }
 
         function toggleBuildMode(mode) {
@@ -452,6 +537,7 @@
             dropModes(); currentMode = 'bomber_strike';
             document.getElementById('btn-bomber-mode').classList.add('active');
             addLog("ВЫБЕРИТЕ ГОРОД ЦЕЛИ СНИЗУ ИЛИ НА КАРТЕ.");
+            updateTargetPanelGrid();
             showTargetSelector(true);
         }
 
@@ -462,6 +548,7 @@
             dropModes(); currentMode = 'heavy_missile';
             document.getElementById('btn-heavy-mode').classList.add('active');
             addLog("ВЫБЕРИТЕ ГОРОД ЦЕЛИ СНИЗУ ИЛИ НА КАРТЕ.");
+            updateTargetPanelGrid();
             showTargetSelector(true);
         }
 
@@ -473,12 +560,20 @@
         }
 
         function dropModes() {
+            // Снимаем подсветку с городов при выходе из режима ремонта
+            CITIES[playerFaction].forEach(c => {
+                if(c.markerInstance && c.markerInstance.getElement()) {
+                    c.markerInstance.getElement().classList.remove('repair-highlight');
+                }
+            });
+
             currentMode = null; selectedFactory = null;
             document.getElementById('btn-factory').classList.remove('active');
             document.getElementById('btn-pvo').classList.remove('active');
             document.getElementById('btn-attack-mode').classList.remove('active');
             document.getElementById('btn-bomber-mode').classList.remove('active');
             document.getElementById('btn-heavy-mode').classList.remove('active');
+            document.getElementById('btn-repair-mode').classList.remove('active');
             showTargetSelector(false);
             updateUIButtons();
         }
@@ -497,6 +592,7 @@
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2500);
             document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 4000);
             document.getElementById('btn-interceptor').classList.toggle('disabled', money < 2200 || enemyDrones.length === 0);
+            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2700);
         }
 
         function buyInterceptorRocket() {
@@ -538,7 +634,7 @@
 
         function setupRadarClicks() {
             map.on('click', function(e) {
-                if (currentMode === 'attack_target' || currentMode === 'heavy_missile' || currentMode === 'bomber_strike') return;
+                if (currentMode === 'attack_target' || currentMode === 'heavy_missile' || currentMode === 'bomber_strike' || currentMode === 'repair_sector') return;
                 const { lat, lng } = e.latlng;
 
                 if (currentMode === 'factory' && money >= 450) {
@@ -572,6 +668,7 @@
         function selectFactoryForLaunch(fObj) {
             selectedFactory = fObj; currentMode = 'attack_target';
             addLog("ЗАВОД ВЫБРАН. УКАЖИТЕ ЦЕЛЬ СНИЗУ ИЛИ НА КАРТЕ.");
+            updateTargetPanelGrid();
             showTargetSelector(true);
         }
 
@@ -598,6 +695,8 @@
         }
 
         function enemyAILogic() {
+            if (!aiActive) return; // ИИ спит во время безопасного старта
+
             enemyMoney += 380;
 
             if (enemyMoney >= 4000 && Math.random() > 0.4) {
@@ -628,11 +727,7 @@
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
             let speed = type === 'heavy' ? 0.007 : (type === 'bomber' ? 0.002 : 0.003);
-            
-            // Модификатор скорости из-за дождя (-30% скорости)
-            if (currentWeather === 'rain') {
-                speed *= 0.7;
-            }
+            if (currentWeather === 'rain') speed *= 0.7;
 
             let hp = type === 'bomber' ? 4 : 1;
 
@@ -710,16 +805,14 @@
                     d.trails.push(dot); if (d.trails.length > 2) map.removeLayer(d.trails.shift());
                 }
 
-                // Модификаторы ПВО из-за Тумана и Ночи
                 let shootDelay = 1400;
-                if (currentWeather === 'rain') shootDelay = 1900; // Дождь замедляет темп стрельбы
+                if (currentWeather === 'rain') shootDelay = 1900; 
 
                 if (!isPlayer) {
                     playerPVO.forEach(pvo => {
                         let dLat = cLat - pvo.lat; let dLng = cLng - pvo.lng;
                         let approxDist = (dLat * dLat) + (dLng * dLng);
                         
-                        // В тумане радиус ПВО режется на 25%
                         let currentRange = pvo.rangeDist;
                         if (currentWeather === 'fog') currentRange *= 0.75;
 
@@ -764,9 +857,7 @@
                 if (Math.abs(mLat - drone.currentLat) < 0.1 && Math.abs(mLng - drone.currentLng) < 0.1) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
                     
-                    // Шанс попадания
                     let hitChance = drone.type === 'heavy' ? 0.45 : 0.85;
-                    // Если ночь — обычное ПВО мажет на 40% чаще
                     if (currentPeriod === 'night') hitChance -= 0.40;
 
                     if (Math.random() <= hitChance) {
