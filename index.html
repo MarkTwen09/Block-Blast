@@ -16,7 +16,6 @@
         #viewport-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
         #map { flex-grow: 1; width: 100%; height: 100%; background: #070a12; z-index: 1; }
         
-        /* Климатические оверлеи делаем очень мягкими, чтобы не мешали */
         #weather-overlay, #time-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10; transition: all 1s ease-in-out;
@@ -48,7 +47,7 @@
         }
         .faction-btn:active { background: #334155; }
 
-        /* МИНИМАЛИСТИЧНЫЙ ВЕРХНИЙ HUD */
+        /* HUD */
         #hud-top {
             position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000;
             background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(51, 65, 85, 0.5);
@@ -66,7 +65,7 @@
         
         #weather-widget { font-size: 9px; color: #94a3b8; }
 
-        /* КОМПАКТНАЯ НИЖНЯЯ ПАНЕЛЬ */
+        /* ПАНЕЛЬ УПРАВЛЕНИЯ */
         #bottom-ui-wrapper {
             position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
             display: flex; flex-direction: column; background: rgba(15, 23, 42, 0.95);
@@ -104,7 +103,6 @@
         .log-entry.enemy { color: #f43f5e; }
         .log-entry.system { color: #fbbf24; }
 
-        /* Кнопки управления без лишней яркости */
         #control-panel { display: flex; flex-direction: column; gap: 4px; }
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .btn {
@@ -124,24 +122,15 @@
         .drone-container { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
         .rotator { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
-        /* АККУРАТНЫЕ МАРКЕРЫ ГОРОДОВ НА КАРТЕ */
-        .city-marker {
-            background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .city-dot {
-            width: 6px; height: 6px; background: #38bdf8; border-radius: 50%;
-            box-shadow: 0 0 4px #38bdf8; border: 1px solid #fff;
-        }
+        /* МАРКЕРЫ */
+        .city-marker { background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .city-dot { width: 6px; height: 6px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 4px #38bdf8; border: 1px solid #fff; }
         .city-marker.enemy .city-dot { background: #f43f5e; box-shadow: 0 0 4px #f43f5e; }
         
-        .city-label {
-            font-size: 9px; font-weight: 600; color: #f1f5f9; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
-            margin-top: 2px; white-space: nowrap;
-        }
+        .city-label { font-size: 9px; font-weight: 600; color: #f1f5f9; text-shadow: 1px 1px 2px #000, -1px -1px 2px #000; margin-top: 2px; white-space: nowrap; }
         .city-marker.enemy .city-label { color: #fecdd3; }
         .city-marker.repair-highlight .city-dot { background: #a855f7; box-shadow: 0 0 10px #a855f7; scale: 1.4; }
 
-        /* Маркеры построек */
         .build-marker {
             background: #0f172a; border: 1px solid #38bdf8; color: #38bdf8;
             font-size: 8px; font-weight: bold; border-radius: 3px; text-align: center; line-height: 13px;
@@ -217,7 +206,7 @@
                         <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$2200)</button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$2700)</button>
+                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$1500)</button>
                     </div>
                 </div>
             </div>
@@ -263,7 +252,6 @@
         let aiActive = false;
         let safeStartCountdown = 40;
 
-        // Минималистичные силуэты без лишней обводки
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
         const HEAVY_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f97316;"><path d="M50,2 L65,35 L98,50 L65,65 L50,98 L35,65 L2,50 L35,35 Z"/></svg>`;
@@ -336,7 +324,6 @@
                     L.DomEvent.stopPropagation(e);
                     if (currentMode === 'repair_sector') executeSectorRepair(c);
                 });
-                // Для дефолтных радаров городов круги НЕ рисуем, чтобы не захламлять карту
                 playerPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 1.1, ammo: 0, maxAmmo: 0, isCityRadar: true, lastShot: 0, circle: null });
             });
 
@@ -384,7 +371,7 @@
         }
 
         function toggleRepairMode() {
-            if (money < 2700) return;
+            if (money < 1500) return; // Снижено с 2700
             if (currentMode === 'repair_sector') { dropModes(); return; }
             dropModes(); currentMode = 'repair_sector';
             document.getElementById('btn-repair-mode').classList.add('active');
@@ -395,8 +382,8 @@
         }
 
         function executeSectorRepair(city) {
-            if (money < 2700 || city.hp >= 100) return;
-            money -= 2700; city.hp = Math.min(100, city.hp + 35);
+            if (money < 1500 || city.hp >= 100) return;
+            money -= 1500; city.hp = Math.min(100, city.hp + 35);
             addLog(`🛠️ Ремонт [${city.name}]: +35% HP`, 'system');
 
             let pMarker = L.marker([city.lat + 0.04, city.lng], { icon: L.divIcon({ className: 'heal-popup', html: `+35%` }) }).addTo(map);
@@ -462,7 +449,7 @@
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2500);
             document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 4000);
             document.getElementById('btn-interceptor').classList.toggle('disabled', money < 2200 || enemyDrones.length === 0);
-            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2700);
+            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 1500);
         }
 
         function buyInterceptorRocket() {
@@ -471,8 +458,12 @@
             money -= 2200;
             triggerBlast(closestDrone.currentLat, closestDrone.currentLng, 12000, '#38bdf8');
             map.removeLayer(closestDrone.marker); closestDrone.trails.forEach(t => map.removeLayer(t));
+            
+            // Баланс: Повышенные награды при ручном перехвате
+            let reward = closestDrone.type === 'heavy' ? 800 : (closestDrone.type === 'bomber' ? 400 : 150);
             enemyDrones.splice(enemyDrones.indexOf(closestDrone), 1);
-            money += 50; addLog("🛡️ Перехват успешной ракетой: +$50", 'system');
+            money += reward; 
+            addLog(`🛡️ Перехват ракетой: +$${reward}`, 'system');
             dropModes();
         }
 
@@ -497,7 +488,6 @@
                     let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [24, 14] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     
-                    // Радиусы покупных ПВО делаем тонкими, едва заметными
                     let visualCircle = L.circle([lat, lng], {
                         radius: 120000, color: '#38bdf8', weight: 1, fillOpacity: 0.01, dashArray: '3,3'
                     }).addTo(map);
@@ -571,7 +561,8 @@
         }
 
         function economyCycle() {
-            money += 50 + (playerFactories.length * 45);
+            // Баланс: Было 50 + заводы * 45. Стало базово 150 + заводы * 100!
+            money += 150 + (playerFactories.length * 100);
             playerFactories.forEach(() => droneInventory++);
             
             let all = [...CITIES['UA'], ...CITIES['RU']];
@@ -612,7 +603,6 @@
                 let cLng = d.lng + (d.targetLng - d.lng) * d.progress;
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
-                // Инверсионный след делаем совсем незаметным (мелкие точки)
                 if (Math.random() > 0.9) {
                     let dot = L.circle([cLat, cLng], { radius: 250, color: isPlayer ? '#38bdf8' : '#f43f5e', weight: 0, fillOpacity: 0.2 }).addTo(map);
                     d.trails.push(dot); if (d.trails.length > 2) map.removeLayer(d.trails.shift());
@@ -660,7 +650,11 @@
                         if (drone.hp <= 0) {
                             map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
                             m.targetCollection.splice(m.targetCollection.indexOf(drone), 1);
-                            money += drone.type === 'heavy' ? 200 : 50;
+                            
+                            // Баланс: Повышенные награды за автоматическое сбитие ПВО
+                            let reward = drone.type === 'heavy' ? 800 : (drone.type === 'bomber' ? 400 : 150);
+                            money += reward;
+                            addLog(`🎯 Цель уничтожена ПВО! Бонус: +$${reward}`, 'system');
                         }
                     }
                     break;
@@ -678,6 +672,13 @@
                 }
                 let pMarker = L.marker([city.lat + 0.04, city.lng], { icon: L.divIcon({ className: 'damage-popup', html: `-${dmg}%` }) }).addTo(map);
                 setTimeout(() => map.removeLayer(pMarker), 600);
+                
+                // Награда за успешное поражение врага (пропорционально урону)
+                if (faction !== playerFaction) {
+                    let attackReward = dmg * 12; // Было *6, теперь *12!
+                    money += attackReward;
+                    addLog(`Успешный удар по врагу: +$${attackReward}`, 'system');
+                }
                 recalcRadarHUD();
             }
         }
