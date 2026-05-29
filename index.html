@@ -10,16 +10,17 @@
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; font-family: monospace;
-            background: #060913; color: #00f2fe; -webkit-user-select: none; user-select: none;
+            background: #04060a; color: #00f2fe; -webkit-user-select: none; user-select: none;
         }
         
         #viewport-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
         #map { flex-grow: 1; width: 100%; height: 100%; background: #05070f; z-index: 1; position: relative; }
         
+        /* Эффект свечения монитора */
         #monitor-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 2000;
-            box-shadow: inset 0 0 80px rgba(0,0,0,0.7);
+            box-shadow: inset 0 0 100px rgba(0, 242, 254, 0.15), inset 0 0 40px rgba(0,0,0,0.8);
         }
 
         /* КЛИМАТИЧЕСКИЕ И ВРЕМЕННЫЕ ОВЕРЛЕИ */
@@ -28,7 +29,6 @@
             pointer-events: none; z-index: 10; transition: all 1s ease-in-out;
         }
         
-        /* Эффект дождя */
         .weather-rain {
             background-image: url('https://www.transparenttextures.com/patterns/60-lines.png');
             opacity: 0; animation: rain-anim 0.3s linear infinite;
@@ -38,7 +38,6 @@
             100% { background-position: 20px 400px; }
         }
 
-        /* Эффект тумана */
         .weather-fog {
             background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
             opacity: 0; animation: fog-pulse 4s ease-in-out infinite alternate;
@@ -48,7 +47,6 @@
             100% { opacity: 0.5; filter: blur(5px); }
         }
 
-        /* Эффект ночи */
         #time-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 9; transition: background 2s ease-in-out;
@@ -61,146 +59,164 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
         }
         .cyber-panel {
-            background: rgba(10, 15, 30, 0.9); border: 1px solid #00f2fe;
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.2); border-radius: 4px; padding: 30px;
+            background: rgba(10, 15, 30, 0.95); border: 1px solid #00f2fe;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.25); border-radius: 6px; padding: 30px;
             text-align: center; max-width: 400px; width: 100%; backdrop-filter: blur(10px);
         }
         .faction-btn {
             background: transparent; border: 1px solid #00f2fe; padding: 14px;
             color: #00f2fe; font-size: 12px; font-weight: bold; cursor: pointer; margin: 12px 0;
             width: 100%; letter-spacing: 2px; font-family: inherit; transition: all 0.2s;
+            border-radius: 4px;
         }
         .faction-btn:hover { background: rgba(0, 242, 254, 0.15); box-shadow: 0 0 15px #00f2fe; }
 
         /* ВЕРХНИЙ HUD */
         #hud-top {
-            position: absolute; top: 8px; left: 8px; right: 8px; z-index: 1000;
-            background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 242, 254, 0.3);
-            backdrop-filter: blur(8px); border-radius: 4px; padding: 8px; font-size: 10px; pointer-events: none;
+            position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
+            background: rgba(6, 10, 23, 0.9); border: 1px solid rgba(0, 242, 254, 0.4);
+            backdrop-filter: blur(10px); border-radius: 6px; padding: 10px; font-size: 11px; pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-        .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .hud-value { font-weight: bold; color: #fff; text-shadow: 0 0 6px #00f2fe; }
-        .hp-bar-container { width: 100%; background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; overflow: hidden; margin-top: 2px; }
-        .hp-bar-fill { height: 100%; width: 100%; transition: width 0.4s ease; }
-        .hp-player { background: #00f2fe; box-shadow: 0 0 6px #00f2fe; }
-        .hp-enemy { background: #ff0055; box-shadow: 0 0 6px #ff0055; }
+        .hud-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .hud-value { font-weight: bold; color: #fff; text-shadow: 0 0 8px #00f2fe; }
         
-        /* Виджет погоды */
-        #weather-widget { font-weight: bold; padding: 2px 5px; border-radius: 3px; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,242,254,0.2); }
+        .hp-bar-container { width: 100%; background: rgba(255,255,255,0.05); height: 5px; border-radius: 3px; overflow: hidden; margin-top: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .hp-bar-fill { height: 100%; width: 100%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hp-player { background: linear-gradient(90deg, #0072ff, #00f2fe); box-shadow: 0 0 8px #00f2fe; }
+        .hp-enemy { background: linear-gradient(90deg, #ff0055, #990033); box-shadow: 0 0 8px #ff0055; }
+        
+        #weather-widget { font-weight: bold; padding: 3px 8px; border-radius: 4px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,242,254,0.25); font-size: 10px; }
 
-        /* СВОРАЧИВАЕМАЯ ПАНЕЛЬ СНИЗУ */
+        /* НИЖНЯЯ ИНТЕРФЕЙСНАЯ ПАНЕЛЬ */
         #bottom-ui-wrapper {
             position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; flex-direction: column; background: rgba(6, 9, 19, 0.95);
-            border-top: 1px solid rgba(0, 242, 254, 0.3); backdrop-filter: blur(10px);
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column; background: rgba(5, 8, 18, 0.96);
+            border-top: 1px solid rgba(0, 242, 254, 0.4); backdrop-filter: blur(12px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.6);
         }
         
-        .ui-collapsed { transform: translateY(calc(100% - 35px)); }
+        .ui-collapsed { transform: translateY(calc(100% - 38px)); }
 
         #toggle-ui-btn {
-            height: 35px; background: rgba(10, 15, 30, 0.9); color: #00f2fe;
+            height: 38px; background: rgba(8, 12, 28, 0.95); color: #00f2fe;
             border: none; border-bottom: 1px solid rgba(0, 242, 254, 0.2);
             font-family: inherit; font-size: 11px; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; justify-content: center; letter-spacing: 2px;
+            transition: background 0.2s;
         }
+        #toggle-ui-btn:hover { background: rgba(0, 242, 254, 0.05); }
 
-        #inner-ui-content { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+        #inner-ui-content { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 
         #target-selector-panel {
-            display: none; background: rgba(255, 0, 85, 0.1); border: 1px dashed #ff0055;
-            padding: 6px; border-radius: 4px; text-align: center;
+            display: none; background: rgba(255, 0, 85, 0.07); border: 1px dashed #ff0055;
+            padding: 8px; border-radius: 4px; text-align: center;
         }
-        .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; }
+        .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px; }
         .target-btn {
-            background: rgba(15, 23, 42, 0.9); border: 1px solid #ff0055; color: #fecdd3;
-            font-size: 9px; padding: 8px 2px; font-family: inherit; cursor: pointer; border-radius: 3px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            background: rgba(10, 16, 32, 0.95); border: 1px solid #ff0055; color: #fecdd3;
+            font-size: 10px; padding: 10px 2px; font-family: inherit; cursor: pointer; border-radius: 4px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: background 0.1s;
         }
         .target-btn:active { background: #ff0055; color: #fff; }
 
         #log-container {
-            background: rgba(10, 15, 30, 0.5); border: 1px solid rgba(0, 242, 254, 0.15); border-radius: 4px; overflow: hidden;
+            background: rgba(4, 6, 14, 0.7); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 4px; overflow: hidden;
         }
         #log-panel {
-            height: 50px; padding: 4px 8px; font-size: 9px; overflow-y: auto;
-            display: flex; flex-direction: column-reverse; pointer-events: none; line-height: 1.3;
+            height: 65px; padding: 6px 10px; font-size: 10px; overflow-y: auto;
+            display: flex; flex-direction: column-reverse; pointer-events: none; line-height: 1.4;
         }
-        .log-entry { margin-bottom: 1px; color: #00f2fe; }
-        .log-entry.enemy { color: #ff0055; }
-        .log-entry.system { color: #eab308; }
+        .log-entry { margin-bottom: 3px; color: #00f2fe; padding-left: 6px; border-left: 2px solid #00f2fe; animation: fade-in-entry 0.2s ease-out forwards; }
+        .log-entry.enemy { color: #ff0055; border-left-color: #ff0055; }
+        .log-entry.system { color: #eab308; border-left-color: #eab308; }
+
+        @keyframes fade-in-entry {
+            from { opacity: 0; transform: translateX(-5px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
 
         /* Кнопки управления */
-        #control-panel { display: flex; flex-direction: column; gap: 5px; }
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        #control-panel { display: flex; flex-direction: column; gap: 6px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .btn {
-            background: rgba(15, 23, 42, 0.8); color: #94a3b8; border: 1px solid rgba(0, 242, 254, 0.25);
-            padding: 10px 3px; cursor: pointer; font-size: 9px; font-weight: bold;
-            border-radius: 4px; font-family: inherit; transition: all 0.15s; letter-spacing: 0.5px;
+            background: rgba(12, 19, 38, 0.85); color: #94a3b8; border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 12px 4px; cursor: pointer; font-size: 10px; font-weight: bold;
+            border-radius: 4px; font-family: inherit; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .btn:hover:not(.disabled) { background: rgba(0, 242, 254, 0.1); color: #fff; }
-        .btn.active { background: rgba(0, 242, 254, 0.15); color: #fff; border-color: #00f2fe; box-shadow: 0 0 8px rgba(0, 242, 254, 0.3); }
-        .btn.disabled { opacity: 0.2; cursor: not-allowed; border-color: transparent; }
+        .btn:hover:not(.disabled) { background: rgba(0, 242, 254, 0.12); color: #fff; border-color: #00f2fe; }
+        .btn.active { background: rgba(0, 242, 254, 0.2); color: #fff; border-color: #00f2fe; box-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
+        .btn.disabled { opacity: 0.15; cursor: not-allowed; border-color: transparent; }
         
-        .btn-orange { border-color: rgba(249, 115, 22, 0.3); color: #f97316; }
-        .btn-orange.active { background: rgba(249,115,22,0.15); border-color: #f97316; box-shadow: 0 0 8px #f97316; }
+        .btn-orange { border-color: rgba(249, 115, 22, 0.4); color: #f97316; }
+        .btn-orange.active { background: rgba(249,115,22,0.2); border-color: #f97316; box-shadow: 0 0 10px #f97316; }
         
-        .btn-purple { border-color: rgba(168, 85, 247, 0.3); color: #a855f7; }
-        .btn-purple.active { background: rgba(168,85,247,0.15); border-color: #a855f7; box-shadow: 0 0 10px #a855f7; }
+        .btn-purple { border-color: rgba(168, 85, 247, 0.4); color: #a855f7; }
+        .btn-purple.active { background: rgba(168,85,247,0.2); border-color: #a855f7; box-shadow: 0 0 12px #a855f7; }
         
-        .btn-red { border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
-        .btn-red.active { background: rgba(239,68,68,0.15); border-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        .btn-red { border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
+        .btn-red.active { background: rgba(239,68,68,0.2); border-color: #ef4444; box-shadow: 0 0 10px #ef4444; }
 
         .btn-cyan { border-color: rgba(6, 182, 212, 0.4); color: #06b6d4; }
-        .btn-blue { border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; }
-        .btn-blue.active { background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+        .btn-blue { border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; }
+        .btn-blue.active { background: rgba(56, 189, 248, 0.2); border-color: #38bdf8; box-shadow: 0 0 10px #38bdf8; }
 
         .drone-container { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; will-change: transform; }
         .rotator { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
+        /* МАРКЕРЫ НА КАРТЕ */
         .city-marker {
-            background: rgba(6, 9, 19, 0.9); border: 1px solid rgba(56, 189, 248, 0.5);
-            color: #e2e8f0; font-size: 9px; font-weight: bold; border-radius: 3px; padding: 2px 4px;
-            white-space: nowrap; box-shadow: 0 0 6px rgba(0,0,0,0.8); z-index: 500 !important;
+            background: rgba(4, 7, 16, 0.95); border: 1px solid rgba(56, 189, 248, 0.6);
+            color: #e2e8f0; font-size: 10px; font-weight: bold; border-radius: 4px; padding: 3px 6px;
+            white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.9); z-index: 500 !important;
+            transition: all 0.3s;
         }
-        .city-marker.enemy { border-color: rgba(255, 0, 85, 0.6); color: #fecdd3; }
-        .city-marker.repair-highlight { border-color: #38bdf8 !important; box-shadow: 0 0 12px #38bdf8 !important; background: rgba(14, 116, 144, 0.4); }
+        .city-marker.enemy { border-color: rgba(255, 0, 85, 0.7); color: #fecdd3; }
+        .city-marker.repair-highlight { border-color: #38bdf8 !important; box-shadow: 0 0 15px #38bdf8 !important; background: rgba(14, 116, 144, 0.45); }
         
         .shake-hit { animation: hard-shake 0.3s ease-in-out; border-color: #ff0055 !important; }
 
         .build-marker {
-            background: #060913; border: 1px solid #38bdf8; color: #38bdf8;
-            font-size: 8px; font-weight: bold; border-radius: 2px; text-align: center; line-height: 12px;
-            padding: 0 3px; box-shadow: 0 0 6px rgba(56,189,248,0.4); z-index: 500 !important;
+            background: #040712; border: 1px solid #38bdf8; color: #38bdf8;
+            font-size: 9px; font-weight: bold; border-radius: 3px; text-align: center; line-height: 15px;
+            padding: 0 5px; box-shadow: 0 0 8px rgba(56,189,248,0.5); z-index: 500 !important;
+            animation: pulse-blue 2s infinite alternate;
+        }
+        
+        @keyframes pulse-blue {
+            from { box-shadow: 0 0 4px rgba(56,189,248,0.4); }
+            to { box-shadow: 0 0 12px rgba(56,189,248,0.8); border-color: #00f2fe; }
         }
 
         .damage-popup {
-            font-size: 11px; font-weight: bold; color: #ff0055; text-shadow: 0 0 3px #000;
-            animation: float-damage 0.6s ease-out forwards;
+            font-size: 12px; font-weight: bold; color: #ff0055; text-shadow: 0 0 4px #000;
+            animation: float-damage 0.7s ease-out forwards;
         }
         .heal-popup {
-            font-size: 11px; font-weight: bold; color: #10b981; text-shadow: 0 0 3px #000;
-            animation: float-damage 0.6s ease-out forwards;
+            font-size: 12px; font-weight: bold; color: #10b981; text-shadow: 0 0 4px #000;
+            animation: float-damage 0.7s ease-out forwards;
         }
 
         @keyframes hard-shake {
             0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-2px, 1px); }
-            40% { transform: translate(2px, -1px); }
-            60% { transform: translate(-1px, -2px); }
-            80% { transform: translate(1px, 1px); }
+            20% { transform: translate(-3px, 1.5px); }
+            40% { transform: translate(3px, -1.5px); }
+            60% { transform: translate(-1.5px, -3px); }
+            80% { transform: translate(1.5px, 1.5px); }
         }
         @keyframes float-damage {
             0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(-25px); opacity: 0; }
         }
         @keyframes global-screen-shake {
             0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-3px, 1px); }
-            40% { transform: translate(3px, -1px); }
-            60% { transform: translate(-1px, -3px); }
-            80% { transform: translate(2px, 2px); }
+            20% { transform: translate(-4px, 2px); }
+            40% { transform: translate(4px, -2px); }
+            60% { transform: translate(-2px, -4px); }
+            80% { transform: translate(3px, 3px); }
         }
     </style>
 </head>
@@ -210,8 +226,8 @@
 
     <div id="faction-screen">
         <div class="cyber-panel">
-            <h2 style="letter-spacing: 2px; margin: 0 0 8px 0; font-size: 14px; color: #fff;">СТРАТЕГИЧЕСКАЯ МАТРИЦА</h2>
-            <p style="color: #475569; font-size: 9px; margin: 0 0 20px 0;">ВЫБЕРИТЕ СВОЮ ФРАКЦИЮ</p>
+            <h2 style="letter-spacing: 2px; margin: 0 0 8px 0; font-size: 15px; color: #fff;">СТРАТЕГИЧЕСКАЯ МАТРИЦА</h2>
+            <p style="color: #475569; font-size: 10px; margin: 0 0 25px 0;">ВЫБЕРИТЕ СВОЮ ФРАКЦИЮ</p>
             <button class="faction-btn" onclick="selectFaction('UA')">КОМАНДОВАНИЕ [UA]</button>
             <button class="faction-btn" onclick="selectFaction('RU')" style="border-color:#ff0055; color:#ff0055;">КОМАНДОВАНИЕ [RU]</button>
         </div>
@@ -224,13 +240,13 @@
                 <div id="weather-widget">☀️ ЯСНО | ДЕНЬ</div>
                 <div>АНГАР БПЛА: <span id="txt-drones" class="hud-value">0</span> ЕД</div>
             </div>
-            <div class="hud-row" style="margin-top: 2px;">
+            <div class="hud-row" style="margin-top: 3px;">
                 <div style="width: 48%;">
-                    <div style="font-size:8px; color:#64748b;">НАШИ БАЗЫ: <span id="lbl-hp">100%</span></div>
+                    <div style="font-size: 9px; color: #64748b;">НАШИ БАЗЫ: <span id="lbl-hp">100%</span></div>
                     <div class="hp-bar-container"><div id="bar-player" class="hp-bar-fill hp-player" style="width: 100%;"></div></div>
                 </div>
                 <div style="width: 48%; text-align: right;">
-                    <div style="font-size:8px; color:#64748b;">ПРОТИВНИК: <span id="lbl-enemy-hp">100%</span></div>
+                    <div style="font-size: 9px; color: #64748b;">ПРОТИВНИК: <span id="lbl-enemy-hp">100%</span></div>
                     <div class="hp-bar-container" style="margin-left: auto;"><div id="bar-enemy" class="hp-bar-fill hp-enemy" style="width: 100%;"></div></div>
                 </div>
             </div>
@@ -257,7 +273,7 @@
                 <div id="control-panel">
                     <div class="btn-row">
                         <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД ($450)</button>
-                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($600) <span id="pvo-counter">0/4</span></button>
+                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($600) <span id="pvo-counter">0/5</span></button>
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 НАЛЕТ ПАРЫ (-$250)</button>
@@ -308,13 +324,13 @@
         let missiles = [];
         let map, selectedFactory = null;
         
-        const MAX_PVO_LIMIT = 4;
+        const MAX_PVO_LIMIT = 5;
 
         // Погода и Тайминги ИИ
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
         let aiActive = false;
-        let safeStartCountdown = 30;
+        let safeStartCountdown = 40;
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="28" height="28" style="filter: drop-shadow(0 0 5px #ff0055); fill: #1e293b; stroke: #ff0055; stroke-width: 5;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="filter: drop-shadow(0 0 5px #00f2fe); fill: rgba(0,242,254,0.2); stroke: #00f2fe; stroke-width: 6;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -343,7 +359,7 @@
             setInterval(enemyAILogic, 4000); 
             setInterval(changeWeatherCycle, 40000);
 
-            // Обратный отсчет подготовки ИИ врага
+            // Обратный отсчет подготовки ИИ врага (Шаг 5 сек)
             addLog(`ПОДГОТОВКА СИСТЕМ: ДО ПЕРВОЙ АТАКИ ВРАГА ${safeStartCountdown} СЕК.`, 'system');
             let countdownTimer = setInterval(() => {
                 safeStartCountdown -= 5;
@@ -479,7 +495,6 @@
             currentMode = 'repair_sector';
             document.getElementById('btn-repair-mode').classList.add('active');
             
-            // Визуально подсвечиваем наши города
             CITIES[playerFaction].forEach(c => {
                 if(c.markerInstance && c.markerInstance.getElement()) {
                     c.markerInstance.getElement().classList.add('repair-highlight');
@@ -560,7 +575,6 @@
         }
 
         function dropModes() {
-            // Снимаем подсветку с городов при выходе из режима ремонта
             CITIES[playerFaction].forEach(c => {
                 if(c.markerInstance && c.markerInstance.getElement()) {
                     c.markerInstance.getElement().classList.remove('repair-highlight');
@@ -639,7 +653,7 @@
 
                 if (currentMode === 'factory' && money >= 450) {
                     money -= 450;
-                    let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [28, 14], iconAnchor: [14, 7] });
+                    let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [32, 16], iconAnchor: [16, 8] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     let fObj = { lat, lng, marker: m };
                     m.on('click', function(event) { 
@@ -651,7 +665,7 @@
                     dropModes();
                 } else if (currentMode === 'pvo' && money >= 600 && getPlacedPVOCount() < MAX_PVO_LIMIT) {
                     money -= 600;
-                    let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [28, 14], iconAnchor: [14, 7] });
+                    let icon = L.divIcon({ className: 'build-marker', html: 'ПВО', iconSize: [32, 16], iconAnchor: [16, 8] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     
                     let visualCircle = L.circle([lat, lng], {
@@ -695,7 +709,7 @@
         }
 
         function enemyAILogic() {
-            if (!aiActive) return; // ИИ спит во время безопасного старта
+            if (!aiActive) return; 
 
             enemyMoney += 380;
 
