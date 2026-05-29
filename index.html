@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sky in Flames - Tactical Radar Lock</title>
+    <title>Sky in Flames - Advanced Neural AI</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -67,7 +67,6 @@
         }
         .marker-uav-ally { color: #00ff66; font-size: 16px; font-weight: bold; text-shadow: 0 0 5px #00ff66; text-align: center; }
         
-        /* Вражеский дрон теперь имеет анимацию пульсации при обнаружении */
         .marker-uav-enemy { 
             color: #ff3333; font-size: 18px; font-weight: bold; text-shadow: 0 0 8px #ff3333; text-align: center;
             animation: radar-pulse 1s infinite alternate;
@@ -82,7 +81,7 @@
 
     <div id="faction-screen">
         <h1 style="letter-spacing: 5px; margin-bottom: 5px;">SKY IN FLAMES</h1>
-        <p style="color: #45f3ff; font-size: 11px; margin-top: 0; letter-spacing: 2px;">TACTICAL RADAR LOCK v5.2</p>
+        <p style="color: #45f3ff; font-size: 11px; margin-top: 0; letter-spacing: 2px;">NEURAL WARFARE v6.0</p>
         <button class="faction-btn" onclick="selectFaction('UA')">УКРАИНА [UA]</button>
         <button class="faction-btn" onclick="selectFaction('RU')" style="border-color:#ff4d4d; color:#ff4d4d;">РОССИЯ [RU]</button>
     </div>
@@ -100,32 +99,37 @@
             <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ЗАВОД (200$)</button>
             <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО (250$)</button>
         </div>
-        <button class="btn btn-attack" onclick="launchDroneSwarm()">ВЫПУСТИТЬ РОЙ (МАКС 5 ШТ | -35$ / ед)</button>
+        <button class="btn btn-attack" onclick="launchDroneSwarm()">ВЫПУСТИТЬ РОЙ (МАКС 2 ШТ | -35$ / ед)</button>
     </div>
 
     <div id="map"></div>
 
     <script>
+        // Обновленный пул из 7 стратегических локаций
         const CITIES = {
             'UA': [
                 { lat: 50.45, lng: 30.52, name: 'Киев', hp: 100 },
                 { lat: 49.99, lng: 36.23, name: 'Харьков', hp: 100 },
                 { lat: 46.48, lng: 30.72, name: 'Одесса', hp: 100 },
                 { lat: 48.46, lng: 35.04, name: 'Днепр', hp: 100 },
-                { lat: 49.83, lng: 24.01, name: 'Львов', hp: 100 }
+                { lat: 49.83, lng: 24.01, name: 'Львов', hp: 100 },
+                { lat: 51.00, lng: 34.80, name: 'Сумская обл.', hp: 100 },
+                { lat: 48.00, lng: 37.80, name: 'Донбасс', hp: 100 }
             ],
             'RU': [
                 { lat: 55.75, lng: 37.62, name: 'Москва', hp: 100 },
                 { lat: 59.93, lng: 30.33, name: 'Санкт-Петербург', hp: 100 },
                 { lat: 47.23, lng: 39.70, name: 'Ростов-на-Дону', hp: 100 },
                 { lat: 51.67, lng: 39.18, name: 'Воронеж', hp: 100 },
-                { lat: 56.32, lng: 44.00, name: 'Нижний Новгород', hp: 100 }
+                { lat: 56.32, lng: 44.00, name: 'Нижний Новгород', hp: 100 },
+                { lat: 45.03, lng: 38.97, name: 'Краснодарский край', hp: 100 },
+                { lat: 45.04, lng: 41.96, name: 'Ставропольский край', hp: 100 }
             ]
         };
 
         let playerFaction = null, enemyFaction = null;
         let money = 600, droneInventory = 0, currentMode = null;
-        let enemyMoney = 400; 
+        let enemyMoney = 500; 
         
         let playerFactories = [], playerPVO = [], playerDrones = [];
         let enemyFactories = [], enemyPVO = [], enemyDrones = [];
@@ -136,7 +140,7 @@
             enemyFaction = faction === 'UA' ? 'RU' : 'UA';
             document.getElementById('faction-screen').style.display = 'none';
 
-            map = L.map('map', { zoomControl: false, minZoom: 5, maxZoom: 8 }).setView([52.5, 34.0], window.innerWidth < 600 ? 5 : 6);
+            map = L.map('map', { zoomControl: false, minZoom: 4, maxZoom: 8 }).setView([51.0, 36.0], window.innerWidth < 600 ? 5 : 6);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '©CartoDB' }).addTo(map);
 
             spawnCities();
@@ -144,9 +148,9 @@
             
             setInterval(economyTick, 2500);
             setInterval(tacticalTick, 50);   
-            setInterval(enemyAI, 7000); 
+            setInterval(enemyAI, 6000); // Повышенная частота просчета ИИ
 
-            addLog("Линия РЛС стабилизирована. Вражеские объекты подсвечиваются при входе в радиус обнаружения.");
+            addLog("Архитектура ИИ обновлена. Налажен мониторинг 7 секторов обороны.");
         }
 
         function spawnCities() {
@@ -154,7 +158,6 @@
                 let icon = L.divIcon({ className: 'marker-ally', html: 'СИТИ', iconSize: [36, 18], iconAnchor: [18, 9] });
                 L.marker([c.lat, c.lng], { icon: icon }).addTo(map).bindPopup(`<b>${c.name}</b>`);
                 
-                // Базовый радар города
                 let r = L.circle([c.lat, c.lng], { radius: 45000, color: '#00ff66', fillColor: '#00ff66', fillOpacity: 0.01, weight: 1, dashArray: '5,5' }).addTo(map);
                 playerPVO.push({ lat: c.lat, lng: c.lng, marker: null, range: r, rangeDist: 45000, ammo: 0, maxAmmo: 0, isCityRadar: true, radarLine: null, angle: 0 });
             });
@@ -162,7 +165,7 @@
                 let icon = L.divIcon({ className: 'marker-enemy', html: 'ЦЕЛЬ', iconSize: [36, 18], iconAnchor: [18, 9] });
                 L.marker([c.lat, c.lng], { icon: icon }).addTo(map).bindPopup(`<b>${c.name}</b>`);
                 
-                enemyPVO.push({ lat: c.lat, lng: c.lng, marker: null, rangeDelta: null, rangeDist: 45000, ammo: 0, maxAmmo: 0, isCityRadar: true, angle: 0 });
+                enemyPVO.push({ lat: c.lat, lng: c.lng, marker: null, rangeDist: 45000, ammo: 0, maxAmmo: 0, isCityRadar: true, angle: 0 });
             });
         }
 
@@ -187,7 +190,7 @@
                 } else if (currentMode === 'pvo' && money >= 250) {
                     money -= 250;
                     let icon = L.divIcon({ className: 'marker-ally', html: 'ПВО', iconSize: [32, 18], iconAnchor: [16, 9] });
-                    let m = L.marker([lat, lng], { icon: icon }).addTo(map).bindPopup("Батарея ПВО (Ракет: 6/6)");
+                    let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                     
                     let r = L.circle([lat, lng], { radius: 110000, color: '#00ff66', fillColor: '#00ff66', fillOpacity: 0.02, weight: 1 }).addTo(map);
                     let radarLine = L.polyline([[lat, lng], [lat, lng]], {color: '#00ff66', weight: 1.5, opacity: 0.7}).addTo(map);
@@ -196,9 +199,9 @@
                         lat, lng, marker: m, range: r, rangeDist: 110000, 
                         ammo: 6, maxAmmo: 6, reloadTimer: 0, 
                         radarLine: radarLine, angle: Math.random() * 360,
-                        lockLine: null // Динамическая линия захвата цели
+                        lockLine: null
                     });
-                    addLog("Развернута система ПВО. Сектор взят под контроль.");
+                    addLog("Развернута система ПВО (6 ракет, эффективность 75%).");
                 }
                 toggleBuildMode(null);
             });
@@ -207,14 +210,15 @@
         function launchDroneSwarm() {
             if (droneInventory <= 0) { addLog("На складах нет готовых БПЛА."); return; }
             
-            let attackSize = Math.min(droneInventory, 5);
+            // Жесткое усложнение: максимум 2 дрона за атаку!
+            let attackSize = Math.min(droneInventory, 2);
             let cost = attackSize * 35; 
             
-            if (money < cost) { addLog(`Недостаточно средств! Требуется: ${cost}$.`); return; }
+            if (money < cost) { addLog(`Недостаточно средств. Требуется: ${cost}$.`); return; }
 
             money -= cost;
             droneInventory -= attackSize;
-            addLog(`Запуск штурмовой группы: ${attackSize} БПЛА отправлены в сектор врага (-${cost}$).`);
+            addLog(`Запуск штурмовой пары: ${attackSize} БПЛА ушли на цель (-${cost}$).`);
 
             const start = playerFactories.length > 0 ? playerFactories[Math.floor(Math.random() * playerFactories.length)] : CITIES[playerFaction][0];
 
@@ -224,28 +228,38 @@
             }
         }
 
+        // ВЫСОКОИНТЕЛЛЕКТУАЛЬНЫЙ ИИ ПРОТИВНИКА
         function enemyAI() {
-            enemyMoney += 65 + (enemyFactories.length * 20);
+            enemyMoney += 85 + (enemyFactories.length * 30); // Повышенный бюджет ИИ
 
-            if (enemyPVO.filter(p=>!p.isCityRadar).length < 2 && enemyMoney >= 250) {
+            // 1. Умное выставление ПВО: бот анализирует, где стоят заводы игрока
+            let activeEnemyPVO = enemyPVO.filter(p => !p.isCityRadar);
+            if (activeEnemyPVO.length < 3 && enemyMoney >= 250 && playerFactories.length > 0) {
                 enemyMoney -= 250;
-                let city = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
-                let lat = city.lat + (Math.random() - 0.5) * 0.15;
-                let lng = city.lng + (Math.random() - 0.5) * 0.15;
+                
+                // Берем случайный завод игрока и случайный город ИИ
+                let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
+                let protectedCity = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
+                
+                // Ставим ПВО строго на векторе между заводом игрока и своим городом (перехват линии атаки!)
+                let lat = protectedCity.lat + (targetFactory.lat - protectedCity.lat) * 0.35;
+                let lng = protectedCity.lng + (targetFactory.lng - protectedCity.lng) * 0.35;
                 
                 let icon = L.divIcon({ className: 'marker-enemy', html: 'ПВО', iconSize: [32, 18], iconAnchor: [16, 9] });
                 let m = L.marker([lat, lng], { icon: icon }).addTo(map);
                 let r = L.circle([lat, lng], { radius: 110000, color: '#ff3333', fillColor: '#ff3333', fillOpacity: 0.01, weight: 1 }).addTo(map);
                 
                 enemyPVO.push({ lat, lng, marker: m, range: r, rangeDist: 110000, ammo: 6, maxAmmo: 6, reloadTimer: 0, angle: Math.random()*360 });
+                addLog("Разведка: ИИ вычислил вектор атаки и развернул перехватывающее ПВО!", true);
                 return;
             }
 
-            if (enemyFactories.length < 2 && enemyMoney >= 200) {
+            // 2. Развитие инфраструктуры ИИ (до 3 заводов для массовых налетов)
+            if (enemyFactories.length < 3 && enemyMoney >= 200) {
                 enemyMoney -= 200;
                 let city = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
-                let lat = city.lat + (Math.random() - 0.5) * 0.2;
-                let lng = city.lng + (Math.random() - 0.5) * 0.2;
+                let lat = city.lat + (Math.random() - 0.5) * 0.15;
+                let lng = city.lng + (Math.random() - 0.5) * 0.15;
 
                 let icon = L.divIcon({ className: 'marker-enemy', html: 'ЗАВ', iconSize: [32, 18], iconAnchor: [16, 9] });
                 let m = L.marker([lat, lng], { icon: icon }).addTo(map);
@@ -253,16 +267,18 @@
                 return;
             }
 
+            // Накопление ударных групп у ИИ
             if (enemyFactories.length > 0) {
-                enemyFactories[Math.floor(Math.random() * enemyFactories.length)].stock++;
+                enemyFactories[Math.floor(Math.random() * enemyFactories.length)].stock += 2;
             }
 
             let totalEnemyDrones = enemyFactories.reduce((acc, f) => acc + f.stock, 0);
-            let launchSize = Math.min(totalEnemyDrones, 4); 
-
-            if (launchSize >= 2 && enemyMoney >= (launchSize * 35)) {
+            
+            // Массированный удар: теперь бот выпускает КРУПНЫЕ волны (от 4 до 7 дронов)
+            if (totalEnemyDrones >= 5 && enemyMoney >= (totalEnemyDrones * 35)) {
+                let launchSize = Math.min(totalEnemyDrones, 7);
                 enemyMoney -= (launchSize * 35);
-                addLog(`Внимание: Обнаружено движение в воздушном пространстве противника!`, true);
+                addLog(`⚠️ КРИТИЧЕСКАЯ УГРОЗА: ИИ запустил массированный рой из ${launchSize} БПЛА!`, true);
 
                 let launched = 0;
                 enemyFactories.forEach(f => {
@@ -284,20 +300,20 @@
             let marker = L.marker([start.lat, start.lng], { icon: icon });
             if (isPlayer) marker.addTo(map);
 
-            let curve = (Math.random() * 0.22) * (Math.random() > 0.5 ? 1 : -1); 
+            let curve = (Math.random() * 0.20) * (Math.random() > 0.5 ? 1 : -1); 
 
             collection.push({
                 marker: marker, lat: start.lat, lng: start.lng,
                 targetLat: target.lat, targetLng: target.lng, targetName: target.name,
                 progress: 0, 
-                speed: 0.0004 + (Math.random() * 0.0003), 
+                speed: 0.0004 + (Math.random() * 0.0002), 
                 curve: curve,
                 isDetected: false 
             });
         }
 
         function economyTick() {
-            money += 40 + (playerFactories.length * 15);
+            money += 45 + (playerFactories.length * 15);
             playerFactories.forEach(() => droneInventory++);
             
             reloadPVOList(playerPVO);
@@ -346,7 +362,7 @@
                     createExplosion(d.targetLat, d.targetLng, '#ff3333', 20000);
                     map.removeLayer(d.marker);
                     playerDrones.splice(i, 1);
-                    addLog(`Удар: Цель в секторе ${d.targetName} поражена.`);
+                    addLog(`Удар: Цель в регионе [${d.targetName}] поражена!`);
                     continue;
                 }
 
@@ -364,7 +380,7 @@
                             createExplosion(cLat, cLng, '#ff3333', 12000);
                             map.removeLayer(d.marker);
                             playerDrones.splice(i, 1);
-                            addLog("Потеря: Наш БПЛА сбит ПВО противника.", true);
+                            addLog(`Потеря: Наш БПЛА сбит умным ПВО врага на подлете.`, true);
                             break;
                         }
                     }
@@ -382,32 +398,27 @@
                 let offset = Math.sin(d.progress * Math.PI) * d.curve;
                 cLat += offset; cLng -= offset;
 
-                // Проверяем, видит ли этот дрон хоть один радар игрока
                 let detectingRadar = null;
                 for (let j = 0; j < playerPVO.length; j++) {
                     if (map.distance([cLat, cLng], [playerPVO[j].lat, playerPVO[j].lng]) <= playerPVO[j].rangeDist) {
                         detectingRadar = playerPVO[j];
-                        break; // Нашли радар, который обнаружил угрозу
+                        break; 
                     }
                 }
 
-                // Визуализация обнаружения в зоне ПВО
                 if (detectingRadar) {
                     if (!d.isDetected) {
                         d.isDetected = true;
-                        d.marker.addTo(map); // Рисуем дрон на карте внутри зоны обнаружения
-                        addLog("🚨 РЛС: Объект обнаружен в зоне ответственности!", true);
+                        d.marker.addTo(map); 
+                        addLog(`🚨 РЛС: Засечен вражеский дрон, идущий на [${d.targetName}]!`, true);
                     }
                     
-                    // Обновляем позицию пульсирующего маркера на карте
                     d.marker.setLatLng([cLat, cLng]);
                     
-                    // Визуальный эффект: подсвечиваем круг ПВО, зафиксировавшего цель
                     if (detectingRadar.range) {
                         detectingRadar.range.setStyle({ color: '#ff3333', fillColor: '#ff3333', fillOpacity: 0.05 });
                     }
 
-                    // Если это полноценная батарея ПВО с ракетами, рисуем линию захвата цели (Lock-On)
                     if (!detectingRadar.isCityRadar && detectingRadar.ammo > 0) {
                         if (!detectingRadar.lockLine) {
                             detectingRadar.lockLine = L.polyline([[detectingRadar.lat, detectingRadar.lng], [cLat, cLng]], {
@@ -418,24 +429,20 @@
                         }
                     }
                 } else {
-                    // Если дрон вылетел из зоны радаров, скрываем его
                     if (d.isDetected) {
                         d.isDetected = false;
                         map.removeLayer(d.marker);
                     }
-                    // Сбрасываем подсветку ПВО, если целей больше нет
                     playerPVO.forEach(p => {
                         if (p.range) p.range.setStyle({ color: '#00ff66', fillColor: '#00ff66', fillOpacity: 0.02 });
                         if (p.lockLine) { map.removeLayer(p.lockLine); p.lockLine = null; }
                     });
                 }
 
-                // Логика достижения цели (удар по городу)
                 if (d.progress >= 1) {
                     createExplosion(d.targetLat, d.targetLng, '#ff3333', 20000);
                     if (d.isDetected) map.removeLayer(d.marker);
                     
-                    // Очищаем линии захвата этого ПВО
                     playerPVO.forEach(p => { if (p.lockLine) { map.removeLayer(p.lockLine); p.lockLine = null; } });
                     
                     enemyDrones.splice(i, 1);
@@ -443,24 +450,22 @@
                     continue;
                 }
 
-                // ПВО Игрока ведет огонь только по тем целям, которые НАХОДЯТСЯ В ЗОНЕ и ОБНАРУЖЕНЫ
                 if (d.isDetected) {
                     for (let j = playerPVO.length - 1; j >= 0; j--) {
                         let pvo = playerPVO[j];
                         if (!pvo.isCityRadar && pvo.ammo > 0 && map.distance([cLat, cLng], [pvo.lat, pvo.lng]) <= pvo.rangeDist) {
                             pvo.ammo--; 
                             
-                            // Убираем линию захвата сразу после выстрела
                             if (pvo.lockLine) { map.removeLayer(pvo.lockLine); pvo.lockLine = null; }
 
                             if (Math.random() <= 0.75) { 
                                 createExplosion(cLat, cLng, '#00ffff', 12000);
                                 map.removeLayer(d.marker);
                                 enemyDrones.splice(i, 1);
-                                addLog("ПВО: Цель успешно уничтожена противоракетой.");
+                                addLog(`ПВО: Воздушная цель успешно ликвидирована.`);
                                 break;
                             } else {
-                                addLog("⚠️ ПВО: Промах! Ракета сошла с траектории!", true);
+                                addLog("⚠️ ПВО: Промах! Плотность роя снизила точность наведения!", true);
                             }
                         }
                     }
@@ -473,15 +478,15 @@
             if (city) {
                 city.hp -= 20; 
                 if (city.hp < 0) city.hp = 0;
-                addLog(`КРИТИЧЕСКИЙ УДАР: Поражен г. ${name}. Защита: ${city.hp}%`, true);
+                addLog(`КРИТИЧЕСКИЙ УДАР: Потери в регионе [${name}]. Целостность: ${city.hp}%`, true);
                 
                 let total = 0;
                 CITIES[playerFaction].forEach(c => total += c.hp);
-                let avg = Math.round(total / 5);
+                let avg = Math.round(total / 7); // Расчет на 7 регионов
                 document.getElementById('txt-hp').innerText = avg + "%";
                 
                 if (avg <= 0) {
-                    alert("Все стратегические центры уничтожены. Капитуляция.");
+                    alert("Все оборонные и промышленные регионы уничтожены. Игра окончена.");
                     location.reload();
                 }
             }
