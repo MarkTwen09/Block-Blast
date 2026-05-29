@@ -3,254 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sky in Flames - Mini 2D</title>
+    <title>Sky in Flames - Tactical Map</title>
+    <!-- Подключаем стили и скрипты карты Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body {
+        body, html {
             margin: 0;
-            background-color: #111;
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            user-select: none;
+            font-family: 'Courier New', Courier, monospace;
+            background: #000;
         }
-        #ui {
+        /* Стилизация самой карты под военный радар */
+        #map {
+            width: 100%;
+            height: 100%;
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        /* Панель управления */
+        #control-panel {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 16px;
-            line-height: 1.5;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border: 1px solid #00ff00;
-            border-radius: 5px;
-            pointer-events: none;
-        }
-        canvas {
-            display: block;
-            cursor: crosshair;
-        }
-        #game-over {
-            display: none;
-            position: absolute;
-            top: 50%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background: rgba(0,0,0,0.9);
-            padding: 30px;
-            border: 2px solid #ff0000;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(10, 15, 10, 0.85);
+            border: 2px solid #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            color: #00ff00;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
         }
-        button {
-            background: #222;
+        .btn {
+            background: #111;
             color: #00ff00;
             border: 1px solid #00ff00;
-            padding: 10px 20px;
+            padding: 8px 15px;
             cursor: pointer;
             font-family: inherit;
+            font-weight: bold;
         }
-        button:hover { background: #00ff00; color: #000; }
+        .btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        .btn.active {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        #stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #00ff00;
+            padding: 10px;
+            color: #00ff00;
+        }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div>СЧЕТ: <span id="score">0</span></div>
-        <div>ПРОЧНОСТЬ БАЗЫ: <span id="health">100</span>%</div>
-        <div>ЗАРЯДЫ ПВО: <span id="ammo">30</span></div>
+    <div id="stats">
+        <div>ОБЪЕКТЫ ПВО: <span id="pvo-count">0</span></div>
+        <div>ОБНАРУЖЕНО ЦЕЛЕЙ: <span id="drone-count">0</span></div>
     </div>
 
-    <div id="game-over">
-        <h1 style="color: #ff0000;">БАЗА УНИЧТОЖЕНА</h1>
-        <p>Система ПВО пала. Рой дронов прорвал оборону.</p>
-        <button onclick="resetGame()">Перезапустить систему</button>
+    <div id="control-panel">
+        <button class="btn" id="btn-pvo" onclick="setMode('pvo')">РАЗВЕРНУТЬ ПВО</button>
+        <button class="btn" id="btn-drone" onclick="setMode('drone')">ЗАПУСТИТЬ РОЙ</button>
+        <button class="btn" onclick="clearMap()">СБРОС СИТУАЦИИ</button>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
+    <div id="map"></div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        // Инициализация карты (по умолчанию центрируем на средние широты, зум 11)
+        const map = L.map('map', {
+            zoomControl: false 
+        }).setView([44.63, 41.94], 11); 
 
-        // Адаптация под размер экрана
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        // Загружаем слой темных дорог/карт (используем бесплатный OSM)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-        // Игровые переменные
-        let score = 0;
-        let baseHealth = 100;
-        let ammo = 30;
-        let gameOver = false;
-
-        const pvoStation = { x: canvas.width / 2, y: canvas.height - 30, r: 20 };
+        let currentMode = null;
+        let pvoSystems = [];
         let drones = [];
-        let missiles = [];
-        let explosions = [];
 
-        // Управление кликом (Пуск ракеты)
-        canvas.addEventListener('click', (e) => {
-            if (gameOver || ammo <= 0) return;
+        // Переключение режимов установки объектов
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-pvo').classList.remove('active');
+            document.getElementById('btn-drone').classList.remove('active');
+            
+            if (mode) {
+                document.getElementById(`btn-${mode}`).classList.add('active');
+            }
+        }
 
-            // Расчет угла полета ракеты к точке клика
-            const targetX = e.clientX;
-            const targetY = e.clientY;
-            
-            const startX = canvas.width / 2;
-            const startY = canvas.height - 30;
-            
-            const angle = Math.atan2(targetY - startY, targetX - startX);
-            
-            missiles.push({
-                x: startX,
-                y: startY,
-                targetX: targetX,
-                targetY: targetY,
-                speed: 7,
-                dx: Math.cos(angle) * 7,
-                dy: Math.sin(angle) * 7
-            });
+        // Клик по карте
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
 
-            ammo--;
-            document.getElementById('ammo').innerText = ammo;
+            if (currentMode === 'pvo') {
+                deployPVO(lat, lng);
+                setMode(null); // Сбрасываем режим после установки
+            } else if (currentMode === 'drone') {
+                spawnDroneSwarm(lat, lng);
+                setMode(null);
+            }
         });
 
-        // Спавн дронов
-        function spawnDrone() {
-            if (gameOver) return;
-            const x = Math.random() * (canvas.width - 40) + 20;
-            const speed = Math.random() * 1.5 + 1; // Скорость падения
-            drones.push({ x: x, y: 0, speed: speed, r: 12 });
-            
-            // Время между спавном уменьшается со временем (усложнение)
-            setTimeout(spawnDrone, Math.max(800 - score * 5, 300));
+        // Функция установки ПВО
+        function deployPVO(lat, lng) {
+            // Маркер комплекса ПВО (Зеленый круг)
+            const pvoMarker = L.circleMarker([lat, lng], {
+                radius: 8,
+                fillColor: "#00ff00",
+                color: "#00ff00",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+
+            // Радиус действия радара / поражения ракет
+            const radarRange = L.circle([lat, lng], {
+                radius: 7000, // 7 километров в метрах
+                color: '#00ff00',
+                fillColor: '#00ff00',
+                fillOpacity: 0.05,
+                weight: 1,
+                dashArray: '5, 5'
+            }).addTo(map);
+
+            pvoSystems.push({ marker: pvoMarker, range: radarRange, lat, lng });
+            document.getElementById('pvo-count').innerText = pvoSystems.length;
         }
-        spawnDrone();
 
-        // Пассивное пополнение припасов (Логистика)
-        setInterval(() => {
-            if (!gameOver && ammo < 50) {
-                ammo += 5;
-                if (ammo > 50) ammo = 50;
-                document.getElementById('ammo').innerText = ammo;
-            }
-        }, 3000); // Раз в 3 секунды подвозят 5 ракет
+        // Функция спавна дрона
+        function spawnDroneSwarm(lat, lng) {
+            // Создаем маркер вражеского БПЛА (Красный квадрат)
+            const droneMarker = L.circleMarker([lat, lng], {
+                radius: 6,
+                fillColor: "#ff0000",
+                color: "#ff0000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).addTo(map);
 
-        // Главный игровой цикл
-        function update() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Случайная точка назначения (например, чуть в сторону или к ближайшему ПВО)
+            // Для теста сделаем просто медленное движение на север/северо-запад
+            const droneObj = {
+                marker: droneMarker,
+                lat: lat,
+                lng: lng,
+                speedLat: (Math.random() - 0.5) * 0.002 - 0.001, // Направление движения
+                speedLng: (Math.random() - 0.5) * 0.002 - 0.001
+            };
 
-            // Отрисовка базы/города снизу
-            ctx.fillStyle = '#333';
-            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
-            
-            // Отрисовка ПВО
-            ctx.fillStyle = '#00ff00';
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height - 20, 25, Math.PI, 0);
-            ctx.fill();
+            drones.push(droneObj);
+            document.getElementById('drone-count').innerText = drones.length;
+        }
 
-            // Обновление и отрисовка ракет
-            for (let i = missiles.length - 1; i >= 0; i--) {
-                let m = missiles[i];
-                m.x += m.dx;
-                m.y += m.dy;
-
-                ctx.strokeStyle = '#00ffff';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(m.x, m.y);
-                ctx.lineTo(m.x - m.dx * 2, m.y - m.dy * 2);
-                ctx.stroke();
-
-                // Проверяем достижение цели (дистанция до точки клика)
-                let distToTarget = Math.hypot(m.x - m.targetX, m.y - m.targetY);
-                if (distToTarget < 10 || m.y < 0) {
-                    explosions.push({ x: m.targetX, y: m.targetY, r: 5, maxR: 40 });
-                    missiles.splice(i, 1);
-                }
-            }
-
-            // Обновление и отрисовка взрывов
-            for (let i = explosions.length - 1; i >= 0; i--) {
-                let exp = explosions[i];
-                exp.r += 2;
-
-                ctx.fillStyle = `rgba(255, 100, 0, ${1 - exp.r / exp.maxR})`;
-                ctx.beginPath();
-                ctx.arc(exp.x, exp.y, exp.r, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Проверка коллизии взрыва с дронами
-                for (let j = drones.length - 1; j >= 0; j--) {
-                    let d = drones[j];
-                    let dist = Math.hypot(d.x - exp.x, d.y - exp.y);
-                    if (dist < exp.r + d.r) {
-                        drones.splice(j, 1);
-                        score += 10;
-                        document.getElementById('score').innerText = score;
-                    }
-                }
-
-                if (exp.r >= exp.maxR) {
-                    explosions.splice(i, 1);
-                }
-            }
-
-            // Обновление и отрисовка дронов
+        // Тактический цикл (расчет перемещений и перехватов)
+        function tacticalTick() {
+            // Двигаем дроны
             for (let i = drones.length - 1; i >= 0; i--) {
                 let d = drones[i];
-                d.y += d.speed;
+                d.lat += d.speedLat;
+                d.lng += d.speedLng;
+                d.marker.setLatLng([d.lat, d.lng]);
 
-                // Рисуем дрон (схематичный силуэт)
-                ctx.fillStyle = '#ff3333';
-                ctx.beginPath();
-                ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-                ctx.fill();
-                // Крылья
-                ctx.fillRect(d.x - 20, d.y - 2, 40, 4);
+                // Проверяем, вошел ли дрон в зону действия какого-либо ПВО
+                for (let j = pvoSystems.length - 1; j >= 0; j--) {
+                    let pvo = pvoSystems[j];
+                    
+                    // Считаем расстояние между координатами в метрах через метод встроенный в Leaflet
+                    let distance = map.distance([d.lat, d.lng], [pvo.lat, pvo.lng]);
 
-                // Дрон долетел до земли
-                if (d.y > canvas.height - 20) {
-                    drones.splice(i, 1);
-                    baseHealth -= 10;
-                    document.getElementById('health').innerText = baseHealth;
-
-                    if (baseHealth <= 0) {
-                        endGame();
+                    if (distance <= 7000) { // Если зашел в радиус 7км
+                        // Имитация пуска ракеты и уничтожения
+                        createExplosion(d.lat, d.lng);
+                        map.removeLayer(d.marker);
+                        drones.splice(i, 1);
+                        break; 
                     }
                 }
             }
-
-            if (!gameOver) {
-                requestAnimationFrame(update);
-            }
+            document.getElementById('drone-count').innerText = drones.length;
         }
 
-        function endGame() {
-            gameOver = true;
-            document.getElementById('game-over').style.display = 'block';
+        // Эффект уничтожения цели
+        function createExplosion(lat, lng) {
+            const exp = L.circle([lat, lng], {
+                radius: 300,
+                color: '#ff6600',
+                fillColor: '#ff3300',
+                fillOpacity: 0.4
+            }).addTo(map);
+
+            // Анимация затухания взрыва
+            let radius = 300;
+            const interval = setInterval(() => {
+                radius += 100;
+                exp.setRadius(radius);
+                if (radius > 1500) {
+                    clearInterval(interval);
+                    map.removeLayer(exp);
+                }
+            }, 40);
         }
 
-        function resetGame() {
-            score = 0;
-            baseHealth = 100;
-            ammo = 30;
+        // Очистить всё
+        function clearMap() {
+            pvoSystems.forEach(p => { map.removeLayer(p.marker); map.removeLayer(p.range); });
+            drones.forEach(d => map.removeLayer(d.marker));
+            pvoSystems = [];
             drones = [];
-            missiles = [];
-            explosions = [];
-            gameOver = false;
-            document.getElementById('score').innerText = score;
-            document.getElementById('health').innerText = baseHealth;
-            document.getElementById('ammo').innerText = ammo;
-            document.getElementById('game-over').style.display = 'none';
-            update();
+            document.getElementById('pvo-count').innerText = 0;
+            document.getElementById('drone-count').innerText = 0;
         }
 
-        // Старт игры
-        update();
+        // Запуск тактического таймера (обновление каждые 100мс)
+        setInterval(tacticalTick, 100);
     </script>
 </body>
 </html>
