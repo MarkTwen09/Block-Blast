@@ -86,7 +86,7 @@
             display: none; background: rgba(244, 63, 94, 0.05); border: 1px dashed rgba(244, 63, 94, 0.4);
             padding: 6px; border-radius: 4px; text-align: center;
         }
-        .target-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
+        .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; max-height: 120px; overflow-y: auto; }
         .target-btn {
             background: #1e293b; border: 1px solid #475569; color: #f1f5f9;
             font-size: 10px; padding: 6px 2px; font-family: inherit; cursor: pointer; border-radius: 4px;
@@ -136,6 +136,7 @@
             font-size: 8px; font-weight: bold; border-radius: 3px; text-align: center; line-height: 13px;
             padding: 0 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.5); white-space: nowrap;
         }
+        .build-marker.enemy-factory { border-color: #f43f5e; color: #f43f5e; }
 
         .damage-popup { font-size: 11px; font-weight: bold; color: #f43f5e; text-shadow: 0 1px 2px #000; animation: float-dmg 0.6s ease-out forwards; }
         .heal-popup { font-size: 11px; font-weight: bold; color: #10b981; text-shadow: 0 1px 2px #000; animation: float-dmg 0.6s ease-out forwards; }
@@ -223,7 +224,8 @@
                 { lat: 49.83, lng: 24.01, name: 'Львов', hp: 100 },
                 { lat: 46.97, lng: 31.99, name: 'Николаев', hp: 100 },
                 { lat: 48.62, lng: 22.28, name: 'Ужгород', hp: 100 },
-                { lat: 50.91, lng: 34.80, name: 'Сумы', hp: 100 }
+                { lat: 50.91, lng: 34.80, name: 'Сумы', hp: 100 },
+                { lat: 47.84, lng: 35.13, name: 'Запорожье', hp: 100 } // НОВЫЙ ГОРОД [UA]
             ],
             'RU': [
                 { lat: 55.75, lng: 37.62, name: 'Москва', hp: 100 },
@@ -234,8 +236,9 @@
                 { lat: 45.03, lng: 38.97, name: 'Краснодар', hp: 100 },
                 { lat: 44.61, lng: 33.52, name: 'Севастоп.', hp: 100 },
                 { lat: 48.01, lng: 37.80, name: 'Донецк', hp: 100 },
-                { lat: 45.04, lng: 41.97, name: 'Ставрополь', hp: 100 }, // НОВЫЙ ГОРОД
-                { lat: 51.73, lng: 36.19, name: 'Курск', hp: 100 }      // НОВЫЙ ГОРОД
+                { lat: 45.04, lng: 41.97, name: 'Ставрополь', hp: 100 }, 
+                { lat: 51.73, lng: 36.19, name: 'Курск', hp: 100 },
+                { lat: 48.57, lng: 39.31, name: 'Луганск', hp: 100 }   // НОВЫЙ ГОРОД [RU]
             ]
         };
 
@@ -244,7 +247,7 @@
         let enemyMoney = 400;
 
         let playerFactories = [], playerPVO = [], playerDrones = [];
-        let enemyPVO = [], enemyDrones = [];
+        let enemyFactories = [], enemyPVO = [], enemyDrones = []; // Массив заводов врага
         let missiles = [];
         let map, selectedFactory = null;
         
@@ -253,7 +256,7 @@
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
         let aiActive = false;
-        let safeStartCountdown = 30; // ТЕПЕРЬ СТАРТ ЧЕРЕЗ 30 СЕКУНД
+        let safeStartCountdown = 30; 
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -335,7 +338,7 @@
                 let icon = L.divIcon({ className: 'city-marker enemy', html: html, iconSize: [30, 30] });
                 c.markerInstance = L.marker([c.lat, c.lng], { icon: icon }).addTo(map).on('click', function(e) {
                     L.DomEvent.stopPropagation(e);
-                    handleTargetSelection(c);
+                    handleTargetSelection({lat: c.lat, lng: c.lng, name: c.name, type: 'city'});
                 });
                 enemyPVO.push({ lat: c.lat, lng: c.lng, rangeDist: 1.3, ammo: 3, maxAmmo: 3, lastShot: 0, isCityRadar: true, circle: null });
             });
@@ -356,21 +359,32 @@
                     container.appendChild(btn);
                 });
             } else {
-                title.innerText = "ВЫБЕРИТЕ ЦЕЛЬ НАЛЕТА:";
+                title.innerText = "ВЫБЕРИТЕ СЕКТОР ИЛИ ЗАВОД ДЛЯ УДАРА:";
                 title.style.color = "#f43f5e";
+                
+                // Сначала выводим города врага
                 CITIES[enemyFaction].forEach(city => {
                     const btn = document.createElement('button'); btn.className = 'target-btn';
                     btn.innerText = city.name;
-                    btn.onclick = () => handleTargetSelection(city);
+                    btn.onclick = () => handleTargetSelection({lat: city.lat, lng: city.lng, name: city.name, type: 'city'});
+                    container.appendChild(btn);
+                });
+
+                // Затем выводим активные заводы врага для возможности их уничтожения
+                enemyFactories.forEach((fac, idx) => {
+                    const btn = document.createElement('button'); btn.className = 'target-btn';
+                    btn.style.borderColor = '#ef4444'; btn.style.color = '#f87171';
+                    btn.innerText = `Враж. Завод #${idx + 1}`;
+                    btn.onclick = () => handleTargetSelection({lat: fac.lat, lng: fac.lng, name: `Завод #${idx + 1}`, type: 'factory', id: fac.id});
                     container.appendChild(btn);
                 });
             }
         }
 
-        function handleTargetSelection(city) {
-            if (currentMode === 'attack_target' && selectedFactory) dispatchDroneStrike(selectedFactory, city);
-            else if (currentMode === 'heavy_missile') dispatchHeavyStrike(city);
-            else if (currentMode === 'bomber_strike') dispatchBomberStrike(city);
+        function handleTargetSelection(targetObj) {
+            if (currentMode === 'attack_target' && selectedFactory) dispatchDroneStrike(selectedFactory, targetObj);
+            else if (currentMode === 'heavy_missile') dispatchHeavyStrike(targetObj);
+            else if (currentMode === 'bomber_strike') dispatchBomberStrike(targetObj);
         }
 
         function toggleRepairMode() {
@@ -482,7 +496,7 @@
                     money -= 500;
                     let icon = L.divIcon({ className: 'build-marker', html: 'ЗАВ', iconSize: [24, 14] });
                     let m = L.marker([lat, lng], { icon: icon }).addTo(map);
-                    let fObj = { lat, lng, marker: m };
+                    let fObj = { id: Math.random().toString(36).substr(2, 5), lat, lng, marker: m };
                     m.on('click', function(event) { 
                         L.DomEvent.stopPropagation(event);
                         if (currentMode === 'attack_source') selectFactoryForLaunch(fObj); 
@@ -509,67 +523,79 @@
             updateTargetPanelGrid(); showTargetSelector(true);
         }
 
-        function dispatchDroneStrike(source, targetCity) {
+        function dispatchDroneStrike(source, targetObj) {
             money -= 250; droneInventory -= 2;
-            for(let i=0; i<2; i++) injectAirTarget(source, targetCity, playerDrones, true, 'drone');
+            for(let i=0; i<2; i++) injectAirTarget(source, targetObj, playerDrones, true, 'drone');
             dropModes();
         }
 
-        function dispatchBomberStrike(targetCity) {
+        function dispatchBomberStrike(targetObj) {
             money -= 2200;
-            injectAirTarget(CITIES[playerFaction][0], targetCity, playerDrones, true, 'bomber');
+            injectAirTarget(CITIES[playerFaction][0], targetObj, playerDrones, true, 'bomber');
             dropModes();
         }
 
-        function dispatchHeavyStrike(targetCity) {
+        function dispatchHeavyStrike(targetObj) {
             money -= 3800;
-            injectAirTarget(CITIES[playerFaction][0], targetCity, playerDrones, true, 'heavy');
+            injectAirTarget(CITIES[playerFaction][0], targetObj, playerDrones, true, 'heavy');
             dropModes();
         }
 
-        /* УМНЫЙ И СТРАТЕГИЧЕСКИЙ ИИ */
         function enemyAILogic() {
             if (!aiActive) return;
             
-            enemyMoney += 220; // Увеличен базовый доход ИИ для жестких ходов
+            // Расчет экономики ИИ в зависимости от его заводов
+            enemyMoney += 220 + (enemyFactories.length * 50);
 
-            // Находим критически поврежденный сектор игрока
+            // ИИ строит свои заводы, если у него много денег и лимит не превышен
+            if (enemyMoney >= 1500 && enemyFactories.length < 6) {
+                enemyMoney -= 500;
+                let randomCity = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
+                // Спавним завод врага со смещением от его города
+                let fLat = randomCity.lat + (Math.random() - 0.5) * 0.15;
+                let fLng = randomCity.lng + (Math.random() - 0.5) * 0.15;
+                let icon = L.divIcon({ className: 'build-marker enemy-factory', html: 'В.ЗАВ', iconSize: [28, 14] });
+                let m = L.marker([fLat, fLng], { icon: icon }).addTo(map);
+                
+                enemyFactories.push({ id: Math.random().toString(36).substr(2, 5), lat: fLat, lng: fLng, marker: m });
+                addLog(`⚠️ ВРАГ: Развернут новый промышленный объект в тылу!`, 'enemy');
+            }
+
             let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 40);
-            let randomTarget = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
+            let randomCityTarget = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
-            // УМНОЕ РЕШЕНИЕ 1: Если игрок застроил карту заводами, ИИ целенаправленно копит и бьет Орешником
+            // Приоритет выбора цели для ИИ
+            let target = { lat: randomCityTarget.lat, lng: randomCityTarget.lng, name: randomCityTarget.name, type: 'city' };
+
             if (playerFactories.length >= 3 && enemyMoney >= 3800) {
                 enemyMoney -= 3800;
                 let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
                 addLog(`⚠️ ВРАГ [СТРАТЕГИЯ]: Подавление промзоны! Гиперзвуковой Орешник идет на завод.`, 'enemy');
-                injectAirTarget(source, {lat: targetFactory.lat, lng: targetFactory.lng, name: 'Завод'}, enemyDrones, false, 'heavy');
+                injectAirTarget(source, {lat: targetFactory.lat, lng: targetFactory.lng, name: 'Завод', type: 'factory', id: targetFactory.id}, enemyDrones, false, 'heavy');
                 return; 
             }
 
-            // УМНОЕ РЕШЕНИЕ 2: Если у города мало здоровья, ИИ не тратит дроны, а копит на авиаудар для уничтожения сектора
             if (brokenCity) {
                 if (enemyMoney >= 2200) {
                     enemyMoney -= 2200;
                     addLog(`⚠️ ВРАГ [ТАКТИКА]: Добивание сектора! Штурмовики вылетели на [${brokenCity.name}].`, 'enemy');
-                    injectAirTarget(source, brokenCity, enemyDrones, false, 'bomber');
+                    injectAirTarget(source, {lat: brokenCity.lat, lng: brokenCity.lng, name: brokenCity.name, type: 'city'}, enemyDrones, false, 'bomber');
                     return;
                 } else {
-                    // ИИ решает подождать и поднакопить денег на мощную атаку, а не спамить впустую
                     return; 
                 }
             }
 
-            // УМНОЕ РЕШЕНИЕ 3: Базовый спам дронами только если накоплен излишек денег
             if (enemyMoney >= 1200) {
                 enemyMoney -= 250;
-                addLog(`⚠️ ВРАГ: Разведка боем. Выпущен БПЛА по сектору [${randomTarget.name}].`, 'enemy');
-                injectAirTarget(source, randomTarget, enemyDrones, false, 'drone');
+                addLog(`⚠️ ВРАГ: Разведка боем. Выпущен БПЛА по сектору [${target.name}].`, 'enemy');
+                injectAirTarget(source, target, enemyDrones, false, 'drone');
             }
         }
 
-        function injectAirTarget(start, target, collection, isPlayer, type) {
-            let dLng = target.lng - start.lng, dLat = target.lat - start.lat;
+        function injectAirTarget(start, targetObj, collection, isPlayer, type) {
+            let dLng = targetObj.lng - start.lng, dLat = targetObj.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
             let speed = type === 'heavy' ? 0.025 : (type === 'bomber' ? 0.0028 : 0.0038);
@@ -584,7 +610,8 @@
 
             collection.push({
                 id: Math.random().toString(36).substr(2, 9), marker: marker, type: type, hp: type === 'bomber' ? 3 : 1,
-                lat: start.lat, lng: start.lng, targetLat: target.lat, targetLng: target.lng, targetName: target.name,
+                lat: start.lat, lng: start.lng, targetLat: targetObj.lat, targetLng: targetObj.lng, 
+                targetName: targetObj.name, targetType: targetObj.type || 'city', targetId: targetObj.id || null,
                 currentLat: start.lat, currentLng: start.lng, progress: 0, speed: speed, trails: []
             });
             updateUIButtons();
@@ -624,7 +651,8 @@
                 if (d.progress >= 1) {
                     let dmg = d.type === 'heavy' ? 85 : (d.type === 'bomber' ? 45 : 15);
                     triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy' ? 30000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
-                    applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.targetLat, d.targetLng, dmg);
+                    
+                    applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.targetLat, d.targetLng, dmg, d.targetType, d.targetId, isPlayer);
                     map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
                     list.splice(i, 1); continue;
                 }
@@ -694,16 +722,29 @@
             }
         }
 
-        function applyRadarDamage(faction, cityName, lat, lng, dmg) {
-            if (cityName === 'Завод' && faction === playerFaction) {
-                let closeFactory = playerFactories.find(f => Math.abs(f.lat - lat) < 0.05 && Math.abs(f.lng - lng) < 0.05);
-                if (closeFactory) {
-                    map.removeLayer(closeFactory.marker);
-                    playerFactories.splice(playerFactories.indexOf(closeFactory), 1);
-                    addLog(`💥 СИСТЕМА: Ваш завод был полностью уничтожен ударом врага!`, 'enemy');
-                    recalcRadarHUD();
-                    return;
+        function applyRadarDamage(faction, cityName, lat, lng, dmg, targetType, targetId, isPlayerAttacking) {
+            // МЕХАНИКА УНИЧТОЖЕНИЯ ЗАВОДОВ ИГРОКА И ИИ
+            if (targetType === 'factory' || cityName === 'Завод') {
+                if (!isPlayerAttacking) {
+                    // Враг уничтожает завод игрока
+                    let closeFactory = playerFactories.find(f => f.id === targetId || (Math.abs(f.lat - lat) < 0.06 && Math.abs(f.lng - lng) < 0.06));
+                    if (closeFactory) {
+                        map.removeLayer(closeFactory.marker);
+                        playerFactories.splice(playerFactories.indexOf(closeFactory), 1);
+                        addLog(`💥 СИСТЕМА: Ваш завод был полностью уничтожен ударом врага!`, 'enemy');
+                        recalcRadarHUD();
+                    }
+                } else {
+                    // Игрок уничтожает завод ИИ
+                    let closeEnemyFactory = enemyFactories.find(f => f.id === targetId || (Math.abs(f.lat - lat) < 0.06 && Math.abs(f.lng - lng) < 0.06));
+                    if (closeEnemyFactory) {
+                        map.removeLayer(closeEnemyFactory.marker);
+                        enemyFactories.splice(enemyFactories.indexOf(closeEnemyFactory), 1);
+                        money += 500; // Бонус за снос вражеской инфраструктуры
+                        addLog(`💥 УСПЕХ: Вы уничтожили завод противника! Экономика ИИ подорвана (+$500)`, 'system');
+                    }
                 }
+                return;
             }
 
             let city = CITIES[faction].find(c => c.name === cityName);
