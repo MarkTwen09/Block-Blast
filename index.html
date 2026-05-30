@@ -145,7 +145,7 @@
         .shake-hit { animation: mini-shake 0.2s ease-in-out; }
         @keyframes mini-shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(-2px,1px); } 75% { transform: translate(2px,-1px); } }
 
-        /* СПЕЦЭФФЕКТЫ РАЗДЕЛЕНИЯ ОРЕШНИКА */
+        /* СПЕЦЭФФЕКТЫ ОРЕШНИКА */
         .separation-flash {
             background: none;
             border: 2px solid #ff4500;
@@ -156,6 +156,30 @@
         @keyframes flash-out {
             0% { transform: scale(0.2); opacity: 1; }
             100% { transform: scale(2.8); opacity: 0; }
+        }
+
+        /* ЭФФЕКТЫ РАКЕТ ПВО И ВЗРЫВОВ ПО РЕФЕРЕНСУ */
+        .pvo-missile-container {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pvo-interceptor-svg {
+            fill: #38bdf8;
+            filter: drop-shadow(0 0 4px #38bdf8);
+        }
+        .pvo-blast-ring {
+            background: none;
+            border: 2px solid #38bdf8;
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+            animation: pvo-blast-out 0.35s ease-out forwards;
+        }
+        @keyframes pvo-blast-out {
+            0% { transform: scale(0.1); opacity: 1; }
+            100% { transform: scale(1.8); opacity: 0; }
         }
     </style>
 </head>
@@ -719,10 +743,22 @@
         }
 
         function fireInterceptor(pvo, target, isPlayerPVO) {
+            let dLng = target.currentLng - pvo.lng;
+            let dLat = target.currentLat - pvo.lat;
+            let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
+
+            let interceptorSVG = `<svg viewBox="0 0 100 100" class="pvo-interceptor-svg" width="12" height="12"><path d="M50,5 L70,50 L50,40 L30,50 Z"/></svg>`;
+            let modelHtml = `<div class="pvo-missile-container"><div style="transform: rotate(${angle}deg); display:flex;">${interceptorSVG}</div></div>`;
+
             let marker = L.marker([pvo.lat, pvo.lng], {
-                icon: L.divIcon({ className: 'interceptor-track', html: `<div style="width:3px; height:3px; background:#38bdf8; border-radius:50%;"></div>` })
+                icon: L.divIcon({ className: 'custom-interceptor', html: modelHtml, iconSize: [14, 14], iconAnchor: [7, 7] })
             }).addTo(map);
-            missiles.push({ marker: marker, lat: pvo.lat, lng: pvo.lng, droneId: target.id, targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.25 });
+
+            missiles.push({ 
+                marker: marker, lat: pvo.lat, lng: pvo.lng, droneId: target.id, 
+                targetCollection: isPlayerPVO ? enemyDrones : playerDrones, progress: 0, speed: 0.22, 
+                interceptorTrails: [] 
+            });
         }
 
         function processInterceptors() {
@@ -730,14 +766,48 @@
                 let m = missiles[i]; m.progress += m.speed;
                 let drone = m.targetCollection.find(d => d.id === m.droneId);
 
-                if (!drone || m.progress >= 1) { map.removeLayer(m.marker); missiles.splice(i, 1); continue; }
+                if (!drone || m.progress >= 1) { 
+                    map.removeLayer(m.marker); 
+                    m.interceptorTrails.forEach(t => map.removeLayer(t));
+                    missiles.splice(i, 1); 
+                    continue; 
+                }
 
                 let mLat = m.lat + (drone.currentLat - m.lat) * m.progress;
                 let mLng = m.lng + (drone.currentLng - m.lng) * m.progress;
                 m.marker.setLatLng([mLat, mLng]);
 
+                let dLng = drone.currentLng - mLat;
+                let dLat = drone.currentLat - mLng;
+                let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
+                let interceptorSVG = `<svg viewBox="0 0 100 100" class="pvo-interceptor-svg" width="12" height="12"><path d="M50,5 L70,50 L50,40 L30,50 Z"/></svg>`;
+                m.marker.setIcon(L.divIcon({
+                    className: 'custom-interceptor',
+                    html: `<div class="pvo-missile-container"><div style="transform: rotate(${angle}deg); display:flex;">${interceptorSVG}</div></div>`,
+                    iconSize: [14, 14], iconAnchor: [7, 7]
+                }));
+
+                let trailDot = L.circle([mLat, mLng], {
+                    radius: 150, color: '#64748b', fillColor: '#94a3b8', fillOpacity: 0.4, weight: 0
+                }).addTo(map);
+                m.interceptorTrails.push(trailDot);
+
+                if (m.interceptorTrails.length > 6) {
+                    map.removeLayer(m.interceptorTrails.shift());
+                }
+                m.interceptorTrails.forEach((t, idx) => {
+                    t.setStyle({ fillOpacity: (idx / m.interceptorTrails.length) * 0.3 });
+                });
+
                 if (Math.abs(mLat - drone.currentLat) < 0.08 && Math.abs(mLng - drone.currentLng) < 0.08) {
-                    map.removeLayer(m.marker); missiles.splice(i, 1);
+                    let pvoBlast = L.marker([mLat, mLng], {
+                        icon: L.divIcon({ className: 'pvo-blast-ring', iconSize: [30, 30], iconAnchor: [15, 15] })
+                    }).addTo(map);
+                    setTimeout(() => map.removeLayer(pvoBlast), 350);
+
+                    map.removeLayer(m.marker);
+                    m.interceptorTrails.forEach(t => map.removeLayer(t));
+                    missiles.splice(i, 1);
                     
                     let targetChance = 0.85;
                     if (drone.type === 'heavy') targetChance = 0.15;
@@ -748,7 +818,8 @@
                         drone.hp--;
                         triggerBlast(drone.currentLat, drone.currentLng, 4000, '#38bdf8');
                         if (drone.hp <= 0) {
-                            map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
+                            map.removeLayer(drone.marker); 
+                            drone.trails.forEach(t => map.removeLayer(t));
                             m.targetCollection.splice(m.targetCollection.indexOf(drone), 1);
                             
                             let reward = drone.type === 'heavy' ? 400 : (drone.type === 'bomber' ? 200 : 60);
