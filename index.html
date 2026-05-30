@@ -243,8 +243,9 @@
         let money = 400, droneInventory = 0, currentMode = null;
         let enemyMoney = 400;
 
-        let playerFactories = [], playerPVO = [], playerDrones = [];
-        let enemyFactories = [], enemyPVO = [], enemyDrones = []; 
+        let playerDrones = [], enemyDrones = []; 
+        let playerFactories = [], playerPVO = [];
+        let enemyFactories = [], enemyPVO = []; 
         let missiles = [];
         let map, selectedFactory = null;
         
@@ -258,6 +259,7 @@
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
         const HEAVY_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f97316;"><path d="M50,2 L65,35 L98,50 L65,65 L50,98 L35,65 L2,50 L35,35 Z"/></svg>`;
+        const SUB_MISSILE_SVG = `<svg viewBox="0 0 100 100" width="10" height="10" style="fill: #ff4500;"><path d="M50,5 L85,85 L50,65 L15,85 Z"/></svg>`;
         const BOMBER_SVG = `<svg viewBox="0 0 100 100" width="20" height="20" style="fill: #a855f7;"><path d="M50,5 L95,55 L50,40 L5,55 Z"/></svg>`;
 
         function toggleUIPanel() {
@@ -575,9 +577,10 @@
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
             let speed = type === 'heavy' ? 0.025 : (type === 'bomber' ? 0.0028 : 0.0038);
+            if (type === 'heavy_sub') speed = 0.035; // Боеголовки летят еще быстрее пикированием
             if (currentWeather === 'rain') speed *= 0.8;
 
-            let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : (type === 'heavy' ? HEAVY_SVG : BOMBER_SVG);
+            let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : (type === 'heavy' ? HEAVY_SVG : (type === 'heavy_sub' ? SUB_MISSILE_SVG : BOMBER_SVG));
             let modelHtml = `<div class="drone-container"><div class="rotator" style="transform: rotate(${angle}deg);">${svgMarkup}</div></div>`;
 
             let marker = L.marker([start.lat, start.lng], {
@@ -624,9 +627,33 @@
             for (let i = list.length - 1; i >= 0; i--) {
                 let d = list[i]; d.progress += d.speed;
 
+                // Механика разделения головной части Орешника на 75% дистанции
+                if (d.type === 'heavy' && d.progress >= 0.75) {
+                    addLog(isPlayer ? `🚀 ОРЕШНИК: Вход в атмосферу, разделение боевых блоков!` : `⚠️ ТРЕВОГА: Разделение гиперзвуковых блоков врага!`, 'system');
+                    
+                    // Создаем 3 суб-ракеты (каждая нанесет по 30 урона вместо одной на 85)
+                    for (let k = 0; k < 3; k++) {
+                        // Небольшое искусственное смещение веера прилета для реализма
+                        let offsetLat = (Math.random() - 0.5) * 0.04;
+                        let offsetLng = (Math.random() - 0.5) * 0.04;
+                        
+                        injectAirTarget(
+                            { lat: d.currentLat, lng: d.currentLng },
+                            { lat: d.targetLat + offsetLat, lng: d.targetLng + offsetLng, name: d.targetName, type: d.targetType, id: d.targetId },
+                            list,
+                            isPlayer,
+                            'heavy_sub'
+                        );
+                    }
+                    
+                    map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
+                    list.splice(i, 1);
+                    continue;
+                }
+
                 if (d.progress >= 1) {
-                    let dmg = d.type === 'heavy' ? 85 : (d.type === 'bomber' ? 45 : 15);
-                    triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy' ? 30000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
+                    let dmg = d.type === 'heavy_sub' ? 30 : (d.type === 'bomber' ? 45 : 15);
+                    triggerBlast(d.targetLat, d.targetLng, d.type === 'heavy_sub' ? 15000 : 10000, isPlayer ? '#38bdf8' : '#f43f5e');
                     
                     applyRadarDamage(isPlayer ? enemyFaction : playerFaction, d.targetName, d.targetLat, d.targetLng, dmg, d.targetType, d.targetId, isPlayer);
                     map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
@@ -677,8 +704,12 @@
                 if (Math.abs(mLat - drone.currentLat) < 0.08 && Math.abs(mLng - drone.currentLng) < 0.08) {
                     map.removeLayer(m.marker); missiles.splice(i, 1);
                     
-                    let targetChance = drone.type === 'heavy' ? 0.15 : (currentPeriod === 'night' ? 0.5 : 0.85);
-                    
+                    // Шансы сбития: Орешник (0.15), боевые блоки (0.01 - почти нереально), авиация/дроны стандартно
+                    let targetChance = 0.85;
+                    if (drone.type === 'heavy') targetChance = 0.15;
+                    if (drone.type === 'heavy_sub') targetChance = 0.01; 
+                    if (currentPeriod === 'night' && drone.type === 'drone') targetChance = 0.5;
+
                     if (Math.random() <= targetChance) {
                         drone.hp--;
                         triggerBlast(drone.currentLat, drone.currentLng, 4000, '#38bdf8');
@@ -690,8 +721,8 @@
                             money += reward;
                             addLog(`🎯 ПВО ликвидировала цель! Награда: +$${reward}`, 'system');
                         }
-                    } else if (drone.type === 'heavy') {
-                        addLog(`⚡ ОРЕШНИК пробил противоракетный купол ПВО!`, 'enemy');
+                    } else if (drone.type === 'heavy_sub' || drone.type === 'heavy') {
+                        addLog(`⚡ ГИПЕРЗВУК! Боевой блок проигнорировал перехват ПВО!`, 'enemy');
                     }
                     break;
                 }
@@ -714,7 +745,7 @@
                         map.removeLayer(closeEnemyFactory.marker);
                         enemyFactories.splice(enemyFactories.indexOf(closeEnemyFactory), 1);
                         money += 500; 
-                        addLog(`💥 УСПЕХ: Вы уничтожили завод противника! Экономика ИИ подорвана (+$500)`, 'system');
+                        addLog(`💥 УСПЕХ: Вы уничтожили завод противника! (+$500)`, 'system');
                     }
                 }
                 return;
@@ -731,7 +762,7 @@
                 setTimeout(() => map.removeLayer(pMarker), 600);
                 
                 if (faction !== playerFaction) {
-                    let attackReward = dmg * 6; 
+                    let attackReward = Math.round(dmg * 6); 
                     money += attackReward;
                     addLog(`Удар по сектору врага: +$${attackReward}`, 'system');
                 }
