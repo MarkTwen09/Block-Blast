@@ -233,7 +233,9 @@
                 { lat: 50.59, lng: 36.58, name: 'Белгород', hp: 100 },
                 { lat: 45.03, lng: 38.97, name: 'Краснодар', hp: 100 },
                 { lat: 44.61, lng: 33.52, name: 'Севастоп.', hp: 100 },
-                { lat: 48.01, lng: 37.80, name: 'Донецк', hp: 100 }
+                { lat: 48.01, lng: 37.80, name: 'Донецк', hp: 100 },
+                { lat: 45.04, lng: 41.97, name: 'Ставрополь', hp: 100 }, // НОВЫЙ ГОРОД
+                { lat: 51.73, lng: 36.19, name: 'Курск', hp: 100 }      // НОВЫЙ ГОРОД
             ]
         };
 
@@ -247,11 +249,11 @@
         let map, selectedFactory = null;
         
         const MAX_PVO_LIMIT = 5;
-        const MAX_FACTORY_LIMIT = 10; // ЖЕСТКИЙ ЛИМИТ НА ЗАВОДЫ
+        const MAX_FACTORY_LIMIT = 10; 
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
         let aiActive = false;
-        let safeStartCountdown = 15; 
+        let safeStartCountdown = 30; // ТЕПЕРЬ СТАРТ ЧЕРЕЗ 30 СЕКУНД
 
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #f43f5e;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
@@ -372,7 +374,7 @@
         }
 
         function toggleRepairMode() {
-            if (money < 2400) return; // Новая цена ремонта $2400
+            if (money < 2400) return; 
             if (currentMode === 'repair_sector') { dropModes(); return; }
             dropModes(); currentMode = 'repair_sector';
             document.getElementById('btn-repair-mode').classList.add('active');
@@ -383,7 +385,7 @@
         }
 
         function executeSectorRepair(city) {
-            if (money < 2400 || city.hp >= 100) return; // Новая цена ремонта $2400
+            if (money < 2400 || city.hp >= 100) return; 
             money -= 2400; city.hp = Math.min(100, city.hp + 25);
             addLog(`🛠️ Ремонт [${city.name}]: +25% HP`, 'system');
 
@@ -453,12 +455,12 @@
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 250 || droneInventory < 2);
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2200);
             document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 3800);
-            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 1700 || enemyDrones.length === 0); // Новая цена перехвата $1700
-            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2400); // Новая цена ремонта $2400
+            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 1700 || enemyDrones.length === 0); 
+            document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2400); 
         }
 
         function buyInterceptorRocket() {
-            if (money < 1700 || enemyDrones.length === 0) return; // Новая цена перехвата $1700
+            if (money < 1700 || enemyDrones.length === 0) return; 
             let closestDrone = enemyDrones[0];
             money -= 1700;
             triggerBlast(closestDrone.currentLat, closestDrone.currentLng, 12000, '#38bdf8');
@@ -525,37 +527,44 @@
             dropModes();
         }
 
+        /* УМНЫЙ И СТРАТЕГИЧЕСКИЙ ИИ */
         function enemyAILogic() {
             if (!aiActive) return;
             
-            enemyMoney += 180; 
+            enemyMoney += 220; // Увеличен базовый доход ИИ для жестких ходов
 
-            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 50);
-            let target = brokenCity || CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
+            // Находим критически поврежденный сектор игрока
+            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 40);
+            let randomTarget = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
-            if (playerFactories.length > 0 && enemyMoney >= 3800 && Math.random() > 0.4) {
+            // УМНОЕ РЕШЕНИЕ 1: Если игрок застроил карту заводами, ИИ целенаправленно копит и бьет Орешником
+            if (playerFactories.length >= 3 && enemyMoney >= 3800) {
                 enemyMoney -= 3800;
                 let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
-                addLog(`⚠️ ВРАГ: Запуск гиперзвукового Орешника по промышленному объекту!`, 'enemy');
+                addLog(`⚠️ ВРАГ [СТРАТЕГИЯ]: Подавление промзоны! Гиперзвуковой Орешник идет на завод.`, 'enemy');
                 injectAirTarget(source, {lat: targetFactory.lat, lng: targetFactory.lng, name: 'Завод'}, enemyDrones, false, 'heavy');
                 return; 
             }
 
-            if (brokenCity && enemyMoney >= 2200) {
-                enemyMoney -= 2200;
-                addLog(`⚠️ ВРАГ: Штурмовая авиация направлена на критический сектор [${brokenCity.name}]!`, 'enemy');
-                injectAirTarget(source, brokenCity, enemyDrones, false, 'bomber');
-                if (enemyMoney >= 250) {
-                    enemyMoney -= 250;
-                    injectAirTarget(source, brokenCity, enemyDrones, false, 'drone');
+            // УМНОЕ РЕШЕНИЕ 2: Если у города мало здоровья, ИИ не тратит дроны, а копит на авиаудар для уничтожения сектора
+            if (brokenCity) {
+                if (enemyMoney >= 2200) {
+                    enemyMoney -= 2200;
+                    addLog(`⚠️ ВРАГ [ТАКТИКА]: Добивание сектора! Штурмовики вылетели на [${brokenCity.name}].`, 'enemy');
+                    injectAirTarget(source, brokenCity, enemyDrones, false, 'bomber');
+                    return;
+                } else {
+                    // ИИ решает подождать и поднакопить денег на мощную атаку, а не спамить впустую
+                    return; 
                 }
-                return;
             }
 
-            if (enemyMoney >= 250) {
+            // УМНОЕ РЕШЕНИЕ 3: Базовый спам дронами только если накоплен излишек денег
+            if (enemyMoney >= 1200) {
                 enemyMoney -= 250;
-                injectAirTarget(source, target, enemyDrones, false, 'drone');
+                addLog(`⚠️ ВРАГ: Разведка боем. Выпущен БПЛА по сектору [${randomTarget.name}].`, 'enemy');
+                injectAirTarget(source, randomTarget, enemyDrones, false, 'drone');
             }
         }
 
