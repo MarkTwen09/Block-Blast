@@ -204,9 +204,6 @@
                     </div>
                     <div class="btn-row">
                         <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 ОРЕШНИК (-$3800)</button>
-                        <button class="btn btn-cyan" id="btn-interceptor" onclick="buyInterceptorRocket()">🛡️ ПЕРЕХВАТ (-$1700)</button>
-                    </div>
-                    <div class="btn-row">
                         <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРA (-$2400)</button>
                     </div>
                 </div>
@@ -225,7 +222,7 @@
                 { lat: 46.97, lng: 31.99, name: 'Николаев', hp: 100 },
                 { lat: 48.62, lng: 22.28, name: 'Ужгород', hp: 100 },
                 { lat: 50.91, lng: 34.80, name: 'Сумы', hp: 100 },
-                { lat: 47.84, lng: 35.13, name: 'Запорожье', hp: 100 } // НОВЫЙ ГОРОД [UA]
+                { lat: 47.84, lng: 35.13, name: 'Запорожье', hp: 100 }
             ],
             'RU': [
                 { lat: 55.75, lng: 37.62, name: 'Москва', hp: 100 },
@@ -238,7 +235,7 @@
                 { lat: 48.01, lng: 37.80, name: 'Донецк', hp: 100 },
                 { lat: 45.04, lng: 41.97, name: 'Ставрополь', hp: 100 }, 
                 { lat: 51.73, lng: 36.19, name: 'Курск', hp: 100 },
-                { lat: 48.57, lng: 39.31, name: 'Луганск', hp: 100 }   // НОВЫЙ ГОРОД [RU]
+                { lat: 48.57, lng: 39.31, name: 'Луганск', hp: 100 }
             ]
         };
 
@@ -247,7 +244,7 @@
         let enemyMoney = 400;
 
         let playerFactories = [], playerPVO = [], playerDrones = [];
-        let enemyFactories = [], enemyPVO = [], enemyDrones = []; // Массив заводов врага
+        let enemyFactories = [], enemyPVO = [], enemyDrones = []; 
         let missiles = [];
         let map, selectedFactory = null;
         
@@ -362,7 +359,6 @@
                 title.innerText = "ВЫБЕРИТЕ СЕКТОР ИЛИ ЗАВОД ДЛЯ УДАРА:";
                 title.style.color = "#f43f5e";
                 
-                // Сначала выводим города врага
                 CITIES[enemyFaction].forEach(city => {
                     const btn = document.createElement('button'); btn.className = 'target-btn';
                     btn.innerText = city.name;
@@ -370,7 +366,6 @@
                     container.appendChild(btn);
                 });
 
-                // Затем выводим активные заводы врага для возможности их уничтожения
                 enemyFactories.forEach((fac, idx) => {
                     const btn = document.createElement('button'); btn.className = 'target-btn';
                     btn.style.borderColor = '#ef4444'; btn.style.color = '#f87171';
@@ -469,22 +464,7 @@
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 250 || droneInventory < 2);
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2200);
             document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 3800);
-            document.getElementById('btn-interceptor').classList.toggle('disabled', money < 1700 || enemyDrones.length === 0); 
             document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2400); 
-        }
-
-        function buyInterceptorRocket() {
-            if (money < 1700 || enemyDrones.length === 0) return; 
-            let closestDrone = enemyDrones[0];
-            money -= 1700;
-            triggerBlast(closestDrone.currentLat, closestDrone.currentLng, 12000, '#38bdf8');
-            map.removeLayer(closestDrone.marker); closestDrone.trails.forEach(t => map.removeLayer(t));
-            
-            let reward = closestDrone.type === 'heavy' ? 400 : (closestDrone.type === 'bomber' ? 200 : 60);
-            enemyDrones.splice(enemyDrones.indexOf(closestDrone), 1);
-            money += reward; 
-            addLog(`🛡️ Ручной перехват: +$${reward}`, 'system');
-            dropModes();
         }
 
         function setupRadarClicks() {
@@ -544,14 +524,11 @@
         function enemyAILogic() {
             if (!aiActive) return;
             
-            // Расчет экономики ИИ в зависимости от его заводов
             enemyMoney += 220 + (enemyFactories.length * 50);
 
-            // ИИ строит свои заводы, если у него много денег и лимит не превышен
             if (enemyMoney >= 1500 && enemyFactories.length < 6) {
                 enemyMoney -= 500;
                 let randomCity = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
-                // Спавним завод врага со смещением от его города
                 let fLat = randomCity.lat + (Math.random() - 0.5) * 0.15;
                 let fLng = randomCity.lng + (Math.random() - 0.5) * 0.15;
                 let icon = L.divIcon({ className: 'build-marker enemy-factory', html: 'В.ЗАВ', iconSize: [28, 14] });
@@ -565,7 +542,6 @@
             let randomCityTarget = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
-            // Приоритет выбора цели для ИИ
             let target = { lat: randomCityTarget.lat, lng: randomCityTarget.lng, name: randomCityTarget.name, type: 'city' };
 
             if (playerFactories.length >= 3 && enemyMoney >= 3800) {
@@ -723,10 +699,8 @@
         }
 
         function applyRadarDamage(faction, cityName, lat, lng, dmg, targetType, targetId, isPlayerAttacking) {
-            // МЕХАНИКА УНИЧТОЖЕНИЯ ЗАВОДОВ ИГРОКА И ИИ
             if (targetType === 'factory' || cityName === 'Завод') {
                 if (!isPlayerAttacking) {
-                    // Враг уничтожает завод игрока
                     let closeFactory = playerFactories.find(f => f.id === targetId || (Math.abs(f.lat - lat) < 0.06 && Math.abs(f.lng - lng) < 0.06));
                     if (closeFactory) {
                         map.removeLayer(closeFactory.marker);
@@ -735,12 +709,11 @@
                         recalcRadarHUD();
                     }
                 } else {
-                    // Игрок уничтожает завод ИИ
                     let closeEnemyFactory = enemyFactories.find(f => f.id === targetId || (Math.abs(f.lat - lat) < 0.06 && Math.abs(f.lng - lng) < 0.06));
                     if (closeEnemyFactory) {
                         map.removeLayer(closeEnemyFactory.marker);
                         enemyFactories.splice(enemyFactories.indexOf(closeEnemyFactory), 1);
-                        money += 500; // Бонус за снос вражеской инфраструктуры
+                        money += 500; 
                         addLog(`💥 УСПЕХ: Вы уничтожили завод противника! Экономика ИИ подорвана (+$500)`, 'system');
                     }
                 }
