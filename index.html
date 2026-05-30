@@ -119,6 +119,7 @@
         .btn.disabled { opacity: 0.2; cursor: not-allowed; border-color: rgba(255,255,255,0.05); }
         
         .btn-orange.active { background: #f97316; color: #fff; border-color: #f97316; }
+        .btn-red.active { background: #ff2a5f; color: #fff; border-color: #ff2a5f; }
         .btn-purple.active { background: #a855f7; color: #fff; border-color: #a855f7; }
         .btn-blue.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 
@@ -142,7 +143,7 @@
         .heal-popup { font-size: 11px; font-weight: bold; color: #00e5ff; text-shadow: 0 0 4px #000; animation: float-dmg 0.4s ease-out forwards; }
         @keyframes float-dmg { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-15px); opacity: 0; } }
         
-        /* СТРАТЕГИЧЕСКАЯ ТРЯСКА ПРИ АВИАУДАРЕ */
+        /* СТРАТЕГИЧЕСКАЯ ТРЯСКА ПРИ АВИАУДАРЕ И ОРЕШНИКЕ */
         .shake-heavy { animation: heavy-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes heavy-shake {
             0%, 100% { transform: translate(0, 0); }
@@ -152,7 +153,7 @@
             40%, 60% { transform: translate(5px, 3px); }
         }
 
-        /* АВИАБОМБЫ КАБ / ФАБ */
+        /* АВИАБОМБЫ И БЛОКИ ОРЕШНИКА */
         .fab-bomb {
             width: 8px; height: 8px; background: #fff; border-radius: 50%;
             box-shadow: 0 0 8px #ffaa00, 0 0 15px #ff3300;
@@ -222,11 +223,12 @@
                         <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] МОДУЛЬ ПВО ($750) <span id="pvo-counter">0/5</span></button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 УДАРНАЯ ПАРА БПЛА (-$250)</button>
-                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 ТАКТИЧЕСКАЯ АВИАЦИЯ (-$2200)</button>
+                        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 ПАРА БПЛА (-$250)</button>
+                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">✈️ АВИАУДАР Су-34 (-$2200)</button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ ИНЖЕНЕРНЫЙ РЕМОНТ (-$2400)</button>
+                        <button class="btn btn-red" id="btn-oreshnik-mode" onclick="toggleOreshnikMode()">🚀 КРК "ОРЕШНИК" (-$4500)</button>
+                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ РЕМОНТ СЕКТОРА (-$2400)</button>
                     </div>
                 </div>
             </div>
@@ -276,10 +278,10 @@
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
 
-        // МИНИМАЛИСТИЧНЫЙ ВОЕННЫЙ СТИЛЬ СИЛУЭТОВ
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #94a3b8;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
         const BOMBER_SVG = `<svg viewBox="0 0 100 100" width="26" height="26" style="fill: #a855f7;"><path d="M50,2 L95,65 L70,55 L50,85 L30,55 L5,65 Z"/></svg>`;
+        const ORESHNIK_SVG = `<svg viewBox="0 0 100 100" width="22" height="22" style="fill: #ff2a5f;"><path d="M50,2 L60,35 L90,35 L65,55 L75,90 L50,70 L25,90 L35,55 L10,35 L40,35 Z"/></svg>`;
 
         function toggleUIPanel() {
             document.getElementById('bottom-ui-wrapper').classList.toggle('ui-collapsed');
@@ -388,6 +390,7 @@
         function handleTargetSelection(targetObj) {
             if (currentMode === 'attack_target' && selectedFactory) dispatchDroneStrike(selectedFactory, targetObj);
             else if (currentMode === 'bomber_strike') dispatchBomberStrike(targetObj);
+            else if (currentMode === 'oreshnik_strike') dispatchOreshnikStrike(targetObj);
         }
 
         function toggleRepairMode() {
@@ -437,6 +440,14 @@
             updateTargetPanelGrid(); showTargetSelector(true);
         }
 
+        function toggleOreshnikMode() {
+            if (currentMode === 'oreshnik_strike') { dropModes(); return; }
+            if (money < 4500) return;
+            dropModes(); currentMode = 'oreshnik_strike';
+            document.getElementById('btn-oreshnik-mode').classList.add('active');
+            updateTargetPanelGrid(); showTargetSelector(true);
+        }
+
         function showTargetSelector(show) {
             document.getElementById('target-selector-panel').style.display = show ? 'block' : 'none';
         }
@@ -463,12 +474,13 @@
             document.getElementById('btn-pvo').classList.toggle('disabled', money < 750 || pvoCount >= MAX_PVO_LIMIT);
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 250 || droneInventory < 2);
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2200);
+            document.getElementById('btn-oreshnik-mode').classList.toggle('disabled', money < 4500);
             document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2400); 
         }
 
         function setupRadarClicks() {
             map.on('click', function(e) {
-                if (currentMode === 'attack_target' || currentMode === 'bomber_strike' || currentMode === 'repair_sector') return;
+                if (currentMode === 'attack_target' || currentMode === 'bomber_strike' || currentMode === 'oreshnik_strike' || currentMode === 'repair_sector') return;
                 const { lat, lng } = e.latlng;
 
                 if (currentMode === 'factory' && money >= 500 && playerFactories.length < MAX_FACTORY_LIMIT) {
@@ -514,6 +526,13 @@
             dropModes();
         }
 
+        function dispatchOreshnikStrike(targetObj) {
+            money -= 4500;
+            addLog(`🚀 ЗАПУСК: Межконтинентальный комплекс "Орешник" отправлен на цель!`, 'system');
+            injectAirTarget(CITIES[playerFaction][0], targetObj, playerDrones, true, 'oreshnik');
+            dropModes();
+        }
+
         function enemyAILogic() {
             enemyMoney += 220 + (enemyFactories.length * 60);
 
@@ -529,11 +548,19 @@
                 addLog(`МОНИТОР: Обнаружена новая инфраструктурная цель противника.`, 'enemy');
             }
 
-            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 60);
+            let brokenCity = CITIES[playerFaction].find(c => c.hp > 0 && c.hp < 50);
             let randomCityTarget = CITIES[playerFaction][Math.floor(Math.random() * CITIES[playerFaction].length)];
             let source = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
 
             let target = { lat: randomCityTarget.lat, lng: randomCityTarget.lng, name: randomCityTarget.name, type: 'city' };
+
+            // ИИ использует тяжелое вооружение при критических целях
+            if (brokenCity && enemyMoney >= 4500 && Math.random() > 0.5) {
+                enemyMoney -= 4500;
+                addLog(`🚨 КРИТИЧЕСКАЯ УГРОЗА: Зафиксирован пуск БРСД "Орешник" противника!`, 'enemy');
+                injectAirTarget(source, {lat: brokenCity.lat, lng: brokenCity.lng, name: brokenCity.name, type: 'city'}, enemyDrones, false, 'oreshnik');
+                return;
+            }
 
             if (brokenCity && enemyMoney >= 2200) {
                 enemyMoney -= 2200;
@@ -552,12 +579,15 @@
             let dLng = targetObj.lng - start.lng, dLat = targetObj.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
-            // Авиация летит быстрее дронов
-            let speed = type === 'bomber' ? 0.0075 : 0.0045;
-            if (type === 'kab_bomb') speed = 0.04; // Скорость сброшенных планирующих авиабомб
+            // Настройка скоростей
+            let speed = 0.0045; 
+            if (type === 'bomber') speed = 0.0075;
+            if (type === 'oreshnik') speed = 0.012; // Гиперзвук летит очень шустро
+            if (type === 'kab_bomb' || type === 'submunition') speed = 0.04; 
+
             if (currentWeather === 'rain') speed *= 0.85;
 
-            let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : BOMBER_SVG;
+            let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : ((type === 'oreshnik') ? ORESHNIK_SVG : BOMBER_SVG);
             let modelHtml = `<div class="drone-container"><div class="rotator" style="transform: rotate(${angle}deg);">${svgMarkup}</div></div>`;
 
             let marker = L.marker([start.lat, start.lng], {
@@ -565,7 +595,7 @@
             }).addTo(map);
 
             collection.push({
-                id: Math.random().toString(36).substr(2, 9), marker: marker, type: type, hp: type === 'bomber' ? 5 : 1,
+                id: Math.random().toString(36).substr(2, 9), marker: marker, type: type, hp: (type === 'bomber' || type === 'oreshnik') ? 5 : 1,
                 lat: start.lat, lng: start.lng, targetLat: targetObj.lat, targetLng: targetObj.lng, 
                 targetName: targetObj.name, targetType: targetObj.type || 'city', targetId: targetObj.id || null,
                 currentLat: start.lat, currentLng: start.lng, progress: 0, speed: speed, trails: []
@@ -608,8 +638,8 @@
                 let cLng = d.lng + (d.targetLng - d.lng) * d.progress;
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
-                // КИНЕТИЧЕСКИЙ СЛЕД ДЛЯ СБРОШЕННЫХ БОМБ
-                if (d.type === 'kab_bomb') {
+                // Отрисовка кинетических трейлов
+                if (d.type === 'kab_bomb' || d.type === 'submunition') {
                     if (Math.random() > 0.4) {
                         let spark = L.marker([cLat, cLng], {
                             icon: L.divIcon({ className: 'custom-spark', html: `<div class="fab-bomb"></div>`, iconSize:[8,8], iconAnchor:[4,4] })
@@ -624,42 +654,49 @@
                     }
                 }
 
-                // КАСКАДНЫЙ СБРОС АВИАБОМБ ПРИ ПОДЛЕТЕ К ЦЕЛИ (На 80% дистанции)
+                // КАСКАДНЫЙ СБРОС АВИАБОМБ ПРИ ПОДЛЕТЕ АВИАЦИИ (На 82% дистанции)
                 if (d.type === 'bomber' && d.progress >= 0.82) {
-                    addLog(isPlayer ? `💥 СИСТЕМА: Бомбометание! Выпущен каскад управляемых ФАБ/КАБ.` : `🚨 КРИТИЧЕСКИЙ УРОВЕНЬ: Зафиксирован сброс серии авиабомб по нашему сектору!`, 'system');
-                    
-                    // Выпускаем 4 тяжелые авиабомбы цепочкой по траектории движения
+                    addLog(isPlayer ? `💥 СИСТЕМА: Бомбометание Су-34! Выпущен каскад управляемых ФАБ/КАБ.` : `🚨 КРИТИЧЕСКИЙ УРОВЕНЬ: Зафиксирован сброс серии авиабомб Су-34!`, 'system');
                     for (let k = 0; k < 4; k++) {
                         let delayOffsetLat = (Math.random() - 0.5) * 0.08;
                         let delayOffsetLng = (Math.random() - 0.5) * 0.08;
-                        
                         setTimeout(() => {
                             injectAirTarget(
                                 { lat: cLat, lng: cLng },
                                 { lat: d.targetLat + delayOffsetLat, lng: d.targetLng + delayOffsetLng, name: d.targetName, type: d.targetType, id: d.targetId },
-                                list,
-                                isPlayer,
-                                'kab_bomb'
+                                list, isPlayer, 'kab_bomb'
                             );
-                        }, k * 250); // Интервал сброса между бомбами
+                        }, k * 250);
                     }
-                    
-                    // Сам самолет отстреливает тепловые ловушки и уходит за пределы радара (удаляется)
                     map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
-                    list.splice(i, 1);
-                    continue;
+                    list.splice(i, 1); continue;
                 }
 
-                // ЛОГИКА ДОСТИЖЕНИЯ ТОЧКИ НАЗНАЧЕНИЯ (УДАР)
+                // РАЗДЕЛЕНИЕ БЛОКОВ ОРЕШНИКА В КОСМОСЕ (На 60% пути)
+                if (d.type === 'oreshnik' && d.progress >= 0.60) {
+                    addLog(`🚀 МОНИТОР: Вход в плотные слои атмосферы. Разделение головной части "Орешник" на 6 боевых блоков!`, 'system');
+                    for (let k = 0; k < 6; k++) {
+                        let scatterLat = (Math.random() - 0.5) * 0.12;
+                        let scatterLng = (Math.random() - 0.5) * 0.12;
+                        injectAirTarget(
+                            { lat: cLat, lng: cLng },
+                            { lat: d.targetLat + scatterLat, lng: d.targetLng + scatterLng, name: d.targetName, type: d.targetType, id: d.targetId },
+                            list, isPlayer, 'submunition'
+                        );
+                    }
+                    map.removeLayer(d.marker); d.trails.forEach(t => map.removeLayer(t));
+                    list.splice(i, 1); continue;
+                }
+
+                // ЛОГИКА УДАРА И ДЕТОНАЦИИ
                 if (d.progress >= 1) {
-                    let isBomb = d.type === 'kab_bomb';
-                    let dmg = isBomb ? 25 : 15; 
+                    let isHeavy = (d.type === 'kab_bomb' || d.type === 'submunition');
+                    let dmg = d.type === 'submunition' ? 20 : (d.type === 'kab_bomb' ? 25 : 15); 
                     
-                    // Эффект волны
-                    triggerTacticalExplosion(d.targetLat, d.targetLng, isBomb ? '#ff2a5f' : (isPlayer ? '#00e5ff' : '#ff2a5f'), isBomb);
+                    triggerTacticalExplosion(d.targetLat, d.targetLng, isHeavy ? '#ff2a5f' : (isPlayer ? '#00e5ff' : '#ff2a5f'), isHeavy);
                     
-                    // ТРЯСКА И ВСПЫШКА: Включается ТОЛЬКО при детонации тяжелых авиабомб
-                    if (isBomb) {
+                    // Тряска и вспышка только от тяжелых прилетов (Орешник / Авиабомбы)
+                    if (isHeavy) {
                         triggerStrategicImpact();
                     }
 
@@ -668,7 +705,7 @@
                     list.splice(i, 1); continue;
                 }
 
-                // ПЕРЕХВАТ СРЕДСТВАМИ ПВО (Доступен для дронов и самолетов)
+                // РАБОТА СИСТЕМ ПВО
                 if (!isPlayer) {
                     playerPVO.forEach(pvo => {
                         let approxDist = Math.pow(cLat - pvo.lat, 2) + Math.pow(cLng - pvo.lng, 2);
@@ -721,7 +758,6 @@
                 m.interceptorTrails.push(smoke);
                 if (m.interceptorTrails.length > 8) map.removeLayer(m.interceptorTrails.shift());
 
-                // УСЛОВИЕ КОНТАКТА С ЦЕЛЬЮ
                 if (Math.abs(mLat - drone.currentLat) < 0.08 && Math.abs(mLng - drone.currentLng) < 0.08) {
                     let dome = L.marker([mLat, mLng], {
                         icon: L.divIcon({ className: 'pvo-dome-blast', iconSize: [40, 40], iconAnchor: [20, 20] })
@@ -732,17 +768,18 @@
                     missiles.splice(i, 1);
                     
                     let targetChance = 0.85;
-                    if (drone.type === 'bomber') targetChance = 0.4; // Истребитель/Бомбардировщик крепче, нужно несколько попаданий
-                    if (drone.type === 'kab_bomb') targetChance = 0.15; // Планирующие бомбы крайне тяжело перехватить из-за размеров
+                    if (drone.type === 'bomber' || drone.type === 'oreshnik') targetChance = 0.4; 
+                    if (drone.type === 'kab_bomb') targetChance = 0.15; 
+                    if (drone.type === 'submunition') targetChance = 0.05; // Гиперзвуковые блоки Орешника сбить практически невозможно!
 
                     if (Math.random() <= targetChance) {
                         drone.hp--;
                         if (drone.hp <= 0) {
                             map.removeLayer(drone.marker); drone.trails.forEach(t => map.removeLayer(t));
                             m.targetCollection.splice(m.targetCollection.indexOf(drone), 1);
-                            let reward = drone.type === 'bomber' ? 600 : (drone.type === 'kab_bomb' ? 150 : 80);
+                            let reward = (drone.type === 'bomber' || drone.type === 'oreshnik') ? 600 : (drone.type === 'kab_bomb' ? 150 : 100);
                             money += reward;
-                            addLog(`🎯 ПВО: Воздушная цель уничтожена. Средства: +$${reward}`, 'system');
+                            addLog(`🎯 ПВО: Воздушная цель поражена. Средства: +$${reward}`, 'system');
                         }
                     }
                     break;
@@ -803,15 +840,14 @@
             if (eAvg <= 0) { alert("Победа! Инфраструктура противника подавлена."); location.reload(); }
         }
 
-        // РЕАЛИСТИЧНЫЕ СТРОГИЕ УДАРНЫЕ ВОЛНЫ
-        function triggerTacticalExplosion(lat, lng, color, isBomb) {
+        function triggerTacticalExplosion(lat, lng, color, isHeavy) {
             let blast = L.circle([lat, lng], {
                 radius: 50, color: '#fff', fillColor: color, fillOpacity: 0.8, weight: 1.5
             }).addTo(map);
             
             let r = 50;
-            let maxRadius = isBomb ? 28000 : 15000; 
-            let speed = isBomb ? 3200 : 2200;
+            let maxRadius = isHeavy ? 28000 : 15000; 
+            let speed = isHeavy ? 3200 : 2200;
 
             let loop = setInterval(() => {
                 r += speed;
@@ -821,7 +857,6 @@
             }, 30);
         }
 
-        // ТРЯСКА ЭКРАНА И БЕЛАЯ ТАКТИЧЕСКАЯ ВСПЫШКА ТЕРМИНАЛА
         function triggerStrategicImpact() {
             const mapEl = document.getElementById('map');
             mapEl.classList.add('shake-heavy');
