@@ -591,7 +591,8 @@
             let dLng = targetObj.lng - start.lng, dLat = targetObj.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
-            let speed = type === 'heavy' ? 0.012 : (type === 'bomber' ? 0.0035 : 0.0045);
+            // Базовая скорость обычных дронов была снижена с 0.0045 до 0.0022 для большей тактичности
+            let speed = type === 'heavy' ? 0.012 : (type === 'bomber' ? 0.0035 : 0.0022);
             if (type === 'heavy_sub') speed = 0.05 + (Math.random() * 0.01); // Огромная скорость отвесного пикирования блоков
             if (currentWeather === 'rain') speed *= 0.85;
 
