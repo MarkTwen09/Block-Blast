@@ -288,10 +288,11 @@
         let aiActive = false;
         let safeStartCountdown = 15; 
 
-        // СТРОГИЕ НЕ КИСЛОТНЫЕ СИЛУЭТЫ РАКЕТ И ДРОНОВ
-        const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="18" height="18" style="fill: #d1d5db;"><path d="M50,5 L95,85 L70,85 L50,65 L30,85 L5,85 Z"/></svg>`;
-        const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="16" height="16" style="fill: #38bdf8;"><path d="M50,5 L90,85 L50,60 L10,85 Z"/></svg>`;
-        const HEAVY_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="fill: #ef4444;"><path d="M50,2 L65,35 L98,50 L65,65 L50,98 L35,65 L2,50 L35,35 Z"/></svg>`;
+        // ОБНОВЛЕННЫЕ ДЕЛЬТАВИДНЫЕ СИЛУЭТЫ С КИЛЯМИ-ЗАКОНЦОВКАМИ ИЗ ИЗОБРАЖЕНИЯ image_9.png
+        const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="22" height="22" style="fill: #ef4444;"><path d="M50,5 L85,75 L88,95 L80,95 L77,82 L50,65 L23,82 L20,95 L12,95 L15,75 Z"/></svg>`;
+        const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="22" height="22" style="fill: #38bdf8;"><path d="M50,5 L85,75 L88,95 L80,95 L77,82 L50,65 L23,82 L20,95 L12,95 L15,75 Z"/></svg>`;
+        
+        const HEAVY_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="fill: #ff5500;"><path d="M50,2 L65,35 L98,50 L65,65 L50,98 L35,65 L2,50 L35,35 Z"/></svg>`;
         const SUB_MISSILE_SVG = `<svg viewBox="0 0 100 100" width="14" height="14" style="fill: #ff4500;"><path d="M50,5 L85,85 L50,65 L15,85 Z"/></svg>`;
         const BOMBER_SVG = `<svg viewBox="0 0 100 100" width="24" height="24" style="fill: #a855f7;"><path d="M50,5 L95,55 L50,40 L5,55 Z"/></svg>`;
 
@@ -591,9 +592,8 @@
             let dLng = targetObj.lng - start.lng, dLat = targetObj.lat - start.lat;
             let angle = Math.atan2(dLng, dLat) * (180 / Math.PI);
             
-            // Базовая скорость обычных дронов была снижена с 0.0045 до 0.0022 для большей тактичности
             let speed = type === 'heavy' ? 0.012 : (type === 'bomber' ? 0.0035 : 0.0022);
-            if (type === 'heavy_sub') speed = 0.05 + (Math.random() * 0.01); // Огромная скорость отвесного пикирования блоков
+            if (type === 'heavy_sub') speed = 0.05 + (Math.random() * 0.01); 
             if (currentWeather === 'rain') speed *= 0.85;
 
             let svgMarkup = (type === 'drone') ? (isPlayer ? PLAYER_DRONE_SVG : SHAHED_SVG) : (type === 'heavy' ? HEAVY_SVG : (type === 'heavy_sub' ? SUB_MISSILE_SVG : BOMBER_SVG));
@@ -647,13 +647,11 @@
                 let cLng = d.lng + (d.targetLng - d.lng) * d.progress;
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
-                // ИЛЛЮЗИЯ ВЫХОДА В СТРАТОСФЕРУ ДЛЯ ОРЕШНИКА (Увеличение -> Разведение)
                 if (d.type === 'heavy') {
-                    let scaleEffect = 1 + Math.sin(d.progress * Math.PI) * 1.2; // Ракета плавно "взлетает" вверх
+                    let scaleEffect = 1 + Math.sin(d.progress * Math.PI) * 1.2; 
                     let el = d.marker.getElement();
                     if (el) el.style.transform = `${el.style.transform} scale(${scaleEffect})`;
 
-                    // 🔥 МОМЕНТ РАЗВЕДЕНИЯ БОЕВЫХ БЛОКОВ (на 75% траектории)
                     if (d.progress >= 0.75) {
                         addLog(isPlayer ? `🚀 СИСТЕМА: Разведение разделяющихся боевых блоков головной части!` : `🚨 ВНИМАНИЕ: Разведение боевых блоков «Орешника» на терминале!`, 'system');
                         
@@ -662,9 +660,8 @@
                         }).addTo(map);
                         setTimeout(() => map.removeLayer(flash), 400);
 
-                        triggerStrategicImpact(true); // Вспышка экрана при разведении
+                        triggerStrategicImpact(true); 
 
-                        // Генерируем каскад из 6 высокоскоростных блоков
                         for (let k = 0; k < 6; k++) {
                             let offsetLat = (Math.random() - 0.5) * 0.12;
                             let offsetLng = (Math.random() - 0.5) * 0.12;
@@ -684,7 +681,6 @@
                     }
                 }
 
-                // ПЛАЗМЕННЫЕ ХВОСТЫ БЛОКОВ
                 if (d.type === 'heavy_sub') {
                     let spark = L.marker([cLat, cLng], {
                         icon: L.divIcon({ className: 'custom-spark', html: `<div class="plasma-bullet"></div>`, iconSize:[6,6], iconAnchor:[3,3] })
@@ -698,16 +694,13 @@
                     }
                 }
 
-                // ТОЧКА УДАРА ПО ЦЕЛИ
                 if (d.progress >= 1) {
                     let isHeavySub = d.type === 'heavy_sub';
                     let isBomber = d.type === 'bomber';
                     let dmg = isHeavySub ? 20 : (isBomber ? 40 : 15);
                     
-                    // Запуск тактических эффектов взрыва
                     triggerTacticalExplosion(d.targetLat, d.targetLng, isHeavySub ? '#ff4500' : (isPlayer ? '#00e5ff' : '#ff2a5f'), isHeavySub);
                     
-                    // Тряска ТОЛЬКО для авиаудара и блоков Орешника
                     if (isHeavySub || isBomber) {
                         triggerStrategicImpact(isHeavySub);
                     }
@@ -717,7 +710,6 @@
                     list.splice(i, 1); continue;
                 }
 
-                // ПЕРЕХВАТ КОМПЛЕКСАМИ ПВО
                 if (!isPlayer) {
                     playerPVO.forEach(pvo => {
                         let approxDist = Math.pow(cLat - pvo.lat, 2) + Math.pow(cLng - pvo.lng, 2);
@@ -770,7 +762,6 @@
                 m.interceptorTrails.push(smoke);
                 if (m.interceptorTrails.length > 8) map.removeLayer(m.interceptorTrails.shift());
 
-                // УСЛОВИЕ КОНТАКТА ПВО С ЦЕЛЬЮ
                 if (Math.abs(mLat - drone.currentLat) < 0.08 && Math.abs(mLng - drone.currentLng) < 0.08) {
                     let dome = L.marker([mLat, mLng], {
                         icon: L.divIcon({ className: 'pvo-dome-blast', iconSize: [40, 40], iconAnchor: [20, 20] })
@@ -782,7 +773,7 @@
                     
                     let targetChance = 0.8;
                     if (drone.type === 'heavy') targetChance = 0.05; 
-                    if (drone.type === 'heavy_sub') targetChance = 0.001; // Сверхзвуковые блоки перехватить невозможно
+                    if (drone.type === 'heavy_sub') targetChance = 0.001; 
                     if (currentPeriod === 'night' && drone.type === 'drone') targetChance = 0.5;
 
                     if (Math.random() <= targetChance) {
@@ -853,14 +844,13 @@
             if (eAvg <= 0) { alert("Миссия завершена. Цели противника полностью подавлены!"); location.reload(); }
         }
 
-        // ТАКТИЧЕСКИЕ СТРОГИЕ УДАРНЫЕ ВОЛНЫ
         function triggerTacticalExplosion(lat, lng, color, isHeavySub) {
             let blast = L.circle([lat, lng], {
                 radius: 50, color: '#fff', fillColor: color, fillOpacity: 0.8, weight: 1.5
             }).addTo(map);
             
             let r = 50;
-            let maxRadius = isHeavySub ? 35000 : 22000; // Раздельные взрывы суб-блоков Орешника шире и мощнее
+            let maxRadius = isHeavySub ? 35000 : 22000; 
             let speed = isHeavySub ? 4500 : 2800;
 
             let loop = setInterval(() => {
@@ -871,7 +861,6 @@
             }, 30);
         }
 
-        // СТРАТЕГИЧЕСКАЯ ТРЯСКА И ТЕПЛОВАЯ ВСПЫШКА ЭкРАНА
         function triggerStrategicImpact(isHeavy) {
             const mapEl = document.getElementById('map');
             mapEl.classList.add('shake-heavy');
