@@ -59,7 +59,8 @@
         /* ИНТЕРФЕЙС И ТАКТИЧЕСКИЙ КУПОЛ */
         #hud-top {
             position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
-            background: rgba(6, 12, 28, 0.85); border: 1px solid rgba(0, 229, 255, 0.2);
+            background: rgba(6, 12, 28, 0.9); border: 1px solid rgba(0, 229, 255, 0.25);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             backdrop-filter: blur(10px); border-radius: 6px; padding: 10px 14px; font-size: 12px; pointer-events: none;
         }
         .hud-row { display: flex; justify-content: space-between; align-items: center; }
@@ -75,22 +76,23 @@
 
         #bottom-ui-wrapper {
             position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; flex-direction: column; background: rgba(5, 10, 24, 0.95);
-            border-top: 1px solid rgba(0, 229, 255, 0.25); backdrop-filter: blur(10px);
+            display: flex; flex-direction: column; background: rgba(5, 10, 24, 0.96);
+            border-top: 1px solid rgba(0, 229, 255, 0.3); backdrop-filter: blur(10px);
+            box-shadow: 0 -4px 25px rgba(0,0,0,0.6);
             transition: transform 0.25s ease-out;
         }
         .ui-collapsed { transform: translateY(calc(100% - 38px)); }
 
         #toggle-ui-btn {
             height: 38px; background: rgba(5, 10, 24, 0.98); color: #00e5ff;
-            border: none; font-family: inherit; font-size: 12px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
+            border: none; font-family: inherit; font-size: 11px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px; letter-spacing: 0.5px;
         }
 
-        #inner-ui-content { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        #inner-ui-content { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 
         #target-selector-panel {
-            display: none; background: rgba(255, 42, 95, 0.03); border: 1px dashed #ff2a5f;
+            display: none; background: rgba(255, 42, 95, 0.04); border: 1px dashed #ff2a5f;
             padding: 8px; border-radius: 4px; text-align: center;
         }
         .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; max-height: 120px; overflow-y: auto; }
@@ -100,23 +102,25 @@
         }
         .target-btn:active { background: #ff2a5f; border-color: #ff2a5f; color: #fff; }
 
-        #log-container { background: rgba(0, 0, 0, 0.3); border-radius: 4px; border: 1px solid rgba(0, 229, 255, 0.1); }
+        #log-container { background: rgba(0, 0, 0, 0.4); border-radius: 4px; border: 1px solid rgba(0, 229, 255, 0.15); }
         #log-panel {
-            height: 50px; padding: 6px 10px; font-size: 11px; overflow-y: auto;
+            height: 55px; padding: 6px 10px; font-size: 11px; overflow-y: auto;
             display: flex; flex-direction: column-reverse; pointer-events: none;
         }
-        .log-entry { margin-bottom: 2px; color: #00e5ff; opacity: 0.8; }
+        .log-entry { margin-bottom: 2px; color: #00e5ff; opacity: 0.85; }
         .log-entry.enemy { color: #ff2a5f; font-weight: bold; }
         .log-entry.system { color: #eab308; }
 
         #control-panel { display: flex; flex-direction: column; gap: 6px; }
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .btn {
-            background: rgba(14, 26, 54, 0.8); color: #94a3b8; border: 1px solid rgba(0, 229, 255, 0.15);
-            padding: 12px 6px; cursor: pointer; font-size: 12px; font-weight: bold; border-radius: 4px; font-family: inherit;
+            background: rgba(14, 26, 54, 0.8); color: #94a3b8; border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 10px 4px; cursor: pointer; font-size: 11px; font-weight: bold; border-radius: 4px; font-family: inherit;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+            text-overflow: ellipsis; overflow: hidden; white-space: nowrap;
         }
-        .btn.active { background: #00e5ff; color: #050a17; border-color: #00e5ff; }
-        .btn.disabled { opacity: 0.2; cursor: not-allowed; border-color: rgba(255,255,255,0.05); }
+        .btn.active { background: #00e5ff; color: #050a17; border-color: #00e5ff; box-shadow: 0 0 8px rgba(0,229,255,0.3); }
+        .btn.disabled { opacity: 0.25; cursor: not-allowed; border-color: rgba(255,255,255,0.05); color: #475569; }
         
         .btn-orange.active { background: #f97316; color: #fff; border-color: #f97316; }
         .btn-purple.active { background: #a855f7; color: #fff; border-color: #a855f7; }
@@ -131,13 +135,15 @@
         .city-dot { width: 6px; height: 6px; background: #00e5ff; border-radius: 50%; border: 1.5px solid #fff; }
         .city-marker.enemy .city-dot { background: #ff2a5f; }
         .city-label { font-size: 10px; font-weight: bold; color: #fff; text-shadow: 0 1px 3px #000; margin-top: 4px; white-space: nowrap; }
-        .city-marker.repair-highlight .city-dot { background: #a855f7; transform: scale(1.4); }
+        .city-marker.repair-highlight .city-dot { background: #3b82f6; transform: scale(1.4); box-shadow: 0 0 10px #3b82f6; }
 
         .build-marker {
             background: #050a17; border: 1px solid #00e5ff; color: #00e5ff;
-            font-size: 9px; font-weight: bold; border-radius: 3px; padding: 2px 5px; white-space: nowrap;
+            font-size: 9px; font-weight: bold; border-radius: 3px; padding: 2px 4px; white-space: nowrap;
+            box-shadow: 0 0 5px rgba(0,229,255,0.2);
         }
         .build-marker.enemy-factory { border-color: #ff2a5f; color: #ff2a5f; }
+        .build-marker.reb-node { border-color: #a855f7; color: #a855f7; }
 
         .damage-popup { font-size: 11px; font-weight: bold; color: #ff2a5f; text-shadow: 0 0 4px #000; animation: float-dmg 0.4s ease-out forwards; }
         .heal-popup { font-size: 11px; font-weight: bold; color: #00e5ff; text-shadow: 0 0 4px #000; animation: float-dmg 0.4s ease-out forwards; }
@@ -153,7 +159,6 @@
             40%, 60% { transform: translate(6px, 4px); }
         }
 
-        /* ЭФФЕКТЫ РАЗВЕДЕНИЯ БЛОКОВ */
         .separation-flash {
             background: none; border: 2px solid #fff; border-radius: 50%;
             box-shadow: 0 0 30px #ff4500, inset 0 0 15px #fff;
@@ -161,13 +166,11 @@
         }
         @keyframes flash-out { 0% { transform: scale(0.2); opacity: 1; } 100% { transform: scale(3.5); opacity: 0; } }
 
-        /* КИНЕТИЧЕСКИЕ ИСКРЫ БЛОКОВ */
         .plasma-bullet {
             width: 6px; height: 6px; background: #fff; border-radius: 50%;
             box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8800;
         }
 
-        /* КУПОЛ ПЕРЕХВАТА ПВО */
         .pvo-dome-blast {
             background: none; border: 1.5px solid #00e5ff; border-radius: 50%;
             box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
@@ -213,7 +216,7 @@
         </div>
 
         <div id="bottom-ui-wrapper" class="ui-collapsed">
-            <button id="toggle-ui-btn" onclick="toggleUIPanel()">📊 КОНТРОЛЬ ОГНЕВЫХ СРЕДСТВ</button>
+            <button id="toggle-ui-btn" onclick="toggleUIPanel()">📊 МОНИТОР ОГНЕВЫХ СРЕДСТВ И РЭБ</button>
             <div id="inner-ui-content">
                 
                 <div id="target-selector-panel">
@@ -227,16 +230,17 @@
 
                 <div id="control-panel">
                     <div class="btn-row">
-                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ПРОМ-ОБЪЕКТ ($500) <span id="factory-counter">0/10</span></button>
-                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] МОДУЛЬ ПВО ($750) <span id="pvo-counter">0/5</span></button>
+                        <button class="btn" id="btn-factory" onclick="toggleBuildMode('factory')">[+] ПРОМ ($500) <span id="factory-counter">0/10</span></button>
+                        <button class="btn" id="btn-pvo" onclick="toggleBuildMode('pvo')">[+] ПВО ($750) <span id="pvo-counter">0/5</span></button>
+                        <button class="btn" id="btn-reb" onclick="toggleBuildMode('reb')">[+] РЭБ ($600) <span id="reb-counter">0/4</span></button>
                     </div>
                     <div class="btn-row">
-                        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 УДАРНАЯ ПАРА БПЛА (-$250)</button>
-                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 СТРАТЕГ. АВИАЦИЯ (-$2200)</button>
-                    </div>
-                    <div class="btn-row">
+                        <button class="btn btn-orange" id="btn-attack-mode" onclick="toggleAttackMode()">🎯 УДАРНАЯ ПАРА (-$250)</button>
+                        <button class="btn btn-purple" id="btn-bomber-mode" onclick="toggleBomberMode()">💥 СТРАТЕГ. АВИА (-$2200)</button>
                         <button class="btn btn-red" id="btn-heavy-mode" onclick="toggleHeavyMissileMode()">🚀 КРК «ОРЕШНИК» (-$3800)</button>
-                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ ИНЖЕНЕРНЫЙ РЕМОНТ (-$2400)</button>
+                    </div>
+                    <div class="btn-row" style="grid-template-columns: 1fr;">
+                        <button class="btn btn-blue" id="btn-repair-mode" onclick="toggleRepairMode()">🛠️ СЕКТОРАЛЬНЫЙ ИНЖЕНЕРНЫЙ РЕМОНТ КОМПЛЕКСОВ (-$2400)</button>
                     </div>
                 </div>
             </div>
@@ -276,19 +280,24 @@
         let enemyMoney = 400;
 
         let playerDrones = [], enemyDrones = []; 
-        let playerFactories = [], playerPVO = [];
-        let enemyFactories = [], enemyPVO = []; 
+        let playerFactories = [], playerPVO = [], playerREB = [];
+        let enemyFactories = [], enemyPVO = [], enemyREB = []; 
         let missiles = [];
         let map, selectedFactory = null;
         
         const MAX_PVO_LIMIT = 5;
         const MAX_FACTORY_LIMIT = 10; 
+        const MAX_REB_LIMIT = 4;
+
         let currentWeather = 'clear'; 
         let currentPeriod = 'day';     
-        let aiActive = false;
-        let safeStartCountdown = 15; 
+        
+        // Переменные для Кулдауна Орешника
+        let oreschnikCooldownActive = false;
+        let oreschnikTimeLeft = 0;
+        let oreschnikTimerInterval = null;
 
-        // ОБНОВЛЕННЫЕ ДЕЛЬТАВИДНЫЕ СИЛУЭТЫ С КИЛЯМИ-ЗАКОНЦОВКАМИ ИЗ ИЗОБРАЖЕНИЯ image_9.png
+        // ХАРАКТЕРНЫЕ СИЛУЭТЫ ИЗ image.png С КИЛЯМИ
         const SHAHED_SVG = `<svg viewBox="0 0 100 100" width="22" height="22" style="fill: #ef4444;"><path d="M50,5 L85,75 L88,95 L80,95 L77,82 L50,65 L23,82 L20,95 L12,95 L15,75 Z"/></svg>`;
         const PLAYER_DRONE_SVG = `<svg viewBox="0 0 100 100" width="22" height="22" style="fill: #38bdf8;"><path d="M50,5 L85,75 L88,95 L80,95 L77,82 L50,65 L23,82 L20,95 L12,95 L15,75 Z"/></svg>`;
         
@@ -306,7 +315,6 @@
             document.getElementById('faction-screen').style.display = 'none';
 
             map = L.map('map', { zoomControl: false, minZoom: 4, maxZoom: 8 }).setView([50.5, 34.5], 5);
-            
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { opacity: 0.8 }).addTo(map);
 
             renderOperationalRadar();
@@ -431,6 +439,7 @@
         function toggleBuildMode(mode) {
             if (mode === 'factory' && (money < 500 || playerFactories.length >= MAX_FACTORY_LIMIT)) return;
             if (mode === 'pvo' && (money < 750 || getPlacedPVOCount() >= MAX_PVO_LIMIT)) return;
+            if (mode === 'reb' && (money < 600 || playerREB.length >= MAX_REB_LIMIT)) return;
             let last = currentMode; dropModes();
             if (last !== mode) {
                 currentMode = mode;
@@ -455,11 +464,32 @@
         }
 
         function toggleHeavyMissileMode() {
+            if (oreschnikCooldownActive) return;
             if (currentMode === 'heavy_missile') { dropModes(); return; }
             if (money < 3800) return;
             dropModes(); currentMode = 'heavy_missile';
             document.getElementById('btn-heavy-mode').classList.add('active');
             updateTargetPanelGrid(); showTargetSelector(true);
+        }
+
+        function startOreschnikCooldown() {
+            oreschnikCooldownActive = true;
+            oreschnikTimeLeft = 60;
+            const btn = document.getElementById('btn-heavy-mode');
+            btn.classList.add('disabled');
+            btn.innerText = `🚀 ОРЕШНИК (${oreschnikTimeLeft}с)`;
+
+            oreschnikTimerInterval = setInterval(() => {
+                oreschnikTimeLeft--;
+                if (oreschnikTimeLeft <= 0) {
+                    clearInterval(oreschnikTimerInterval);
+                    oreschnikCooldownActive = false;
+                    btn.innerText = `🚀 КРК «ОРЕШНИК» (-$3800)`;
+                    updateUIButtons();
+                } else {
+                    btn.innerText = `🚀 ОРЕШНИК (${oreschnikTimeLeft}с)`;
+                }
+            }, 1000);
         }
 
         function showTargetSelector(show) {
@@ -471,7 +501,10 @@
                 if(c.markerInstance && c.markerInstance.getElement()) c.markerInstance.getElement().classList.remove('repair-highlight');
             });
             currentMode = null; selectedFactory = null;
-            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.btn').forEach(b => {
+                if (b.id === 'btn-heavy-mode' && oreschnikCooldownActive) return;
+                b.classList.remove('active');
+            });
             showTargetSelector(false); updateUIButtons();
         }
 
@@ -480,16 +513,23 @@
         function updateUIButtons() {
             let pvoCount = getPlacedPVOCount();
             let factoryCount = playerFactories.length;
+            let rebCount = playerREB.length;
             
             document.getElementById('pvo-counter').innerText = `${pvoCount}/${MAX_PVO_LIMIT}`;
             document.getElementById('factory-counter').innerText = `${factoryCount}/${MAX_FACTORY_LIMIT}`;
+            document.getElementById('reb-counter').innerText = `${rebCount}/${MAX_REB_LIMIT}`;
             
             document.getElementById('btn-factory').classList.toggle('disabled', money < 500 || factoryCount >= MAX_FACTORY_LIMIT);
             document.getElementById('btn-pvo').classList.toggle('disabled', money < 750 || pvoCount >= MAX_PVO_LIMIT);
+            document.getElementById('btn-reb').classList.toggle('disabled', money < 600 || rebCount >= MAX_REB_LIMIT);
+            
             document.getElementById('btn-attack-mode').classList.toggle('disabled', money < 250 || droneInventory < 2);
             document.getElementById('btn-bomber-mode').classList.toggle('disabled', money < 2200);
-            document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 3800);
             document.getElementById('btn-repair-mode').classList.toggle('disabled', money < 2400); 
+
+            if (!oreschnikCooldownActive) {
+                document.getElementById('btn-heavy-mode').classList.toggle('disabled', money < 3800);
+            }
         }
 
         function setupRadarClicks() {
@@ -519,6 +559,17 @@
 
                     playerPVO.push({ lat: lat, lng: lng, marker: m, rangeDist: 2.1, ammo: 6, maxAmmo: 6, lastShot: 0, isCityRadar: false, circle: visualCircle });
                     dropModes();
+                } else if (currentMode === 'reb' && money >= 600 && playerREB.length < MAX_REB_LIMIT) {
+                    money -= 600;
+                    let icon = L.divIcon({ className: 'build-marker reb-node', html: 'РЭБ', iconSize: [36, 16] });
+                    let m = L.marker([lat, lng], { icon: icon }).addTo(map);
+
+                    let visualCircle = L.circle([lat, lng], {
+                        radius: 120000, color: '#a855f7', weight: 1, fillOpacity: 0.03, dashArray: '3,3'
+                    }).addTo(map);
+
+                    playerREB.push({ lat: lat, lng: lng, marker: m, rangeDist: 1.6, circle: visualCircle });
+                    dropModes();
                 }
             });
         }
@@ -542,6 +593,7 @@
 
         function dispatchHeavyStrike(targetObj) {
             money -= 3800;
+            startOreschnikCooldown();
             injectAirTarget(CITIES[playerFaction][0], targetObj, playerDrones, true, 'heavy');
             dropModes();
         }
@@ -549,7 +601,7 @@
         function enemyAILogic() {
             enemyMoney += 220 + (enemyFactories.length * 60);
 
-            if (enemyMoney >= 1400 && enemyFactories.length < 4) {
+            if (enemyMoney >= 1450 && enemyFactories.length < 4) {
                 enemyMoney -= 500;
                 let randomCity = CITIES[enemyFaction][Math.floor(Math.random() * CITIES[enemyFaction].length)];
                 let fLat = randomCity.lat + (Math.random() - 0.5) * 0.2;
@@ -567,7 +619,7 @@
 
             let target = { lat: randomCityTarget.lat, lng: randomCityTarget.lng, name: randomCityTarget.name, type: 'city' };
 
-            if (playerFactories.length >= 1 && enemyMoney >= 3800) {
+            if (playerFactories.length >= 1 && enemyMoney >= 4200) {
                 enemyMoney -= 3800;
                 let targetFactory = playerFactories[Math.floor(Math.random() * playerFactories.length)];
                 addLog(`⚠️ КРИТИЧЕСКАЯ УГРОЗА: ЗАФИКСИРОВАН БАЛЛИСТИЧЕСКИЙ ПУСК КРК «ОРЕШНИК»!`, 'enemy');
@@ -575,14 +627,14 @@
                 return; 
             }
 
-            if (brokenCity && enemyMoney >= 2200) {
+            if (brokenCity && enemyMoney >= 2400) {
                 enemyMoney -= 2200;
                 addLog(`🚨 ВНИМАНИЕ: Зафиксирован вылет стратегической авиации противника.`, 'enemy');
                 injectAirTarget(source, {lat: brokenCity.lat, lng: brokenCity.lng, name: brokenCity.name, type: 'city'}, enemyDrones, false, 'bomber');
                 return;
             }
 
-            if (enemyMoney >= 800) {
+            if (enemyMoney >= 850) {
                 enemyMoney -= 250;
                 injectAirTarget(source, target, enemyDrones, false, 'drone');
             }
@@ -607,7 +659,8 @@
                 id: Math.random().toString(36).substr(2, 9), marker: marker, type: type, hp: type === 'bomber' ? 4 : 1,
                 lat: start.lat, lng: start.lng, targetLat: targetObj.lat, targetLng: targetObj.lng, 
                 targetName: targetObj.name, targetType: targetObj.type || 'city', targetId: targetObj.id || null,
-                currentLat: start.lat, currentLng: start.lng, progress: 0, speed: speed, trails: []
+                currentLat: start.lat, currentLng: start.lng, progress: 0, speed: speed, originalSpeed: speed,
+                trails: [], rebAffected: false, driftX: 0, driftY: 0
             });
             updateUIButtons();
         }
@@ -641,10 +694,38 @@
         function processTracks(list, isPlayer) {
             let now = Date.now();
             for (let i = list.length - 1; i >= 0; i--) {
-                let d = list[i]; d.progress += d.speed;
+                let d = list[i]; 
 
-                let cLat = d.lat + (d.targetLat - d.lat) * d.progress;
-                let cLng = d.lng + (d.targetLng - d.lng) * d.progress;
+                // МЕХАНИКА РЭБ (Влияет только на обычные дроны и бомбардировщики врага, Орешник РЭБом не сбить!)
+                if (!isPlayer && d.type !== 'heavy' && d.type !== 'heavy_sub') {
+                    let insideREB = false;
+                    playerREB.forEach(reb => {
+                        let dist = Math.pow(d.currentLat - reb.lat, 2) + Math.pow(d.currentLng - reb.lng, 2);
+                        if (dist <= Math.pow(reb.rangeDist, 2)) {
+                            insideREB = true;
+                        }
+                    });
+
+                    if (insideREB) {
+                        if (!d.rebAffected) {
+                            d.rebAffected = true;
+                            d.speed = d.originalSpeed * 0.45; // Снижаем скорость более чем в 2 раза
+                            addLog(`📡 РЭБ: Вражеский БПЛА попал в зону радиоэлектронных помех!`, 'system');
+                        }
+                        // Эффект «виляния» / ложного курса
+                        d.driftX += (Math.random() - 0.5) * 0.015;
+                        d.driftY += (Math.random() - 0.5) * 0.015;
+                    } else if (d.rebAffected) {
+                        d.rebAffected = false;
+                        d.speed = d.originalSpeed;
+                        d.driftX *= 0.5; d.driftY *= 0.5; // Плавное выравнивание
+                    }
+                }
+
+                d.progress += d.speed;
+
+                let cLat = d.lat + (d.targetLat - d.lat) * d.progress + (d.driftX || 0);
+                let cLng = d.lng + (d.targetLng - d.lng) * d.progress + (d.driftY || 0);
                 d.currentLat = cLat; d.currentLng = cLng; d.marker.setLatLng([cLat, cLng]);
 
                 if (d.type === 'heavy') {
