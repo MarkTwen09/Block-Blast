@@ -2,384 +2,349 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Crisis: State Strategy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Conquest: Tactics</title>
     <style>
-        :root {
-            --bg-body: #0f1115;
-            --bg-panel: #161920;
-            --bg-panel-header: #1e222d;
-            --border-color: #2a2f3d;
-            --text-main: #d0d4dc;
-            --text-muted: #848d9f;
-            --accent: #c0392b; /* Строгий красный акцент */
-            --accent-blue: #2980b9;
-            --success: #27ae60;
-            --warning: #f39c12;
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #0b0e14; color: #fff; }
+
+        /* Экран выбора страны */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0d1117; z-index: 1000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
-        body { background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        /* Экраны */
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: 0.3s; }
-        .screen.hidden { opacity: 0; pointer-events: none; }
-
-        .setup-box { background: var(--bg-panel); border: 1px solid var(--border-color); width: 500px; padding: 30px; border-radius: 6px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .setup-title { font-size: 20px; font-weight: bold; color: #fff; border-bottom: 2px solid var(--accent); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .start-box {
+            background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+            padding: 30px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+        .start-title { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff; text-align: center; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 12px; color: #8b949e; text-transform: uppercase; font-weight: 600; }
+        .input-ctrl { background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 12px; border-radius: 6px; font-size: 14px; outline: none; }
+        .input-ctrl:focus { border-color: #58a6ff; }
         
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; }
-        .form-control { background: #0b0d10; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 4px; font-size: 14px; outline: none; }
-        .form-control:focus { border-color: var(--accent); }
+        .start-btn {
+            background: #238636; border: none; color: #fff; padding: 14px; font-weight: 700;
+            font-size: 15px; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+        }
+        .start-btn:hover { background: #2ea043; }
 
-        /* Интерфейс игры */
-        #game-interface { display: grid; grid-template-rows: 50px 1fr; height: 100vh; }
-        
-        header { background: var(--bg-panel-header); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
-        .top-stats { display: flex; gap: 25px; font-size: 13px; }
-        .top-stat b { color: #fff; }
+        /* Игровой холст и интерфейс */
+        #game-canvas { width: 100vw; height: 100vh; display: block; background: #090c10; cursor: crosshair; }
 
-        .main-layout { display: grid; grid-template-columns: 280px 1fr 320px; height: calc(100vh - 50px); background: var(--bg-body); }
-        
-        .column { background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-        .column:last-child { border-right: none; border-left: 1px solid var(--border-color); }
-        
-        .col-header { background: var(--bg-panel-header); padding: 12px 15px; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); }
-        .col-content { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; flex: 1; }
+        .hud-top {
+            position: absolute; top: 15px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between; align-items: center; pointer-events: none;
+        }
+        .hud-card {
+            background: rgba(22, 27, 34, 0.9); border: 1px solid #30363d;
+            padding: 10px 16px; border-radius: 8px; backdrop-filter: blur(8px); pointer-events: auto;
+            display: flex; gap: 20px; align-items: center;
+        }
+        .hud-val { font-size: 18px; font-weight: 700; color: #58a6ff; }
+        .hud-lbl { font-size: 11px; color: #8b949e; text-transform: uppercase; }
 
-        /* Элементы управления */
-        .btn { background: #222632; border: 1px solid var(--border-color); color: #fff; padding: 10px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: 0.2s; text-align: center; }
-        .btn:hover { background: #2c3242; border-color: #4a5568; }
-        .btn-accent { background: var(--accent); border-color: #962d22; }
-        .btn-accent:hover { background: #d63031; }
-
-        .country-card { background: #12151c; border: 1px solid var(--border-color); padding: 12px; border-radius: 4px; display: flex; flex-direction: column; gap: 8px; }
-        .country-name { font-weight: bold; font-size: 14px; color: #fff; }
-        
-        /* Лог событий */
-        .log-box { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
-        .log-entry { background: #12151c; border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 0 4px 4px 0; line-height: 1.4; color: var(--text-main); }
-
-        /* Ползунки и мини-панели */
-        .slider-group { display: flex; flex-direction: column; gap: 5px; }
-        .slider-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
-        input[type="range"] { width: 100%; accent-color: var(--accent); }
-
-        /* Модальные окна */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 200; visibility: hidden; opacity: 0; transition: 0.3s; }
-        .modal-overlay.active { visibility: visible; opacity: 1; }
-        .modal { background: var(--bg-panel); border: 1px solid var(--border-color); width: 450px; padding: 25px; border-radius: 6px; display: flex; flex-direction: column; gap: 15px; }
-        .modal-title { font-size: 16px; font-weight: bold; color: #fff; text-transform: uppercase; }
-        .modal-text { font-size: 13px; color: var(--text-main); line-height: 1.5; }
+        .hud-bottom {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(22, 27, 34, 0.9); border: 1px solid #30363d;
+            padding: 10px 20px; border-radius: 20px; font-size: 13px; color: #c9d1d9;
+            backdrop-filter: blur(8px); text-align: center; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <!-- ЭКРАН СТАРТА И ВЫБОРА СТРАНЫ -->
-    <div class="screen" id="setup-screen">
-        <div class="setup-box">
-            <div class="setup-title">Конфигурация Новой Игры</div>
-            <div class="form-group">
-                <label>Режим выбора государства</label>
-                <select class="form-control" id="select-mode" onchange="toggleCustomCountry(this.value)">
-                    <option value="preset">Выбрать существующую державу</option>
-                    <option value="custom">Создать собственное государство</option>
+    <!-- СТАРТОВЫЙ ЭКРАН -->
+    <div id="start-screen">
+        <div class="start-box">
+            <div class="start-title">Глобальное Завоевание</div>
+            
+            <div class="input-group">
+                <label>Выберите государство</label>
+                <select class="input-ctrl" id="country-select" onchange="checkCustom(this.value)">
+                    <option value="Россия">Россия (Центр)</option>
+                    <option value="Украина">Украина</option>
+                    <option value="Европа">Западная Европа</option>
+                    <option value="США">США</option>
+                    <option value="Китай">Китай</option>
+                    <option value="custom">+ Создать свою державу</option>
                 </select>
             </div>
 
-            <div class="form-group" id="preset-group">
-                <label>Государство</label>
-                <select class="form-control" id="select-country">
-                    <option value="Россия">Российская Федерация (Ядерная держава)</option>
-                    <option value="США">Соединенные Штаты Америки (Мировой гегемон)</option>
-                    <option value="Китай">Китайская Народная Республика (Экономический гигант)</option>
-                    <option value="Германия">Федеративная Республика Германия (Европейский лидер)</option>
-                    <option value="Украина">Украина (Региональный субъект)</option>
-                </select>
+            <div class="input-group" id="custom-name-box" style="display: none;">
+                <label>Название вашей страны</label>
+                <input type="text" class="input-ctrl" id="custom-name-input" placeholder="Введите название...">
             </div>
 
-            <div class="form-group" id="custom-group" style="display: none;">
-                <label>Название государства</label>
-                <input type="text" class="form-control" id="custom-name" value="Новая Республика">
-            </div>
-
-            <button class="btn btn-accent" style="margin-top: 10px;" onclick="startGame()">Инициировать Симуляцию</button>
+            <button class="start-btn" onclick="initGame()">Вступить в войну</button>
         </div>
     </div>
 
-    <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС -->
-    <div id="game-interface" style="display: none;">
-        <header>
-            <div style="font-weight: bold; font-size: 14px; letter-spacing: 1px; color: #fff;" id="header-country-title">РОССИЙСКАЯ ФЕДЕРАЦИЯ</div>
-            <div class="top-stats">
-                <div class="top-stat">Казна: <b id="stat-budget">$4,200 млрд</b></div>
-                <div class="top-stat">ВВП: <b id="stat-gdp">$2,100 млрд</b></div>
-                <div class="top-stat">Стабильность: <b id="stat-stability">82%</b></div>
-                <div class="top-stat">Армия: <b id="stat-military">1,150,000</b></div>
-                <div class="top-stat">Дата: <b id="stat-date">Январь 2026</b></div>
+    <!-- ИГРОВОЙ ИНТЕРФЕЙС -->
+    <div class="hud-top">
+        <div class="hud-card">
+            <div>
+                <div class="hud-lbl">Держава</div>
+                <div class="hud-val" id="player-flag-name" style="color:#2f81f7;">Россия</div>
             </div>
-            <button class="btn" onclick="nextTurn()" style="padding: 6px 12px; background: #27ae60; border-color: #1e8449;">Следующий месяц ➔</button>
-        </header>
-
-        <div class="main-layout">
-            <!-- Левая колонка: Управление государством -->
-            <div class="column">
-                <div class="col-header">Государственное Управление</div>
-                <div class="col-content">
-                    <div class="slider-group">
-                        <div class="slider-header"><span>Налогообложение</span><span id="lbl-tax">18%</span></div>
-                        <input type="range" id="input-tax" min="5" max="45" value="18" oninput="updateSliders()">
-                    </div>
-                    <div class="slider-group">
-                        <div class="slider-header"><span>Финансирование Обороны</span><span id="lbl-mil">$60 млрд</span></div>
-                        <input type="range" id="input-mil" min="10" max="250" value="60" oninput="updateSliders()">
-                    </div>
-                    <div class="slider-group">
-                        <div class="slider-header"><span>Социальные расходы</span><span id="lbl-soc">$40 млрд</span></div>
-                        <input type="range" id="input-soc" min="10" max="200" value="40" oninput="updateSliders()">
-                    </div>
-                    <hr style="border: 0; border-top: 1px solid var(--border-color);">
-                    <button class="btn" onclick="openRecruitModal()">Провести мобилизацию</button>
-                    <button class="btn" onclick="openInvestModal()">Инвестировать в экономику</button>
-                </div>
+            <div>
+                <div class="hud-lbl">Регионы</div>
+                <div class="hud-val" id="stat-regions">0</div>
             </div>
-
-            <!-- Центральная колонка: Мировая карта / Сводка геополитики -->
-            <div class="column" style="background: #0d0f14;">
-                <div class="col-header">Мировая Геополитическая Сводка</div>
-                <div class="col-content" id="world-powers-list">
-                    <!-- Заполняется динамически -->
-                </div>
-            </div>
-
-            <!-- Правая колонка: Журнал событий -->
-            <div class="column">
-                <div class="col-header">Сводка Новостей и Событий</div>
-                <div class="col-content log-box" id="game-log">
-                    <div class="log-entry">Система инициализирована. Правительство приступило к исполнению обязанностей.</div>
-                </div>
+            <div>
+                <div class="hud-lbl">Всего войск</div>
+                <div class="hud-val" id="stat-troops">0</div>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно событий -->
-    <div class="modal-overlay" id="event-modal">
-        <div class="modal">
-            <div class="modal-title" id="modal-title">Внимание, господин Президент</div>
-            <div class="modal-text" id="modal-desc">Описание кризисной ситуации...</div>
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;" id="modal-buttons">
-                <!-- Кнопки выбора -->
-            </div>
-        </div>
+    <div class="hud-bottom">
+        🖱️ <b>Нажми на свой регион</b> $\rightarrow$ затем <b>кликуй на врага</b> для атаки отрядом точек!
     </div>
 
-    <script>
-        let game = {
-            countryName: "Россия",
-            budget: 4200,
-            gdp: 2100,
-            stability: 82,
-            military: 1150000,
-            tax: 18,
-            milBudget: 60,
-            socBudget: 40,
-            turn: 0,
-            month: 0,
-            year: 2026,
-            powers: [
-                { name: "США", status: "Соперник", relations: 35, gdp: 25000, mil: 1350000 },
-                { name: "Китай", status: "Стратегический партнер", relations: 75, gdp: 18000, mil: 2000000 },
-                { name: "Евросоюз", status: "Оппонент", relations: 25, gdp: 16000, mil: 900000 },
-                { name: "Индия", status: "Нейтрален", relations: 60, gdp: 3500, mil: 1450000 }
-            ]
-        };
+    <canvas id="game-canvas"></canvas>
 
-        const months = ["Январь",га="Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+<script>
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
 
-        function toggleCustomCountry(val) {
-            document.getElementById('preset-group').style.display = val === 'preset' ? 'flex' : 'none';
-            document.getElementById('custom-group').style.display = val === 'custom' ? 'flex' : 'none';
-        }
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
 
-        function startGame() {
-            const mode = document.getElementById('select-mode').value;
-            if (mode === 'preset') {
-                game.countryName = document.getElementById('select-country').value;
+window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+});
+
+// Данные о регионах (Географическая карта с узлами и полигонами)
+const REGIONS = [
+    { id: 'rus_west', name: 'Центральная Россия', x: 0.52, y: 0.32, radius: 45, owner: 'Россия', troops: 45 },
+    { id: 'rus_south', name: 'Юг России / Кавказ', x: 0.53, y: 0.44, radius: 40, owner: 'Россия', troops: 35 },
+    { id: 'rus_ural', name: 'Урал', x: 0.62, y: 0.30, radius: 42, owner: 'Россия', troops: 30 },
+    { id: 'rus_sib', name: 'Сибирь', x: 0.74, y: 0.28, radius: 50, owner: 'Россия', troops: 50 },
+    
+    { id: 'ukr_east', name: 'Восточная Украина', x: 0.46, y: 0.39, radius: 35, owner: 'Украина', troops: 30 },
+    { id: 'ukr_west', name: 'Западная Украина', x: 0.41, y: 0.38, radius: 35, owner: 'Украина', troops: 25 },
+    
+    { id: 'eur_east', name: 'Польша / Восточная Европа', x: 0.36, y: 0.34, radius: 38, owner: 'Европа', troops: 40 },
+    { id: 'eur_west', name: 'Германия / Франция', x: 0.28, y: 0.36, radius: 42, owner: 'Европа', troops: 50 },
+    { id: 'eur_south', name: 'Турция / Балканы', x: 0.42, y: 0.48, radius: 38, owner: 'Нейтралы', troops: 20 },
+
+    { id: 'asia_chin', name: 'Китай', x: 0.76, y: 0.48, radius: 52, owner: 'Китай', troops: 60 },
+    { id: 'asia_ind', name: 'Индия', x: 0.67, y: 0.56, radius: 45, owner: 'Нейтралы', troops: 35 },
+    { id: 'usa_east', name: 'США (Восток)', x: 0.12, y: 0.38, radius: 45, owner: 'США', troops: 55 }
+];
+
+// Цвета фракций
+const OWNER_COLORS = {
+    'Россия': '#2f81f7',
+    'Украина': '#e3b341',
+    'Европа': '#a371f7',
+    'Китай': '#f85149',
+    'США': '#2ea043',
+    'Нейтралы': '#484f58'
+};
+
+let playerFaction = 'Россия';
+let selectedRegion = null;
+let attackParticles = [];
+
+class TroopParticle {
+    constructor(fromX, fromY, toX, toY, owner, targetRegion) {
+        this.x = fromX + (Math.random() - 0.5) * 15;
+        this.y = fromY + (Math.random() - 0.5) * 15;
+        this.toX = toX + (Math.random() - 0.5) * 15;
+        this.toY = toY + (Math.random() - 0.5) * 15;
+        this.owner = owner;
+        this.targetRegion = targetRegion;
+        this.speed = 2.5 + Math.random() * 1.0;
+        this.done = false;
+    }
+
+    update() {
+        let dx = this.toX - this.x;
+        let dy = this.toY - this.y;
+        let dist = Math.hypot(dx, dy);
+
+        if (dist < 5) {
+            this.done = true;
+            // Урон / захват при прибытии точки
+            if (this.targetRegion.owner === this.owner) {
+                this.targetRegion.troops += 1;
             } else {
-                game.countryName = document.getElementById('custom-name').value || "Республика";
-            }
-
-            document.getElementById('header-country-title').innerText = game.countryName.toUpperCase();
-            document.getElementById('setup-screen').classList.add('hidden');
-            document.getElementById('game-interface').style.display = 'grid';
-            
-            updateUI();
-            addLog(`Новое правительство во главе с лидером государства приступило к управлению.`);
-        }
-
-        function updateSliders() {
-            game.tax = parseInt(document.getElementById('input-tax').value);
-            game.milBudget = parseInt(document.getElementById('input-mil').value);
-            game.socBudget = parseInt(document.getElementById('input-soc').value);
-
-            document.getElementById('lbl-tax').innerText = game.tax + '%';
-            document.getElementById('lbl-mil').innerText = '$' + game.milBudget + ' млрд';
-            document.getElementById('lbl-soc').innerText = '$' + game.socBudget + ' млрд';
-        }
-
-        function updateUI() {
-            document.getElementById('stat-budget').innerText = `$${Math.round(game.budget)} млрд`;
-            document.getElementById('stat-gdp').innerText = `$${Math.round(game.gdp)} млрд`;
-            document.getElementById('stat-stability').innerText = `${Math.round(game.stability)}%`;
-            document.getElementById('stat-military').innerText = game.military.toLocaleString();
-            
-            let monthName = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"][game.month];
-            document.getElementById('stat-date').innerText = `${monthName} ${game.year}`;
-
-            // Отрисовка списка держав
-            let container = document.getElementById('world-powers-list');
-            container.innerHTML = '';
-            game.powers.forEach((p, idx) => {
-                let card = document.createElement('div');
-                card.className = 'country-card';
-                card.innerHTML = `
-                    <div class="country-name">${p.name} <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(${p.status})</span></div>
-                    <div style="font-size:12px; color:var(--text-muted);">Отношения: <b style="color:#fff">${p.relations}/100</b> | ВВП: <b style="color:#fff">$${p.gdp} млрд</b></div>
-                    <button class="btn" style="padding: 5px; font-size:11px; margin-top:5px;" onclick="openDiplomacy(${idx})жи">Дипломатический контакт</button>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function addLog(text) {
-            let logBox = document.getElementById('game-log');
-            let entry = document.createElement('div');
-            entry.className = 'log-entry';
-            let monthName = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"][game.month];
-            entry.innerText = `[${monthName} ${game.year}] ${text}`;
-            logBox.prepend(entry);
-        }
-
-        function nextTurn() {
-            game.turn++;
-            game.month++;
-            if (game.month > 11) {
-                game.month = 0;
-                game.year++;
-            }
-
-            // Финансовый расчет
-            let income = (game.gdp * (game.tax / 100)) / 12;
-            let expenses = (game.milBudget + game.socBudget) / 12;
-            let net = income - expenses;
-            game.budget += net;
-
-            // Изменение стабильности от налогов и социальной сферы
-            if (game.tax > 30) game.stability -= 1.5;
-            if (game.socBudget > 60) game.stability += 1.0;
-            if (game.stability > 100) game.stability = 100;
-            if (game.stability < 0) game.stability = 0;
-
-            // Проверка поражения
-            if (game.stability <= 5) {
-                alert("КРИТИЧЕСКИЙ КРИЗИС: В стране произошел государственный переворот из-за падения стабильности. Игра окончена.");
-                location.reload();
-                return;
-            }
-
-            addLog(`Финансовый отчет за месяц: Доходы: $${Math.round(income)} млрд, Расходы: $${Math.round(expenses)} млрд.`);
-
-            // Случайные события
-            if (Math.random() < 0.35) {
-                triggerRandomEvent();
-            }
-
-            updateUI();
-        }
-
-        function openRecruitModal() {
-            if (game.budget >= 50) {
-                game.budget -= 50;
-                game.military += 35000;
-                addLog("Проведена частичная мобилизация и набор контрактников (+35,000 военного персонала).");
-                updateUI();
-            } else {
-                alert("Недостаточно средств в государственной казне ($50 млрд требуется).");
-            }
-        }
-
-        function openInvestModal() {
-            if (game.budget >= 100) {
-                game.budget -= 100;
-                game.gdp += 120;
-                addLog("Успешно реализованы инвестиционные инфраструктурные проекты (ВВП вырос).");
-                updateUI();
-            } else {
-                alert("Недостаточно средств в государственной казне ($100 млрд требуется).");
-            }
-        }
-
-        function triggerRandomEvent() {
-            const events = [
-                {
-                    title: "Энергетический кризис на мировых рынках",
-                    desc: "Колебания цен на сырьевые ресурсы угрожают стабильности бюджета. Требуется вмешательство министерства финансов.",
-                    options: [
-                        { text: "Выделить экстренные субсидии (-$120 млрд, +5% стабильности)", action: () => { game.budget -= 120; game.stability += 5; addLog("Правительство субсидировало энергетический сектор."); } },
-                        { text: "Переложить нагрузку на граждан (-8% стабильности, +$80 млрд в казну)", action: () => { game.budget += 80; game.stability -= 8; addLog("Граждане приняли на себя удар энергокризиса, вызвав волну недовольства."); } }
-                    ]
-                },
-                {
-                    title: "Пограничный дипломатический инцидент",
-                    desc: "Соседнее государство обвинило наши силы в нарушении границ. Ситуация накаляется.",
-                    options: [
-                        { text: "Провести жесткую ноту протеста и усилить гарнизоны (-$40 млрд)", action: () => { game.budget -= 40; game.military += 15000; addLog("Границы укреплены, напряженность в отношениях выросла."); } },
-                        { text: "Сгладить конфликт по дипломатическим каналам (-5 отношений с соседями)", action: () => { game.powers[0].relations -= 5; addLog("Конфликт улажен дипломатически ценой уступок в риторике."); } }
-                    ]
+                this.targetRegion.troops -= 1;
+                if (this.targetRegion.troops <= 0) {
+                    this.targetRegion.owner = this.owner;
+                    this.targetRegion.troops = 1;
                 }
-            ];
-
-            let ev = events[Math.floor(Math.random() * events.length)];
-            document.getElementById('modal-title').innerText = ev.title;
-            document.getElementById('modal-desc').innerText = ev.desc;
-            
-            let btnContainer = document.getElementById('modal-buttons');
-            btnContainer.innerHTML = '';
-            
-            ev.options.forEach(opt => {
-                let b = document.createElement('button');
-                b.className = 'btn';
-                b.innerText = opt.text;
-                b.onclick = () => {
-                    opt.action();
-                    document.getElementById('event-modal').classList.remove('active');
-                    updateUI();
-                };
-                btnContainer.appendChild(b);
-            });
-
-            document.getElementById('event-modal').classList.add('active');
+            }
+        } else {
+            this.x += (dx / dist) * this.speed;
+            this.y += (dy / dist) * this.speed;
         }
+    }
 
-        function openDiplomacy(idx) {
-            let p = game.powers[idx];
-            let actionChoice = prompt(`Диалог с лидером державы: ${p.name}\nТекущие отношения: ${p.relations}/100\n\n1. Предложить торговый пакт ($200 млрд)\n2. Выразить дипломатический протест`);
-            if (actionChoice === "1") {
-                if (game.budget >= 200) {
-                    game.budget -= 200;
-                    p.relations = Math.min(100, p.relations + 15);
-                    addLog(`Подписан выгодный экономический и торговый договор с ${p.name}.`);
-                    updateUI();
-                } else {
-                    alert("Недостаточно средств.");
-                }
-            } else if (actionChoice === "2") {
-                p.relations = Math.max(0, p.relations - 10);
-                addLog(`Отношения с ${p.name} ухудшились в результате жестких заявлений МИД.`);
-                updateUI();
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = OWNER_COLORS[this.owner] || '#ffffff';
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+function checkCustom(val) {
+    document.getElementById('custom-name-box').style.display = val === 'custom' ? 'flex' : 'none';
+}
+
+function initGame() {
+    let selectVal = document.getElementById('country-select').value;
+    if (selectVal === 'custom') {
+        playerFaction = document.getElementById('custom-name-input').value || 'Моя Держава';
+        OWNER_COLORS[playerFaction] = '#00f0ff';
+        // Назначаем игроку центральный регион
+        REGIONS[0].owner = playerFaction;
+    } else {
+        playerFaction = selectVal;
+    }
+
+    document.getElementById('player-flag-name').innerText = playerFaction;
+    document.getElementById('player-flag-name').style.color = OWNER_COLORS[playerFaction] || '#2f81f7';
+    document.getElementById('start-screen').style.display = 'none';
+
+    // Запуск постоянного прироста войск (Пассивный доход за территории)
+    setInterval(() => {
+        REGIONS.forEach(r => {
+            if (r.owner !== 'Нейтралы' && r.troops < 120) {
+                r.troops += 1;
+            }
+        });
+    }, 1500);
+
+    gameLoop();
+}
+
+// Обработка кликов
+canvas.addEventListener('click', (e) => {
+    let mx = e.clientX;
+    let my = e.clientY;
+
+    let clicked = REGIONS.find(r => {
+        let rx = r.x * width;
+        let ry = r.y * height;
+        return Math.hypot(rx - mx, ry - my) < r.radius;
+    });
+
+    if (clicked) {
+        if (clicked.owner === playerFaction) {
+            selectedRegion = clicked;
+        } else if (selectedRegion) {
+            // Отправка атаки
+            sendAttack(selectedRegion, clicked);
+            selectedRegion = null;
+        }
+    } else {
+        selectedRegion = null;
+    }
+});
+
+function sendAttack(from, to) {
+    let sendAmount = Math.floor(from.troops / 2);
+    if (sendAmount <= 0) return;
+
+    from.troops -= sendAmount;
+
+    let fromX = from.x * width;
+    let fromY = from.y * height;
+    let toX = to.x * width;
+    let toY = to.y * height;
+
+    for (let i = 0; i < sendAmount; i++) {
+        setTimeout(() => {
+            attackParticles.push(new TroopParticle(fromX, fromY, toX, toY, from.owner, to));
+        }, i * 100);
+    }
+}
+
+function updateStats() {
+    let myRegions = REGIONS.filter(r => r.owner === playerFaction);
+    let totalTroops = myRegions.reduce((sum, r) => sum + r.troops, 0);
+
+    document.getElementById('stat-regions').innerText = myRegions.length;
+    document.getElementById('stat-troops').innerText = totalTroops;
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, width, height);
+
+    // 1. Отрисовка связей фронта (линий)
+    ctx.strokeStyle = '#161b22';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < REGIONS.length; i++) {
+        for (let j = i + 1; j < REGIONS.length; j++) {
+            let r1 = REGIONS[i];
+            let r2 = REGIONS[j];
+            let dist = Math.hypot((r1.x - r2.x) * width, (r1.y - r2.y) * height);
+            if (dist < width * 0.25) {
+                ctx.beginPath();
+                ctx.moveTo(r1.x * width, r1.y * height);
+                ctx.lineTo(r2.x * width, r2.y * height);
+                ctx.stroke();
             }
         }
-    </script>
+    }
+
+    // 2. Отрисовка регионов-крепостей
+    REGIONS.forEach(r => {
+        let rx = r.x * width;
+        let ry = r.y * height;
+        let color = OWNER_COLORS[r.owner] || '#8b949e';
+
+        // Подсветка выбранной территории
+        if (r === selectedRegion) {
+            ctx.beginPath();
+            ctx.arc(rx, ry, r.radius + 8, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // Заливка узла
+        ctx.beginPath();
+        ctx.arc(rx, ry, r.radius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.25;
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Текст названия и войск
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 15px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(r.troops, rx, ry + 5);
+
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.fillText(r.name, rx, ry + r.radius + 16);
+    });
+
+    // 3. Обновление летящих точек-армий
+    attackParticles = attackParticles.filter(p => !p.done);
+    attackParticles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+
+    updateStats();
+    requestAnimationFrame(gameLoop);
+}
+</script>
 </body>
 </html>
