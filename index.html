@@ -3,368 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Госстратегия: Симулятор Президента</title>
+    <title>Global Crisis: State Strategy</title>
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --panel-bg: rgba(18, 26, 43, 0.85);
-            --border-color: #1e2d4a;
-            --accent-color: #00d2ff;
-            --text-main: #e2e8f0;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
+            --bg-body: #0f1115;
+            --bg-panel: #161920;
+            --bg-panel-header: #1e222d;
+            --border-color: #2a2f3d;
+            --text-main: #d0d4dc;
+            --text-muted: #848d9f;
+            --accent: #c0392b; /* Строгий красный акцент */
+            --accent-blue: #2980b9;
+            --success: #27ae60;
+            --warning: #f39c12;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
-        body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; padding: 20px; display: flex; justify-content: center; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        .app-container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+        /* Экраны */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: 0.3s; }
+        .screen.hidden { opacity: 0; pointer-events: none; }
 
-        /* Left Side: Stats & Controls */
-        .main-content { display: flex; flex-direction: column; gap: 20px; }
+        .setup-box { background: var(--bg-panel); border: 1px solid var(--border-color); width: 500px; padding: 30px; border-radius: 6px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .setup-title { font-size: 20px; font-weight: bold; color: #fff; border-bottom: 2px solid var(--accent); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; }
+        .form-control { background: #0b0d10; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 4px; font-size: 14px; outline: none; }
+        .form-control:focus { border-color: var(--accent); }
 
-        /* Header Stat Bar */
-        .stat-bar {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
-            background: var(--panel-bg); border: 1px solid var(--border-color);
-            padding: 15px 20px; border-radius: 14px; backdrop-filter: blur(10px);
-        }
-        .stat-card { display: flex; flex-direction: column; gap: 5px; }
-        .stat-title { font-size: 13px; color: var(--text-muted); text-transform: uppercase; }
-        .stat-value { font-size: 22px; font-weight: bold; color: var(--accent-color); }
-        .stat-sub { font-size: 12px; }
+        /* Интерфейс игры */
+        #game-interface { display: grid; grid-template-rows: 50px 1fr; height: 100vh; }
+        
+        header { background: var(--bg-panel-header); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .top-stats { display: flex; gap: 25px; font-size: 13px; }
+        .top-stat b { color: #fff; }
 
-        /* Panels Grid */
-        .grid-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .panel {
-            background: var(--panel-bg); border: 1px solid var(--border-color);
-            border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 15px;
-            backdrop-filter: blur(10px);
-        }
-        .panel-title { font-size: 16px; font-weight: bold; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; display: flex; justify-content: space-between; }
+        .main-layout { display: grid; grid-template-columns: 280px 1fr 320px; height: calc(100vh - 50px); background: var(--bg-body); }
+        
+        .column { background: var(--bg-panel); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .column:last-child { border-right: none; border-left: 1px solid var(--border-color); }
+        
+        .col-header { background: var(--bg-panel-header); padding: 12px 15px; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); color: var(--text-muted); }
+        .col-content { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; flex: 1; }
 
-        /* Controls Slider */
-        .slider-group { display: flex; flex-direction: column; gap: 8px; }
-        .slider-label { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); }
-        input[type="range"] {
-            width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; outline: none; accent-color: var(--accent-color);
-        }
+        /* Элементы управления */
+        .btn { background: #222632; border: 1px solid var(--border-color); color: #fff; padding: 10px 15px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: 0.2s; text-align: center; }
+        .btn:hover { background: #2c3242; border-color: #4a5568; }
+        .btn-accent { background: var(--accent); border-color: #962d22; }
+        .btn-accent:hover { background: #d63031; }
 
-        /* Lists & Buttons */
-        .country-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-            padding: 12px 15px; border-radius: 10px; font-size: 14px;
-        }
-        .btn {
-            background: linear-gradient(135deg, #00d2ff, #0077ff); border: none; color: white;
-            padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;
-        }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn:active { transform: translateY(0); }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); }
-        .btn-next-turn {
-            width: 100%; padding: 16px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;
-            background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
-        }
+        .country-card { background: #12151c; border: 1px solid var(--border-color); padding: 12px; border-radius: 4px; display: flex; flex-direction: column; gap: 8px; }
+        .country-name { font-weight: bold; font-size: 14px; color: #fff; }
+        
+        /* Лог событий */
+        .log-box { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+        .log-entry { background: #12151c; border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 0 4px 4px 0; line-height: 1.4; color: var(--text-main); }
 
-        /* Right Side: News & Events */
-        .sidebar { display: flex; flex-direction: column; gap: 20px; }
-        .log-box {
-            background: rgba(0,0,0,0.3); border: 1px solid var(--border-color);
-            border-radius: 10px; padding: 12px; height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px;
-        }
-        .log-item { padding: 8px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border-left: 3px solid var(--accent-color); }
-        .log-event { border-color: var(--warning); }
-        .log-alert { border-color: var(--danger); }
+        /* Ползунки и мини-панели */
+        .slider-group { display: flex; flex-direction: column; gap: 5px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
 
-        /* Modal Box for Events */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
-            display: flex; justify-content: center; align-items: center; z-index: 100;
-            visibility: hidden; opacity: 0; transition: 0.3s;
-        }
+        /* Модальные окна */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 200; visibility: hidden; opacity: 0; transition: 0.3s; }
         .modal-overlay.active { visibility: visible; opacity: 1; }
-        .modal {
-            background: #131d31; border: 1px solid var(--accent-color);
-            width: 90%; max-width: 500px; padding: 25px; border-radius: 16px;
-            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); display: flex; flex-direction: column; gap: 15px;
-        }
-        .modal-title { font-size: 18px; color: var(--accent-color); font-weight: bold; }
-        .modal-desc { font-size: 14px; color: var(--text-main); line-height: 1.5; }
-        .modal-options { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .modal { background: var(--bg-panel); border: 1px solid var(--border-color); width: 450px; padding: 25px; border-radius: 6px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-title { font-size: 16px; font-weight: bold; color: #fff; text-transform: uppercase; }
+        .modal-text { font-size: 13px; color: var(--text-main); line-height: 1.5; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <!-- Главный экран -->
-    <div class="main-content">
-        <!-- Статистика государства -->
-        <div class="stat-bar">
-            <div class="stat-card">
-                <span class="stat-title">Казна (Бюджет)</span>
-                <span class="stat-value" id="val-budget">$5,000 Млрд</span>
-                <span class="stat-sub" id="sub-budget" style="color: var(--success);">+$120 / ход</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-title">Стабильность</span>
-                <span class="stat-value" id="val-stability">78%</span>
-                <span class="stat-sub" style="color: var(--text-muted);">Поддержка народа</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-title">Армия & Влияние</span>
-                <span class="stat-value" id="val-military">450 тыс.</span>
-                <span class="stat-sub" style="color: var(--text-muted);">Сила державы</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-title">Ход & Год</span>
-                <span class="stat-value" id="val-turn">1</span>
-                <span class="stat-sub" id="val-year">2026 год</span>
-            </div>
-        </div>
-
-        <!-- Панели управления -->
-        <div class="grid-panels">
-            <!-- Экономика -->
-            <div class="panel">
-                <div class="panel-title">Управление Экономикой</div>
-                <div class="slider-group">
-                    <div class="slider-label"><span>Налог на граждан</span><b id="lbl-tax-citizens">15%</b></div>
-                    <input type="range" id="tax-citizens" min="5" max="45" value="15">
-                </div>
-                <div class="slider-group">
-                    <div class="slider-label"><span>Налог на бизнес</span><b id="lbl-tax-biz">20%</b></div>
-                    <input type="range" id="tax-biz" min="5" max="50" value="20">
-                </div>
-                <div class="slider-group">
-                    <div class="slider-label"><span>Расходы на медицину и Науку</span><b id="lbl-spend-med">$50 Млрд</b></div>
-                    <input type="range" id="spend-med" min="10" max="200" value="50">
-                </div>
-                <div class="slider-group">
-                    <div class="slider-label"><span>Финансирование Армии</span><b id="lbl-spend-mil">$80 Млрд</b></div>
-                    <input type="range" id="spend-mil" min="10" max="300" value="80">
-                </div>
+    <!-- ЭКРАН СТАРТА И ВЫБОРА СТРАНЫ -->
+    <div class="screen" id="setup-screen">
+        <div class="setup-box">
+            <div class="setup-title">Конфигурация Новой Игры</div>
+            <div class="form-group">
+                <label>Режим выбора государства</label>
+                <select class="form-control" id="select-mode" onchange="toggleCustomCountry(this.value)">
+                    <option value="preset">Выбрать существующую державу</option>
+                    <option value="custom">Создать собственное государство</option>
+                </select>
             </div>
 
-            <!-- Дипломатия -->
-            <div class="panel">
-                <div class="panel-title">Международные Отношения</div>
-                <div style="display: flex; flex-direction: column; gap: 10px;" id="diplomacy-list">
-                    <!-- Заполняется JS -->
-                </div>
+            <div class="form-group" id="preset-group">
+                <label>Государство</label>
+                <select class="form-control" id="select-country">
+                    <option value="Россия">Российская Федерация (Ядерная держава)</option>
+                    <option value="США">Соединенные Штаты Америки (Мировой гегемон)</option>
+                    <option value="Китай">Китайская Народная Республика (Экономический гигант)</option>
+                    <option value="Германия">Федеративная Республика Германия (Европейский лидер)</option>
+                    <option value="Украина">Украина (Региональный субъект)</option>
+                </select>
             </div>
-        </div>
 
-        <!-- Кнопка перехода -->
-        <button class="btn btn-next-turn" id="next-turn-btn">Завершить ход ➔</button>
-    </div>
-
-    <!-- Боковая панель новостей -->
-    <div class="sidebar">
-        <div class="panel" style="height: 100%;">
-            <div class="panel-title">Сводка событий</div>
-            <div class="log-box" id="game-log">
-                <div class="log-item">Вы вступили в должность главы государства. Проведите реформы с умом.</div>
+            <div class="form-group" id="custom-group" style="display: none;">
+                <label>Название государства</label>
+                <input type="text" class="form-control" id="custom-name" value="Новая Республика">
             </div>
+
+            <button class="btn btn-accent" style="margin-top: 10px;" onclick="startGame()">Инициировать Симуляцию</button>
         </div>
     </div>
-</div>
 
-<!-- Модальное окно событий -->
-<div class="modal-overlay" id="event-modal">
-    <div class="modal">
-        <div class="modal-title" id="m-title">Событие в стране</div>
-        <div class="modal-desc" id="m-desc">Описание события...</div>
-        <div class="modal-options" id="m-options"></div>
-    </div>
-</div>
-
-<script>
-// Состояние игры
-let gameState = {
-    turn: 1,
-    year: 2026,
-    budget: 5000,
-    stability: 78,
-    military: 450,
-    taxCitizens: 15,
-    taxBiz: 20,
-    spendMed: 50,
-    spendMil: 80,
-    relations: [
-        { name: "США", status: "Нейтралитет", score: 50 },
-        { name: "Китай", status: "Торговый союз", score: 75 },
-        { name: "Евросоюз", status: "Нейтралитет", score: 60 }
-    ]
-};
-
-// События
-const randomEvents = [
-    {
-        title: "Забастовка Профсоюзов",
-        desc: "Рабочие крупных заводов требуют снижения налогов и повышения зарплат. Заводы приостановили работу.",
-        options: [
-            { text: "Снизить налог и выдать субсидии (-$200 Млрд, +10% Стабильности)", action: () => { gameState.budget -= 200; gameState.stability += 10; } },
-            { text: "Отправить полицию разогнать митинги (-15% Стабильности, +$0)", action: () => { gameState.stability -= 15; } }
-        ]
-    },
-    {
-        title: "Научный Прорыв",
-        desc: "Наши ученые разработали новую технологию в энергетике!",
-        options: [
-            { text: "Внедрить в производство (-$150 Млрд, +$50/ход доход)", action: () => { gameState.budget -= 150; gameState.budgetIncomeBonus = (gameState.budgetIncomeBonus || 0) + 50; } },
-            { text: "Продать патент за рубеж (+$300 Млрд)", action: () => { gameState.budget += 300; } }
-        ]
-    },
-    {
-        title: "Международный Кризис",
-        desc: "Соседнее государство усиливает военное присутствие у наших границ.",
-        options: [
-            { text: "Провести военные учения (-$100 Млрд, +50 тыс. Армии)", action: () => { gameState.budget -= 100; gameState.military += 50; } },
-            { text: "Дипломатические переговоры (+5% Стабильности)", action: () => { gameState.stability += 5; } }
-        ]
-    }
-];
-
-// Обновление UI
-function updateUI() {
-    document.getElementById('val-budget').innerText = `$${gameState.budget.toLocaleString()} Млрд`;
-    document.getElementById('val-stability').innerText = `${Math.min(100, Math.max(0, gameState.stability))}%`;
-    document.getElementById('val-military').innerText = `${gameState.military} тыс.`;
-    document.getElementById('val-turn').innerText = gameState.turn;
-    document.getElementById('val-year').innerText = `${gameState.year} год`;
-
-    // Расчет доходов
-    let income = (gameState.taxCitizens * 20) + (gameState.taxBiz * 25) + (gameState.budgetIncomeBonus || 0);
-    let expenses = gameState.spendMed + gameState.spendMil;
-    let net = income - expenses;
-    
-    let subBudget = document.getElementById('sub-budget');
-    subBudget.innerText = `${net >= 0 ? '+' : ''}$${net} Млрд / ход`;
-    subBudget.style.color = net >= 0 ? 'var(--success)' : 'var(--danger)';
-
-    // Обновление списка стран
-    let dipContainer = document.getElementById('diplomacy-list');
-    dipContainer.innerHTML = '';
-    gameState.relations.forEach((country, index) => {
-        let div = document.createElement('div');
-        div.className = 'country-item';
-        div.innerHTML = `
-            <div>
-                <b>${country.name}</b> <br>
-                <small style="color:var(--text-muted)">${country.status} (${country.score}/100)</small>
+    <!-- ОСНОВНОЙ ИГРОВОЙ ИНТЕРФЕЙС -->
+    <div id="game-interface" style="display: none;">
+        <header>
+            <div style="font-weight: bold; font-size: 14px; letter-spacing: 1px; color: #fff;" id="header-country-title">РОССИЙСКАЯ ФЕДЕРАЦИЯ</div>
+            <div class="top-stats">
+                <div class="top-stat">Казна: <b id="stat-budget">$4,200 млрд</b></div>
+                <div class="top-stat">ВВП: <b id="stat-gdp">$2,100 млрд</b></div>
+                <div class="top-stat">Стабильность: <b id="stat-stability">82%</b></div>
+                <div class="top-stat">Армия: <b id="stat-military">1,150,000</b></div>
+                <div class="top-stat">Дата: <b id="stat-date">Январь 2026</b></div>
             </div>
-            <button class="btn" style="padding: 6px 10px; font-size: 12px;" onclick="improveRelations(${index})">Улучшить ($50M)</button>
-        `;
-        dipContainer.appendChild(div);
-    });
-}
+            <button class="btn" onclick="nextTurn()" style="padding: 6px 12px; background: #27ae60; border-color: #1e8449;">Следующий месяц ➔</button>
+        </header>
 
-function logMessage(text, type = '') {
-    let logBox = document.getElementById('game-log');
-    let item = document.createElement('div');
-    item.className = `log-item ${type}`;
-    item.innerText = `[Год ${gameState.year}] ${text}`;
-    logBox.prepend(item);
-}
+        <div class="main-layout">
+            <!-- Левая колонка: Управление государством -->
+            <div class="column">
+                <div class="col-header">Государственное Управление</div>
+                <div class="col-content">
+                    <div class="slider-group">
+                        <div class="slider-header"><span>Налогообложение</span><span id="lbl-tax">18%</span></div>
+                        <input type="range" id="input-tax" min="5" max="45" value="18" oninput="updateSliders()">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header"><span>Финансирование Обороны</span><span id="lbl-mil">$60 млрд</span></div>
+                        <input type="range" id="input-mil" min="10" max="250" value="60" oninput="updateSliders()">
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header"><span>Социальные расходы</span><span id="lbl-soc">$40 млрд</span></div>
+                        <input type="range" id="input-soc" min="10" max="200" value="40" oninput="updateSliders()">
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid var(--border-color);">
+                    <button class="btn" onclick="openRecruitModal()">Провести мобилизацию</button>
+                    <button class="btn" onclick="openInvestModal()">Инвестировать в экономику</button>
+                </div>
+            </div>
 
-// Слайдеры
-document.getElementById('tax-citizens').oninput = function() {
-    gameState.taxCitizens = parseInt(this.value);
-    document.getElementById('lbl-tax-citizens').innerText = this.value + '%';
-    updateUI();
-};
-document.getElementById('tax-biz').oninput = function() {
-    gameState.taxBiz = parseInt(this.value);
-    document.getElementById('lbl-tax-biz').innerText = this.value + '%';
-    updateUI();
-};
-document.getElementById('spend-med').oninput = function() {
-    gameState.spendMed = parseInt(this.value);
-    document.getElementById('lbl-spend-med').innerText = '$' + this.value + ' Млрд';
-    updateUI();
-};
-document.getElementById('spend-mil').oninput = function() {
-    gameState.spendMil = parseInt(this.value);
-    document.getElementById('lbl-spend-mil').innerText = '$' + this.value + ' Млрд';
-    updateUI();
-};
+            <!-- Центральная колонка: Мировая карта / Сводка геополитики -->
+            <div class="column" style="background: #0d0f14;">
+                <div class="col-header">Мировая Геополитическая Сводка</div>
+                <div class="col-content" id="world-powers-list">
+                    <!-- Заполняется динамически -->
+                </div>
+            </div>
 
-function improveRelations(index) {
-    if (gameState.budget >= 50) {
-        gameState.budget -= 50;
-        gameState.relations[index].score = Math.min(100, gameState.relations[index].score + 10);
-        logMessage(`Улучшены отношения с ${gameState.relations[index].name}`);
-        updateUI();
-    } else {
-        alert("Недостаточно денег в казне!");
-    }
-}
+            <!-- Правая колонка: Журнал событий -->
+            <div class="column">
+                <div class="col-header">Сводка Новостей и Событий</div>
+                <div class="col-content log-box" id="game-log">
+                    <div class="log-entry">Система инициализирована. Правительство приступило к исполнению обязанностей.</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-// Следующий ход
-document.getElementById('next-turn-btn').onclick = function() {
-    gameState.turn++;
-    gameState.year = 2026 + Math.floor(gameState.turn / 2);
+    <!-- Модальное окно событий -->
+    <div class="modal-overlay" id="event-modal">
+        <div class="modal">
+            <div class="modal-title" id="modal-title">Внимание, господин Президент</div>
+            <div class="modal-text" id="modal-desc">Описание кризисной ситуации...</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;" id="modal-buttons">
+                <!-- Кнопки выбора -->
+            </div>
+        </div>
+    </div>
 
-    // Доходы и расходы
-    let income = (gameState.taxCitizens * 20) + (gameState.taxBiz * 25) + (gameState.budgetIncomeBonus || 0);
-    let expenses = gameState.spendMed + gameState.spendMil;
-    let net = income - expenses;
-    gameState.budget += net;
-
-    // Влияние налогов на стабильность
-    if (gameState.taxCitizens > 25) gameState.stability -= 3;
-    if (gameState.taxBiz > 30) gameState.stability -= 2;
-    if (gameState.spendMed > 80) gameState.stability += 2;
-
-    logMessage(`Ход завершен. Чистый доход: $${net} Млрд.`);
-
-    // Проверка проигрыша
-    if (gameState.stability <= 0) {
-        alert("Революция! Народи сверг ваше правительство. Игра окончена.");
-        location.reload();
-        return;
-    }
-
-    // Случайное событие (шанс 40%)
-    if (Math.random() < 0.5) {
-        triggerRandomEvent();
-    }
-
-    updateUI();
-};
-
-function triggerRandomEvent() {
-    let ev = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-    document.getElementById('m-title').innerText = ev.title;
-    document.getElementById('m-desc').innerText = ev.desc;
-    
-    let optContainer = document.getElementById('m-options');
-    optContainer.innerHTML = '';
-    
-    ev.options.forEach(opt => {
-        let btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.innerText = opt.text;
-        btn.onclick = () => {
-            opt.action();
-            document.getElementById('event-modal').classList.remove('active');
-            logMessage(`Принято решение по событию "${ev.title}"`, 'log-event');
-            updateUI();
+    <script>
+        let game = {
+            countryName: "Россия",
+            budget: 4200,
+            gdp: 2100,
+            stability: 82,
+            military: 1150000,
+            tax: 18,
+            milBudget: 60,
+            socBudget: 40,
+            turn: 0,
+            month: 0,
+            year: 2026,
+            powers: [
+                { name: "США", status: "Соперник", relations: 35, gdp: 25000, mil: 1350000 },
+                { name: "Китай", status: "Стратегический партнер", relations: 75, gdp: 18000, mil: 2000000 },
+                { name: "Евросоюз", status: "Оппонент", relations: 25, gdp: 16000, mil: 900000 },
+                { name: "Индия", status: "Нейтрален", relations: 60, gdp: 3500, mil: 1450000 }
+            ]
         };
-        optContainer.appendChild(btn);
-    });
 
-    document.getElementById('event-modal').classList.add('active');
-}
+        const months = ["Январь",га="Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
-// Старт
-updateUI();
-</script>
+        function toggleCustomCountry(val) {
+            document.getElementById('preset-group').style.display = val === 'preset' ? 'flex' : 'none';
+            document.getElementById('custom-group').style.display = val === 'custom' ? 'flex' : 'none';
+        }
+
+        function startGame() {
+            const mode = document.getElementById('select-mode').value;
+            if (mode === 'preset') {
+                game.countryName = document.getElementById('select-country').value;
+            } else {
+                game.countryName = document.getElementById('custom-name').value || "Республика";
+            }
+
+            document.getElementById('header-country-title').innerText = game.countryName.toUpperCase();
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-interface').style.display = 'grid';
+            
+            updateUI();
+            addLog(`Новое правительство во главе с лидером государства приступило к управлению.`);
+        }
+
+        function updateSliders() {
+            game.tax = parseInt(document.getElementById('input-tax').value);
+            game.milBudget = parseInt(document.getElementById('input-mil').value);
+            game.socBudget = parseInt(document.getElementById('input-soc').value);
+
+            document.getElementById('lbl-tax').innerText = game.tax + '%';
+            document.getElementById('lbl-mil').innerText = '$' + game.milBudget + ' млрд';
+            document.getElementById('lbl-soc').innerText = '$' + game.socBudget + ' млрд';
+        }
+
+        function updateUI() {
+            document.getElementById('stat-budget').innerText = `$${Math.round(game.budget)} млрд`;
+            document.getElementById('stat-gdp').innerText = `$${Math.round(game.gdp)} млрд`;
+            document.getElementById('stat-stability').innerText = `${Math.round(game.stability)}%`;
+            document.getElementById('stat-military').innerText = game.military.toLocaleString();
+            
+            let monthName = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"][game.month];
+            document.getElementById('stat-date').innerText = `${monthName} ${game.year}`;
+
+            // Отрисовка списка держав
+            let container = document.getElementById('world-powers-list');
+            container.innerHTML = '';
+            game.powers.forEach((p, idx) => {
+                let card = document.createElement('div');
+                card.className = 'country-card';
+                card.innerHTML = `
+                    <div class="country-name">${p.name} <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(${p.status})</span></div>
+                    <div style="font-size:12px; color:var(--text-muted);">Отношения: <b style="color:#fff">${p.relations}/100</b> | ВВП: <b style="color:#fff">$${p.gdp} млрд</b></div>
+                    <button class="btn" style="padding: 5px; font-size:11px; margin-top:5px;" onclick="openDiplomacy(${idx})жи">Дипломатический контакт</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addLog(text) {
+            let logBox = document.getElementById('game-log');
+            let entry = document.createElement('div');
+            entry.className = 'log-entry';
+            let monthName = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"][game.month];
+            entry.innerText = `[${monthName} ${game.year}] ${text}`;
+            logBox.prepend(entry);
+        }
+
+        function nextTurn() {
+            game.turn++;
+            game.month++;
+            if (game.month > 11) {
+                game.month = 0;
+                game.year++;
+            }
+
+            // Финансовый расчет
+            let income = (game.gdp * (game.tax / 100)) / 12;
+            let expenses = (game.milBudget + game.socBudget) / 12;
+            let net = income - expenses;
+            game.budget += net;
+
+            // Изменение стабильности от налогов и социальной сферы
+            if (game.tax > 30) game.stability -= 1.5;
+            if (game.socBudget > 60) game.stability += 1.0;
+            if (game.stability > 100) game.stability = 100;
+            if (game.stability < 0) game.stability = 0;
+
+            // Проверка поражения
+            if (game.stability <= 5) {
+                alert("КРИТИЧЕСКИЙ КРИЗИС: В стране произошел государственный переворот из-за падения стабильности. Игра окончена.");
+                location.reload();
+                return;
+            }
+
+            addLog(`Финансовый отчет за месяц: Доходы: $${Math.round(income)} млрд, Расходы: $${Math.round(expenses)} млрд.`);
+
+            // Случайные события
+            if (Math.random() < 0.35) {
+                triggerRandomEvent();
+            }
+
+            updateUI();
+        }
+
+        function openRecruitModal() {
+            if (game.budget >= 50) {
+                game.budget -= 50;
+                game.military += 35000;
+                addLog("Проведена частичная мобилизация и набор контрактников (+35,000 военного персонала).");
+                updateUI();
+            } else {
+                alert("Недостаточно средств в государственной казне ($50 млрд требуется).");
+            }
+        }
+
+        function openInvestModal() {
+            if (game.budget >= 100) {
+                game.budget -= 100;
+                game.gdp += 120;
+                addLog("Успешно реализованы инвестиционные инфраструктурные проекты (ВВП вырос).");
+                updateUI();
+            } else {
+                alert("Недостаточно средств в государственной казне ($100 млрд требуется).");
+            }
+        }
+
+        function triggerRandomEvent() {
+            const events = [
+                {
+                    title: "Энергетический кризис на мировых рынках",
+                    desc: "Колебания цен на сырьевые ресурсы угрожают стабильности бюджета. Требуется вмешательство министерства финансов.",
+                    options: [
+                        { text: "Выделить экстренные субсидии (-$120 млрд, +5% стабильности)", action: () => { game.budget -= 120; game.stability += 5; addLog("Правительство субсидировало энергетический сектор."); } },
+                        { text: "Переложить нагрузку на граждан (-8% стабильности, +$80 млрд в казну)", action: () => { game.budget += 80; game.stability -= 8; addLog("Граждане приняли на себя удар энергокризиса, вызвав волну недовольства."); } }
+                    ]
+                },
+                {
+                    title: "Пограничный дипломатический инцидент",
+                    desc: "Соседнее государство обвинило наши силы в нарушении границ. Ситуация накаляется.",
+                    options: [
+                        { text: "Провести жесткую ноту протеста и усилить гарнизоны (-$40 млрд)", action: () => { game.budget -= 40; game.military += 15000; addLog("Границы укреплены, напряженность в отношениях выросла."); } },
+                        { text: "Сгладить конфликт по дипломатическим каналам (-5 отношений с соседями)", action: () => { game.powers[0].relations -= 5; addLog("Конфликт улажен дипломатически ценой уступок в риторике."); } }
+                    ]
+                }
+            ];
+
+            let ev = events[Math.floor(Math.random() * events.length)];
+            document.getElementById('modal-title').innerText = ev.title;
+            document.getElementById('modal-desc').innerText = ev.desc;
+            
+            let btnContainer = document.getElementById('modal-buttons');
+            btnContainer.innerHTML = '';
+            
+            ev.options.forEach(opt => {
+                let b = document.createElement('button');
+                b.className = 'btn';
+                b.innerText = opt.text;
+                b.onclick = () => {
+                    opt.action();
+                    document.getElementById('event-modal').classList.remove('active');
+                    updateUI();
+                };
+                btnContainer.appendChild(b);
+            });
+
+            document.getElementById('event-modal').classList.add('active');
+        }
+
+        function openDiplomacy(idx) {
+            let p = game.powers[idx];
+            let actionChoice = prompt(`Диалог с лидером державы: ${p.name}\nТекущие отношения: ${p.relations}/100\n\n1. Предложить торговый пакт ($200 млрд)\n2. Выразить дипломатический протест`);
+            if (actionChoice === "1") {
+                if (game.budget >= 200) {
+                    game.budget -= 200;
+                    p.relations = Math.min(100, p.relations + 15);
+                    addLog(`Подписан выгодный экономический и торговый договор с ${p.name}.`);
+                    updateUI();
+                } else {
+                    alert("Недостаточно средств.");
+                }
+            } else if (actionChoice === "2") {
+                p.relations = Math.max(0, p.relations - 10);
+                addLog(`Отношения с ${p.name} ухудшились в результате жестких заявлений МИД.`);
+                updateUI();
+            }
+        }
+    </script>
 </body>
 </html>
