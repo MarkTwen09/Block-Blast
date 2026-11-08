@@ -2,23 +2,24 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Conquest: Tactical War Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>War of Dots: Global Conquest</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@600;700&display=swap');
 
         * {
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
 
         body {
             font-family: 'Rajdhani', sans-serif;
-            background-color: #030712;
+            background-color: #080d1a;
             color: #f3f4f6;
             overflow: hidden;
         }
@@ -29,421 +30,164 @@
 
         /* Glassmorphism Panels */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
         }
 
-        .glass-panel-glow {
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2), inset 0 0 15px rgba(56, 189, 248, 0.05);
+        /* Custom glow buttons */
+        .btn-upgrade {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            transition: all 0.2s ease;
         }
-
-        /* Tactical Grid Background */
-        .grid-bg {
-            background-image: 
-                radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.08) 0%, transparent 80%),
-                linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
+        .btn-upgrade:hover:not(:disabled) {
+            border-color: rgba(56, 189, 248, 0.8);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            transform: translateY(-2px);
         }
-
-        /* CRT Scanlines Overlay */
-        .scanlines {
-            background: linear-gradient(
-                rgba(18, 16, 16, 0) 50%, 
-                rgba(0, 0, 0, 0.25) 50%
-            );
-            background-size: 100% 4px;
-            pointer-events: none;
+        .btn-upgrade:active:not(:disabled) {
+            transform: translateY(0);
         }
-
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.6);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(56, 189, 248, 0.4);
-            border-radius: 3px;
+        .btn-upgrade:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
     </style>
 </head>
-<body class="w-screen h-screen flex flex-col bg-slate-950 grid-bg relative overflow-hidden">
-    <!-- Visual Scanline Overlay -->
-    <div class="scanlines absolute inset-0 z-10 pointer-events-none opacity-40"></div>
+<body class="w-screen h-screen flex flex-col relative overflow-hidden bg-slate-950">
 
-    <!-- MAIN GAME LAYOUT -->
-    <div id="game-app" class="relative flex-1 w-full h-full flex flex-col z-0">
-        
-        <!-- HEADER CONTROL BAR -->
-        <header class="h-16 px-6 glass-panel z-20 flex items-center justify-between border-b border-cyan-900/40">
-            <!-- Game Title & Player Nation Info -->
-            <div class="flex items-center space-x-6">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-globe text-cyan-400 text-2xl animate-pulse"></i>
-                    <h1 class="font-orbitron font-black text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500">
-                        GLOBAL WAR MAP
-                    </h1>
-                </div>
+    <!-- CANVAS ENGINE -->
+    <canvas id="gameCanvas" class="w-full h-full absolute inset-0 z-0 cursor-crosshair"></canvas>
 
-                <div id="player-flag-badge" class="hidden items-center px-3 py-1 rounded-lg bg-slate-900/90 border border-slate-700 space-x-2">
-                    <span id="player-country-name" class="font-orbitron font-bold text-sm tracking-wide text-cyan-300">NATION</span>
-                    <span id="player-country-tag" class="text-xs px-2 py-0.5 rounded font-mono font-bold">TAG</span>
+    <!-- HEADER / TOP HUD -->
+    <header class="absolute top-0 left-0 right-0 h-16 px-4 md:px-8 glass-panel z-10 flex items-center justify-between border-b border-cyan-900/40">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-burst text-cyan-400 text-2xl animate-pulse"></i>
+            <div>
+                <h1 class="font-orbitron font-black text-lg md:text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500">
+                    WAR OF DOTS
+                </h1>
+                <p class="text-[10px] text-slate-400 tracking-widest uppercase font-semibold">State Conquest Real-Time RTS</p>
+            </div>
+        </div>
+
+        <!-- STATS & RESOURCES -->
+        <div class="flex items-center space-x-4 md:space-x-8">
+            <!-- Player Territory Control -->
+            <div class="flex items-center space-x-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-cyan-500/30">
+                <i class="fa-solid fa-flag text-cyan-400 text-sm"></i>
+                <div class="text-xs font-orbitron font-bold">
+                    <span id="stat-nodes" class="text-cyan-300">0</span> <span class="text-slate-500 text-[10px]">ЗАЗВАТАНО</span>
                 </div>
             </div>
 
-            <!-- Economy & Resource Counters -->
-            <div class="flex items-center space-x-6">
-                <!-- Gold / War Budget -->
-                <div class="flex items-center space-x-3 bg-slate-900/80 px-4 py-1.5 rounded-xl border border-amber-500/30">
-                    <i class="fa-solid fa-coins text-amber-400 text-lg"></i>
-                    <div>
-                        <div class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Военный Бюджет</div>
-                        <div class="flex items-center space-x-1 font-orbitron font-bold text-amber-300 text-base">
-                            <span id="res-gold">1,000</span>
-                            <span id="res-gold-rate" class="text-xs text-emerald-400 font-sans font-semibold ml-1">(+10/с)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Manpower Pool -->
-                <div class="flex items-center space-x-3 bg-slate-900/80 px-4 py-1.5 rounded-xl border border-blue-500/30">
-                    <i class="fa-solid fa-users text-blue-400 text-lg"></i>
-                    <div>
-                        <div class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Резерв Войск</div>
-                        <div class="flex items-center space-x-1 font-orbitron font-bold text-blue-300 text-base">
-                            <span id="res-manpower">500</span>
-                            <span id="res-manpower-rate" class="text-xs text-blue-400 font-sans font-semibold ml-1">(+5/с)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Control Nodes Progress -->
-                <div class="flex items-center space-x-3 bg-slate-900/80 px-4 py-1.5 rounded-xl border border-cyan-500/30">
-                    <i class="fa-solid fa-flag text-cyan-400 text-lg"></i>
-                    <div>
-                        <div class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Контроль Мира</div>
-                        <div class="font-orbitron font-bold text-cyan-300 text-base">
-                            <span id="res-nodes-captured">0</span> / <span id="res-nodes-total">0</span> <span class="text-xs text-slate-400">Узлов</span>
-                        </div>
-                    </div>
+            <!-- Total Player Armies -->
+            <div class="flex items-center space-x-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                <i class="fa-solid fa-users text-emerald-400 text-sm"></i>
+                <div class="text-xs font-orbitron font-bold">
+                    <span id="stat-troops" class="text-emerald-300">0</span> <span class="text-slate-500 text-[10px]">ВОЙСКА</span>
                 </div>
             </div>
 
-            <!-- Game Control Buttons -->
-            <div class="flex items-center space-x-3">
-                <div class="flex bg-slate-900/90 rounded-lg p-1 border border-slate-700/80">
-                    <button id="btn-pause" onclick="setGameSpeed(0)" class="px-3 py-1 rounded font-orbitron text-xs font-bold text-slate-400 hover:text-white transition">
-                        <i class="fa-solid fa-pause"></i>
-                    </button>
-                    <button id="btn-speed-1" onclick="setGameSpeed(1)" class="px-3 py-1 rounded font-orbitron text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-700/50 transition">
-                        1x
-                    </button>
-                    <button id="btn-speed-2" onclick="setGameSpeed(2)" class="px-3 py-1 rounded font-orbitron text-xs font-bold text-slate-400 hover:text-white transition">
-                        2x
-                    </button>
-                    <button id="btn-speed-5" onclick="setGameSpeed(5)" class="px-3 py-1 rounded font-orbitron text-xs font-bold text-slate-400 hover:text-white transition">
-                        5x
-                    </button>
-                </div>
-
-                <button onclick="toggleAudio()" id="btn-audio" class="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 text-cyan-400 hover:bg-slate-800 transition">
-                    <i class="fa-solid fa-volume-high"></i>
-                </button>
-
-                <button onclick="openTechTree()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-orbitron font-bold text-xs uppercase tracking-wider shadow-lg shadow-cyan-900/40 flex items-center space-x-2 border border-cyan-400/30 transition">
-                    <i class="fa-solid fa-microchip"></i>
-                    <span>Прокачка</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- VIEWPORT CANVAS & HUD OVERLAYS -->
-        <div class="relative flex-1 w-full h-full overflow-hidden">
-            <!-- CANVAS WORLD MAP -->
-            <canvas id="map-canvas" class="w-full h-full cursor-grab active:cursor-grabbing block"></canvas>
-
-            <!-- CONTROLS INSTRUCTIONS HUD -->
-            <div class="absolute top-4 left-4 pointer-events-none z-10 flex flex-col space-y-2">
-                <div class="glass-panel p-3.5 rounded-xl border border-slate-700/60 text-xs max-w-xs space-y-1.5 pointer-events-auto">
-                    <div class="font-orbitron font-bold text-cyan-400 flex items-center space-x-2">
-                        <i class="fa-solid fa-crosshairs"></i>
-                        <span>УПРАВЛЕНИЕ ТАКТИКОЙ</span>
-                    </div>
-                    <ul class="text-slate-300 space-y-1 text-[11px] list-disc list-inside">
-                        <li><span class="text-cyan-300 font-semibold">ЛКМ на узел</span>: Выбрать регион / армию</li>
-                        <li><span class="text-cyan-300 font-semibold">Клик на соседний узел</span>: Переместить / Атаковать</li>
-                        <li><span class="text-cyan-300 font-semibold">Колёсико мыши</span>: Масштаб (Zoom)</li>
-                        <li><span class="text-cyan-300 font-semibold">Зажать ЛКМ и тянуть</span>: Панорама карты</li>
-                    </ul>
+            <!-- Energy / Cash Gold -->
+            <div class="flex items-center space-x-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-amber-500/30">
+                <i class="fa-solid fa-coins text-amber-400 text-sm"></i>
+                <div class="text-xs font-orbitron font-bold">
+                    <span id="stat-gold" class="text-amber-300">0</span> <span class="text-amber-500/80 text-[10px]">(+$<span id="stat-gold-rate">0</span>/с)</span>
                 </div>
             </div>
+        </div>
 
-            <!-- NODE ACTION PANEL (BOTTOM HUD) -->
-            <div id="selection-panel" class="hidden absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-panel p-4 rounded-2xl border border-cyan-500/40 z-20 flex items-center space-x-6 min-w-[500px]">
-                <div class="flex flex-col">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Выбранный регион</span>
-                    <span id="sel-node-name" class="font-orbitron font-bold text-lg text-cyan-300">Название Региона</span>
-                    <span id="sel-node-owner" class="text-xs font-semibold text-slate-400">Владелец: Нейтрал</span>
-                </div>
+        <!-- AUDIO & RESTART -->
+        <div class="flex items-center space-x-2">
+            <button id="btn-sound" onclick="toggleSound()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-700 text-cyan-400 hover:bg-slate-800 transition">
+                <i class="fa-solid fa-volume-high"></i>
+            </button>
+            <button onclick="restartGame()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 border border-slate-700 text-amber-400 hover:bg-slate-800 transition" title="Перезапустить">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+    </header>
 
-                <div class="h-10 border-r border-slate-700"></div>
-
-                <div class="flex items-center space-x-4">
-                    <!-- Garrison / Armies -->
-                    <div class="text-center px-2">
-                        <div class="text-[10px] uppercase font-bold text-slate-400">Гарнизон</div>
-                        <div id="sel-node-troops" class="font-orbitron font-black text-2xl text-amber-400">0</div>
-                    </div>
-
-                    <!-- Recruit Action Buttons -->
-                    <div class="flex flex-col space-y-1">
-                        <button id="btn-recruit-10" onclick="recruitTroops(10)" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-orbitron font-bold text-emerald-400 transition flex items-center justify-between space-x-3">
-                            <span>+10 Пехота</span>
-                            <span class="text-[10px] text-amber-300">$100</span>
-                        </button>
-                        <button id="btn-recruit-50" onclick="recruitTroops(50)" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-orbitron font-bold text-emerald-400 transition flex items-center justify-between space-x-3">
-                            <span>+50 Дивизия</span>
-                            <span class="text-[10px] text-amber-300">$450</span>
-                        </button>
-                    </div>
-
-                    <!-- Deselect Button -->
-                    <button id="btn-deselect" onclick="deselectNode()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-400 text-xs font-orbitron font-bold transition">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
+    <!-- INSTRUCTIONS OVERLAY -->
+    <div class="absolute top-20 left-4 z-10 pointer-events-none hidden md:block">
+        <div class="glass-panel p-3 rounded-xl text-xs space-y-1 border border-slate-700/60 max-w-xs">
+            <div class="font-orbitron font-bold text-cyan-400 flex items-center space-x-2">
+                <i class="fa-solid fa-hand-pointer"></i>
+                <span>КАК ИГРАТЬ</span>
             </div>
-
-            <!-- COMBAT LOG TOAST MESSAGES -->
-            <div id="combat-log-container" class="absolute top-4 right-4 z-10 w-80 pointer-events-none flex flex-col space-y-2"></div>
+            <p class="text-slate-300 text-[11px] leading-tight">
+                Зажми <span class="text-cyan-300 font-bold">ЛКМ / Палец</span> на своей синей территории и <span class="text-cyan-300 font-bold">протяни линию</span> к врагу. Рой точек атакует!
+            </p>
         </div>
     </div>
 
-    <!-- START GAME MODAL (COUNTRY SELECTION) -->
-    <div id="modal-country-select" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md">
-        <div class="glass-panel p-8 rounded-3xl border border-cyan-500/40 max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl relative">
-            <div class="text-center mb-6">
-                <h2 class="font-orbitron font-black text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500 tracking-wider">
-                    ВЫБЕРИТЕ СВОЮ ДЕРЖАВУ
-                </h2>
-                <p class="text-slate-400 text-sm mt-1">Выберите государство, за которое будете воевать. Захватывайте регионы и доминируйте на мировой карте.</p>
+    <!-- BOTTOM UPGRADE BAR (State.io style upgrades) -->
+    <footer class="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex items-center space-x-2 md:space-x-4 max-w-full px-2">
+        <!-- Upgrade 1: Production Speed -->
+        <button id="upg-prod-btn" onclick="buyUpgrade('prod')" class="btn-upgrade p-2 md:p-3 rounded-2xl flex items-center space-x-3 text-left">
+            <div class="w-9 h-9 rounded-xl bg-cyan-950 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-base">
+                <i class="fa-solid fa-bolt"></i>
             </div>
-
-            <!-- Country Selection Grid -->
-            <div id="country-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto p-2 my-2 flex-1"></div>
-
-            <div class="mt-6 flex justify-between items-center pt-4 border-t border-slate-800">
-                <div class="text-xs text-slate-400 flex items-center space-x-2">
-                    <i class="fa-solid fa-shield-halved text-cyan-400"></i>
-                    <span>Симуляция глобальной войны в реальном времени</span>
-                </div>
-                <button id="btn-start-game" disabled onclick="startGame()" class="px-8 py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-500 font-orbitron font-extrabold text-sm tracking-wider uppercase transition-all duration-300 cursor-not-allowed">
-                    Начать Кампанию
-                </button>
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Прирост Точек</div>
+                <div class="font-orbitron font-bold text-xs text-white">Ур. <span id="upg-prod-lvl">1</span></div>
+                <div class="text-[11px] font-orbitron font-bold text-amber-400">$<span id="upg-prod-cost">50</span></div>
             </div>
+        </button>
+
+        <!-- Upgrade 2: Troop Movement Speed -->
+        <button id="upg-speed-btn" onclick="buyUpgrade('speed')" class="btn-upgrade p-2 md:p-3 rounded-2xl flex items-center space-x-3 text-left">
+            <div class="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-base">
+                <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Скорость Точек</div>
+                <div class="font-orbitron font-bold text-xs text-white">Ур. <span id="upg-speed-lvl">1</span></div>
+                <div class="text-[11px] font-orbitron font-bold text-amber-400">$<span id="upg-speed-cost">75</span></div>
+            </div>
+        </button>
+
+        <!-- Upgrade 3: Starting / Max Troops -->
+        <button id="upg-start-btn" onclick="buyUpgrade('start')" class="btn-upgrade p-2 md:p-3 rounded-2xl flex items-center space-x-3 text-left">
+            <div class="w-9 h-9 rounded-xl bg-purple-950 border border-purple-500/40 flex items-center justify-center text-purple-400 text-base">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Старт Войск</div>
+                <div class="font-orbitron font-bold text-xs text-white">Ур. <span id="upg-start-lvl">1</span></div>
+                <div class="text-[11px] font-orbitron font-bold text-amber-400">$<span id="upg-start-cost">100</span></div>
+            </div>
+        </button>
+    </footer>
+
+    <!-- GAME OVER / WIN MODAL -->
+    <div id="modal-end" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md">
+        <div class="glass-panel p-8 rounded-3xl border border-cyan-500/40 max-w-md w-full text-center space-y-6 shadow-2xl">
+            <div id="end-icon" class="text-6xl text-cyan-400">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div>
+                <h2 id="end-title" class="font-orbitron font-black text-3xl text-white">ПОБЕДА!</h2>
+                <p id="end-subtitle" class="text-slate-400 text-sm mt-2">Вы захватили все территории на карте!</p>
+            </div>
+            <button onclick="restartGame()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-orbitron font-black text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/30 transition">
+                Играть Снова
+            </button>
         </div>
     </div>
 
-    <!-- UPGRADES & TECH TREE MODAL -->
-    <div id="modal-tech-tree" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md">
-        <div class="glass-panel p-6 rounded-3xl border border-cyan-500/40 max-w-2xl w-full flex flex-col shadow-2xl relative">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-microchip text-cyan-400 text-2xl"></i>
-                    <h3 class="font-orbitron font-bold text-xl text-white">ВОЕННО-ПРОМЫШЛЕННАЯ ПРОКАЧКА</h3>
-                </div>
-                <button onclick="closeTechTree()" class="text-slate-400 hover:text-white text-lg px-2">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Upgrades List -->
-            <div class="space-y-4 my-2">
-                <!-- Upgrade 1: Firepower -->
-                <div class="glass-panel p-4 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-xl bg-red-950/60 border border-red-500/30 flex items-center justify-center text-red-400 text-xl">
-                            <i class="fa-solid fa-gun"></i>
-                        </div>
-                        <div>
-                            <div class="font-orbitron font-bold text-white text-base">Огневая Мощь</div>
-                            <div class="text-xs text-slate-400">Увеличивает урон армии в бою на +20%.</div>
-                            <div class="text-xs text-cyan-400 font-semibold mt-1">Уровень: <span id="upg-atk-lvl">1</span></div>
-                        </div>
-                    </div>
-                    <button id="btn-upg-atk" onclick="buyUpgrade('attack')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-orbitron font-bold text-xs uppercase shadow transition">
-                        Улучшить <span id="upg-atk-cost" class="font-black">$200</span>
-                    </button>
-                </div>
-
-                <!-- Upgrade 2: Armor -->
-                <div class="glass-panel p-4 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-xl bg-blue-950/60 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl">
-                            <i class="fa-solid fa-shield-cat"></i>
-                        </div>
-                        <div>
-                            <div class="font-orbitron font-bold text-white text-base">Броня и Укрепрайоны</div>
-                            <div class="text-xs text-slate-400">Снижает потери при обороне узлов на -15%.</div>
-                            <div class="text-xs text-cyan-400 font-semibold mt-1">Уровень: <span id="upg-def-lvl">1</span></div>
-                        </div>
-                    </div>
-                    <button id="btn-upg-def" onclick="buyUpgrade('defense')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-orbitron font-bold text-xs uppercase shadow transition">
-                        Улучшить <span id="upg-def-cost" class="font-black">$250</span>
-                    </button>
-                </div>
-
-                <!-- Upgrade 3: Speed -->
-                <div class="glass-panel p-4 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl">
-                            <i class="fa-solid fa-person-running"></i>
-                        </div>
-                        <div>
-                            <div class="font-orbitron font-bold text-white text-base">Скорость Марша</div>
-                            <div class="text-xs text-slate-400">Ускоряет перемещение войск между узлами на +25%.</div>
-                            <div class="text-xs text-cyan-400 font-semibold mt-1">Уровень: <span id="upg-spd-lvl">1</span></div>
-                        </div>
-                    </div>
-                    <button id="btn-upg-spd" onclick="buyUpgrade('speed')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-orbitron font-bold text-xs uppercase shadow transition">
-                        Улучшить <span id="upg-spd-cost" class="font-black">$150</span>
-                    </button>
-                </div>
-
-                <!-- Upgrade 4: Economy -->
-                <div class="glass-panel p-4 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-xl bg-amber-950/60 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
-                            <i class="fa-solid fa-vault"></i>
-                        </div>
-                        <div>
-                            <div class="font-orbitron font-bold text-white text-base">Военная Экономика</div>
-                            <div class="text-xs text-slate-400">Увеличивает доход золота от регионов на +30%.</div>
-                            <div class="text-xs text-cyan-400 font-semibold mt-1">Уровень: <span id="upg-eco-lvl">1</span></div>
-                        </div>
-                    </div>
-                    <button id="btn-upg-eco" onclick="buyUpgrade('economy')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-orbitron font-bold text-xs uppercase shadow transition">
-                        Улучшить <span id="upg-eco-cost" class="font-black">$300</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end">
-                <button onclick="closeTechTree()" class="px-6 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-orbitron font-bold text-xs uppercase">
-                    Вернуться на Карту
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN GAME LOGIC SCRIPT -->
+    <!-- SCRIPT ENGINE -->
     <script>
-        /* NATIONS CONFIGURATION */
-        const NATIONS = {
-            'RUS': { id: 'RUS', name: 'Россия', color: '#ef4444', textClass: 'text-red-500', bgClass: 'bg-red-500', tag: 'RUS' },
-            'UKR': { id: 'UKR', name: 'Украина', color: '#eab308', textClass: 'text-yellow-500', bgClass: 'bg-yellow-500', tag: 'UKR' },
-            'USA': { id: 'USA', name: 'США', color: '#3b82f6', textClass: 'text-blue-500', bgClass: 'bg-blue-500', tag: 'USA' },
-            'DEU': { id: 'DEU', name: 'Германия', color: '#10b981', textClass: 'text-emerald-500', bgClass: 'bg-emerald-500', tag: 'DEU' },
-            'CHN': { id: 'CHN', name: 'Китай', color: '#a855f7', textClass: 'text-purple-500', bgClass: 'bg-purple-500', tag: 'CHN' },
-            'NEU': { id: 'NEU', name: 'Нейтралы', color: '#64748b', textClass: 'text-slate-400', bgClass: 'bg-slate-500', tag: 'NEU' }
-        };
-
-        /* MAP NODES DATA (X, Y mapped to 1200x700 relative map boundaries) */
-        const MAP_NODES = [
-            // North America
-            { id: 'us_west', name: 'Запад США', country: 'USA', x: 220, y: 260, troops: 40 },
-            { id: 'us_east', name: 'Восток США', country: 'USA', x: 340, y: 270, troops: 50 },
-            
-            // Europe
-            { id: 'gbr', name: 'Великобритания', country: 'NEU', x: 500, y: 200, troops: 25 },
-            { id: 'fra', name: 'Франция', country: 'NEU', x: 510, y: 270, troops: 30 },
-            { id: 'deu_north', name: 'Берлин', country: 'DEU', x: 570, y: 220, troops: 45 },
-            { id: 'deu_south', name: 'Бавария', country: 'DEU', x: 560, y: 270, troops: 35 },
-            { id: 'pol', name: 'Польша', country: 'NEU', x: 630, y: 230, troops: 25 },
-
-            // Eastern Europe
-            { id: 'ukr_west', name: 'Киев', country: 'UKR', x: 690, y: 250, troops: 40 },
-            { id: 'ukr_east', name: 'Харьков / Донбасс', country: 'UKR', x: 740, y: 270, troops: 35 },
-            { id: 'rus_moscow', name: 'Москва', country: 'RUS', x: 770, y: 200, troops: 60 },
-            { id: 'rus_south', name: 'Ростов / Кубань', country: 'RUS', x: 780, y: 260, troops: 45 },
-            { id: 'rus_ural', name: 'Урал', country: 'RUS', x: 870, y: 210, troops: 30 },
-            { id: 'rus_siberia', name: 'Сибирь', country: 'RUS', x: 970, y: 190, troops: 35 },
-
-            // Asia & Mid-East
-            { id: 'tur', name: 'Турция', country: 'NEU', x: 710, y: 340, troops: 30 },
-            { id: 'chn_north', name: 'Пекин', country: 'CHN', x: 990, y: 300, troops: 55 },
-            { id: 'chn_south', name: 'Шанхай', country: 'CHN', x: 1010, y: 370, troops: 45 },
-            { id: 'ind', name: 'Индия', country: 'NEU', x: 880, y: 390, troops: 40 },
-            { id: 'jpn', name: 'Токио', country: 'NEU', x: 1110, y: 310, troops: 30 }
-        ];
-
-        /* MAP CONNECTIONS (EDGES) */
-        const MAP_EDGES = [
-            ['us_west', 'us_east'],
-            ['us_east', 'gbr'],
-            ['gbr', 'fra'],
-            ['fra', 'deu_south'],
-            ['deu_north', 'deu_south'],
-            ['deu_north', 'pol'],
-            ['pol', 'ukr_west'],
-            ['ukr_west', 'ukr_east'],
-            ['ukr_west', 'rus_moscow'],
-            ['ukr_east', 'rus_south'],
-            ['rus_moscow', 'rus_south'],
-            ['rus_moscow', 'rus_ural'],
-            ['rus_south', 'tur'],
-            ['tur', 'ukr_east'],
-            ['rus_ural', 'rus_siberia'],
-            ['rus_siberia', 'chn_north'],
-            ['chn_north', 'chn_south'],
-            ['chn_north', 'jpn'],
-            ['chn_south', 'ind'],
-            ['ind', 'tur']
-        ];
-
-        /* STATE VARIABLES */
-        let playerNation = null;
-        let gameSpeed = 1;
-        let soundEnabled = true;
-
-        let resources = {
-            gold: 1000,
-            goldRate: 10,
-            manpower: 500,
-            manpowerRate: 5
-        };
-
-        let upgrades = {
-            attack: { level: 1, cost: 200, multiplier: 1.0 },
-            defense: { level: 1, cost: 250, multiplier: 1.0 },
-            speed: { level: 1, cost: 150, multiplier: 1.0 },
-            economy: { level: 1, cost: 300, multiplier: 1.0 }
-        };
-
-        let activeArmies = [];
-        let selectedNodeId = null;
-
-        let viewport = {
-            x: 0,
-            y: 0,
-            zoom: 1,
-            isDragging: false,
-            dragStartX: 0,
-            dragStartY: 0
-        };
-
         /* SOUND SYNTHESIZER (Web Audio API) */
         let audioCtx = null;
+        let soundEnabled = true;
 
         function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
         function playSound(type) {
@@ -455,532 +199,542 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
 
-            if (type === 'select') {
+            if (type === 'launch') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
-                gain.gain.setValueAtTime(0.15, now);
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+                gain.gain.setValueAtTime(0.1, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
-                osc.start(now);
-                osc.stop(now + 0.08);
-            } else if (type === 'march') {
+                osc.start(now); osc.stop(now + 0.08);
+            } else if (type === 'hit') {
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(220, now);
-                osc.frequency.exponentialRampToValueAtTime(330, now + 0.15);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                osc.start(now);
-                osc.stop(now + 0.15);
-            } else if (type === 'battle') {
-                const bufferSize = audioCtx.sampleRate * 0.1;
-                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-                const noiseGain = audioCtx.createGain();
-                noiseGain.gain.setValueAtTime(0.15, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                noise.connect(noiseGain);
-                noiseGain.connect(audioCtx.destination);
-                noise.start(now);
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.05);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
             } else if (type === 'conquer') {
                 osc.type = 'square';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.setValueAtTime(659.25, now + 0.1);
-                osc.frequency.setValueAtTime(783.99, now + 0.2);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                osc.start(now);
-                osc.stop(now + 0.4);
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
             }
         }
 
-        function toggleAudio() {
+        function toggleSound() {
             soundEnabled = !soundEnabled;
-            const btn = document.getElementById('btn-audio');
+            const btn = document.getElementById('btn-sound');
             btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
-            btn.className = `w-9 h-9 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 ${soundEnabled ? 'text-cyan-400' : 'text-slate-500'} hover:bg-slate-800 transition`;
+            btn.className = `w-9 h-9 flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 ${soundEnabled ? 'text-cyan-400' : 'text-slate-500'}`;
         }
 
-        /* CANVAS GRAPHICS ENGINE */
-        const canvas = document.getElementById('map-canvas');
+        /* FACTIONS & COLORS */
+        const FACTIONS = {
+            PLAYER: { id: 'PLAYER', name: 'Игрок', color: '#00f0ff', fill: 'rgba(0, 240, 255, 0.25)', border: '#00f0ff' },
+            ENEMY_RED: { id: 'ENEMY_RED', name: 'Красная Держава', color: '#ff2a5f', fill: 'rgba(255, 42, 95, 0.25)', border: '#ff2a5f' },
+            ENEMY_YELLOW: { id: 'ENEMY_YELLOW', name: 'Желтый Альянс', color: '#ffcc00', fill: 'rgba(255, 204, 0, 0.25)', border: '#ffcc00' },
+            NEUTRAL: { id: 'NEUTRAL', name: 'Нейтралы', color: '#64748b', fill: 'rgba(100, 116, 139, 0.15)', border: '#475569' }
+        };
+
+        /* MAP POLYGONS & NODES (Stylized Eurasian & Global Territories) */
+        // Formatted to fit normalized 1000x600 coordinates
+        const REGIONS = [
+            // Russia Regions
+            {
+                id: 'rus_moscow', name: 'Центр России', owner: 'PLAYER', troops: 25,
+                center: { x: 540, y: 190 },
+                path: [[480, 150], [580, 140], [600, 220], [520, 240], [470, 200]]
+            },
+            {
+                id: 'rus_south', name: 'Юг России', owner: 'PLAYER', troops: 20,
+                center: { x: 550, y: 280 },
+                path: [[520, 240], [600, 220], [610, 310], [530, 320]]
+            },
+            {
+                id: 'rus_ural', name: 'Урал', owner: 'NEUTRAL', troops: 15,
+                center: { x: 670, y: 180 },
+                path: [[600, 130], [730, 120], [720, 240], [600, 220]]
+            },
+            {
+                id: 'rus_siberia', name: 'Сибирь', owner: 'NEUTRAL', troops: 30,
+                center: { x: 810, y: 170 },
+                path: [[730, 120], [920, 110], [890, 250], [720, 240]]
+            },
+
+            // Ukraine Regions
+            {
+                id: 'ukr_west', name: 'Запад Украины', owner: 'NEUTRAL', troops: 12,
+                center: { x: 450, y: 250 },
+                path: [[420, 220], [480, 210], [480, 280], [410, 270]]
+            },
+            {
+                id: 'ukr_east', name: 'Восток Украины', owner: 'NEUTRAL', troops: 18,
+                center: { x: 500, y: 270 },
+                path: [[480, 210], [520, 240], [530, 320], [480, 280]]
+            },
+
+            // Europe
+            {
+                id: 'eur_north', name: 'Скандинавия', owner: 'NEUTRAL', troops: 15,
+                center: { x: 420, y: 120 },
+                path: [[370, 80], [460, 90], [450, 170], [390, 160]]
+            },
+            {
+                id: 'eur_west', name: 'Зап. Европа', owner: 'ENEMY_YELLOW', troops: 35,
+                center: { x: 340, y: 240 },
+                path: [[280, 200], [400, 190], [410, 280], [300, 290]]
+            },
+            {
+                id: 'eur_east', name: 'Вост. Европа', owner: 'NEUTRAL', troops: 20,
+                center: { x: 420, y: 200 },
+                path: [[400, 170], [480, 150], [470, 220], [400, 210]]
+            },
+
+            // Asia
+            {
+                id: 'chn_north', name: 'Сев. Китай', owner: 'ENEMY_RED', troops: 40,
+                center: { x: 830, y: 310 },
+                path: [[760, 260], [900, 250], [890, 360], [770, 350]]
+            },
+            {
+                id: 'chn_south', name: 'Юж. Китай', owner: 'ENEMY_RED', troops: 30,
+                center: { x: 820, y: 410 },
+                path: [[770, 350], [890, 360], [860, 480], [750, 450]]
+            },
+            {
+                id: 'ind', name: 'Индия', owner: 'NEUTRAL', troops: 25,
+                center: { x: 700, y: 400 },
+                path: [[630, 330], [760, 340], [730, 480], [640, 430]]
+            },
+            {
+                id: 'mid_east', name: 'Ближний Восток', owner: 'NEUTRAL', troops: 20,
+                center: { x: 580, y: 380 },
+                path: [[530, 320], [630, 330], [630, 440], [530, 420]]
+            },
+
+            // Americas
+            {
+                id: 'usa_east', name: 'Восток США', owner: 'NEUTRAL', troops: 30,
+                center: { x: 180, y: 240 },
+                path: [[120, 180], [240, 180], [230, 310], [130, 300]]
+            }
+        ];
+
+        /* GAME STATE */
+        let gold = 100;
+        let goldRate = 5;
+
+        let upgrades = {
+            prod: { level: 1, cost: 50, rate: 1.0 },
+            speed: { level: 1, cost: 75, speed: 1.0 },
+            start: { level: 1, cost: 100, bonus: 0 }
+        };
+
+        let movingDots = []; // Array of dot objects moving across the screen
+        let activeDrag = null; // Currently dragged connection line { fromRegion, currentX, currentY }
+
+        /* CANVAS INITIALIZATION */
+        const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-        }
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
 
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // Fit 1000x600 map coordinate space into canvas dynamically
+            const scaleX = canvas.width / 1050;
+            const scaleY = canvas.height / 650;
+            scale = Math.min(scaleX, scaleY) * 0.9;
+
+            offsetX = (canvas.width - 1000 * scale) / 2;
+            offsetY = (canvas.height - 600 * scale) / 2;
+        }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        viewport.x = (canvas.width - 1200) / 2;
-        viewport.y = (canvas.height - 700) / 2;
-
-        function renderMap() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            ctx.translate(viewport.x, viewport.y);
-            ctx.scale(viewport.zoom, viewport.zoom);
-
-            // Draw Frontline Connections
-            MAP_EDGES.forEach(edge => {
-                const nodeA = MAP_NODES.find(n => n.id === edge[0]);
-                const nodeB = MAP_NODES.find(n => n.id === edge[1]);
-                if (!nodeA || !nodeB) return;
-
-                const isPlayerFront = nodeA.country === playerNation || nodeB.country === playerNation;
-
-                ctx.beginPath();
-                ctx.moveTo(nodeA.x, nodeA.y);
-                ctx.lineTo(nodeB.x, nodeB.y);
-                ctx.lineWidth = isPlayerFront ? 3 : 2;
-                ctx.strokeStyle = isPlayerFront ? 'rgba(56, 189, 248, 0.4)' : 'rgba(71, 85, 105, 0.3)';
-                ctx.setLineDash([6, 6]);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            });
-
-            // Draw Moving Armies
-            activeArmies.forEach(army => {
-                const fromNode = MAP_NODES.find(n => n.id === army.fromId);
-                const toNode = MAP_NODES.find(n => n.id === army.toId);
-                if (!fromNode || !toNode) return;
-
-                const currentX = fromNode.x + (toNode.x - fromNode.x) * army.progress;
-                const currentY = fromNode.y + (toNode.y - fromNode.y) * army.progress;
-
-                const owner = NATIONS[army.country] || NATIONS['NEU'];
-
-                ctx.beginPath();
-                ctx.arc(currentX, currentY, 12, 0, Math.PI * 2);
-                ctx.fillStyle = owner.color + '44';
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.arc(currentX, currentY, 7, 0, Math.PI * 2);
-                ctx.fillStyle = owner.color;
-                ctx.shadowColor = owner.color;
-                ctx.shadowBlur = 10;
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                ctx.font = 'bold 10px Orbitron';
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center';
-                ctx.fillText(army.count, currentX, currentY - 12);
-            });
-
-            // Draw Territory Nodes
-            MAP_NODES.forEach(node => {
-                const owner = NATIONS[node.country] || NATIONS['NEU'];
-                const isSelected = selectedNodeId === node.id;
-
-                if (isSelected) {
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, 28, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.arc(node.x, node.y, 24, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#38bdf8';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
-                ctx.fillStyle = '#0f172a';
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = owner.color;
-                ctx.shadowColor = owner.color;
-                ctx.shadowBlur = isSelected ? 15 : 6;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-
-                ctx.font = 'bold 12px Orbitron';
-                ctx.fillStyle = '#ffffff';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(node.troops, node.x, node.y);
-
-                ctx.font = '600 11px Rajdhani';
-                ctx.fillStyle = isSelected ? '#38bdf8' : '#cbd5e1';
-                ctx.fillText(node.name, node.x, node.y + 30);
-            });
-
-            ctx.restore();
-            requestAnimationFrame(renderMap);
+        function mapToCanvas(x, y) {
+            return { x: x * scale + offsetX, y: y * scale + offsetY };
         }
 
-        /* GAME LOOP & AI ENGINE */
-        let lastTickTime = performance.now();
-
-        function gameLoop(timestamp) {
-            const dt = (timestamp - lastTickTime) / 1000;
-            lastTickTime = timestamp;
-
-            if (gameSpeed > 0 && playerNation) {
-                const effectiveDt = dt * gameSpeed;
-
-                resources.gold += (resources.goldRate * upgrades.economy.multiplier) * (effectiveDt / 2);
-                resources.manpower += resources.manpowerRate * (effectiveDt / 2);
-                updateUIResources();
-
-                for (let i = activeArmies.length - 1; i >= 0; i--) {
-                    const army = activeArmies[i];
-                    army.progress += (army.speed * upgrades.speed.multiplier) * (effectiveDt / 5);
-
-                    if (army.progress >= 1.0) {
-                        resolveArmyArrival(army);
-                        activeArmies.splice(i, 1);
-                    }
-                }
-
-                simulateAI(effectiveDt);
-            }
-
-            requestAnimationFrame(gameLoop);
+        function canvasToMap(x, y) {
+            return { x: (x - offsetX) / scale, y: (y - offsetY) / scale };
         }
 
-        function resolveArmyArrival(army) {
-            const targetNode = MAP_NODES.find(n => n.id === army.toId);
-            if (!targetNode) return;
+        /* TROOP DOT MOVEMENTS & LAUNCHING */
+        function sendTroopDots(fromRegion, toRegion) {
+            if (fromRegion.id === toRegion.id || fromRegion.troops <= 1) return;
 
-            if (targetNode.country === army.country) {
-                targetNode.troops += army.count;
-                playSound('march');
-                if (targetNode.id === selectedNodeId) updateSelectionPanel();
-            } else {
-                resolveCombat(army, targetNode);
-            }
-        }
+            const sendCount = Math.floor(fromRegion.troops * 0.65);
+            fromRegion.troops -= sendCount;
 
-        function resolveCombat(attackerArmy, defenderNode) {
-            playSound('battle');
+            const startPos = mapToCanvas(fromRegion.center.x, fromRegion.center.y);
+            const targetPos = mapToCanvas(toRegion.center.x, toRegion.center.y);
 
-            let attackerCount = attackerArmy.count;
-            let defenderCount = defenderNode.troops;
+            playSound('launch');
 
-            const atkPower = 1.0 * (attackerArmy.country === playerNation ? upgrades.attack.multiplier : 1.0);
-            const defPower = 1.1 * (defenderNode.country === playerNation ? upgrades.defense.multiplier : 1.0);
-
-            let atkCasualties = Math.round(defenderCount * 0.3 * defPower);
-            let defCasualties = Math.round(attackerCount * 0.4 * atkPower);
-
-            attackerCount = Math.max(0, attackerCount - atkCasualties);
-            defenderNode.troops = Math.max(0, defenderNode.troops - defCasualties);
-
-            if (defenderNode.troops <= 0) {
-                const prevOwner = defenderNode.country;
-                defenderNode.country = attackerArmy.country;
-                defenderNode.troops = Math.max(1, attackerCount);
-
-                playSound('conquer');
-                logCombatEvent(`${NATIONS[attackerArmy.country].name} захватили ${defenderNode.name}!`);
-
-                recalculateRates();
-                checkWinCondition();
-            } else {
-                logCombatEvent(`Сражение в ${defenderNode.name}: Атака отбита.`);
-            }
-
-            if (defenderNode.id === selectedNodeId) updateSelectionPanel();
-        }
-
-        let aiTimer = 0;
-        function simulateAI(dt) {
-            aiTimer += dt;
-            if (aiTimer < 3) return;
-            aiTimer = 0;
-
-            const nonPlayerNodes = MAP_NODES.filter(n => n.country !== playerNation && n.country !== 'NEU');
-            if (nonPlayerNodes.length === 0) return;
-
-            const sourceNode = nonPlayerNodes[Math.floor(Math.random() * nonPlayerNodes.length)];
-            if (sourceNode.troops < 25) return;
-
-            const connectedEdges = MAP_EDGES.filter(e => e[0] === sourceNode.id || e[1] === sourceNode.id);
-            if (connectedEdges.length === 0) return;
-
-            const randomEdge = connectedEdges[Math.floor(Math.random() * connectedEdges.length)];
-            const targetId = randomEdge[0] === sourceNode.id ? randomEdge[1] : randomEdge[0];
-            const targetNode = MAP_NODES.find(n => n.id === targetId);
-
-            if (targetNode && targetNode.country !== sourceNode.country) {
-                const marchCount = Math.floor(sourceNode.troops * 0.6);
-                sourceNode.troops -= marchCount;
-
-                activeArmies.push({
-                    fromId: sourceNode.id,
-                    toId: targetNode.id,
-                    country: sourceNode.country,
-                    count: marchCount,
+            // Spawn stream of individual physical dots
+            for (let i = 0; i < sendCount; i++) {
+                const delay = i * (45 / upgrades.speed.speed); // Staggered stream
+                movingDots.push({
+                    owner: fromRegion.owner,
+                    targetRegionId: toRegion.id,
+                    x: startPos.x + (Math.random() * 16 - 8),
+                    y: startPos.y + (Math.random() * 16 - 8),
+                    startX: startPos.x,
+                    startY: startPos.y,
+                    targetX: targetPos.x,
+                    targetY: targetPos.y,
                     progress: 0,
-                    speed: 0.25
+                    delay: delay,
+                    speed: (0.006 + Math.random() * 0.002) * upgrades.speed.speed
                 });
             }
         }
 
-        /* CONTROLS & INTERACTION */
-        canvas.addEventListener('mousedown', e => {
-            if (e.button === 0) {
-                viewport.isDragging = true;
-                viewport.dragStartX = e.clientX - viewport.x;
-                viewport.dragStartY = e.clientY - viewport.y;
-            }
-        });
+        /* GAME TICK & AUTOMATIC GENERATION */
+        let lastTick = performance.now();
+        let aiTimer = 0;
 
-        canvas.addEventListener('mousemove', e => {
-            if (viewport.isDragging) {
-                viewport.x = e.clientX - viewport.dragStartX;
-                viewport.y = e.clientY - viewport.dragStartY;
-            }
-        });
+        function updateGame(now) {
+            const dt = (now - lastTick) / 1000;
+            lastTick = now;
 
-        canvas.addEventListener('mouseup', () => viewport.isDragging = false);
-
-        canvas.addEventListener('click', e => {
-            const rect = canvas.getBoundingClientRect();
-            const clickX = (e.clientX - rect.left - viewport.x) / viewport.zoom;
-            const clickY = (e.clientY - rect.top - viewport.y) / viewport.zoom;
-
-            const clickedNode = MAP_NODES.find(n => Math.hypot(n.x - clickX, n.y - clickY) <= 22);
-
-            if (clickedNode) {
-                playSound('select');
-                if (selectedNodeId && selectedNodeId !== clickedNode.id) {
-                    const selNode = MAP_NODES.find(n => n.id === selectedNodeId);
-                    const isConnected = MAP_EDGES.some(e => 
-                        (e[0] === selectedNodeId && e[1] === clickedNode.id) ||
-                        (e[1] === selectedNodeId && e[0] === clickedNode.id)
-                    );
-
-                    if (isConnected && selNode.country === playerNation && selNode.troops > 1) {
-                        const dispatchCount = Math.floor(selNode.troops - 1);
-                        selNode.troops -= dispatchCount;
-
-                        activeArmies.push({
-                            fromId: selNode.id,
-                            toId: clickedNode.id,
-                            country: playerNation,
-                            count: dispatchCount,
-                            progress: 0,
-                            speed: 0.35
-                        });
-
-                        playSound('march');
-                        deselectNode();
-                        return;
+            // 1. Passive Gold & Troop Production
+            REGIONS.forEach(reg => {
+                if (reg.owner !== 'FACTION_NONE') {
+                    // Generate troops periodically
+                    reg.troopProgress = (reg.troopProgress || 0) + dt * (reg.owner === 'PLAYER' ? upgrades.prod.rate : 0.8);
+                    if (reg.troopProgress >= 2.0) {
+                        reg.troops += 1;
+                        reg.troopProgress = 0;
                     }
                 }
+            });
 
-                selectedNodeId = clickedNode.id;
-                updateSelectionPanel();
-            } else {
-                deselectNode();
+            // Gold accumulation
+            const playerOwnedCount = REGIONS.filter(r => r.owner === 'PLAYER').length;
+            goldRate = playerOwnedCount * 3;
+            gold += goldRate * dt;
+
+            // 2. Update Moving Troop Dots
+            for (let i = movingDots.length - 1; i >= 0; i--) {
+                const dot = movingDots[i];
+                if (dot.delay > 0) {
+                    dot.delay -= dt * 1000;
+                    continue;
+                }
+
+                dot.progress += dot.speed;
+                dot.x = dot.startX + (dot.targetX - dot.startX) * dot.progress;
+                dot.y = dot.startY + (dot.targetY - dot.startY) * dot.progress;
+
+                // Hit target region
+                if (dot.progress >= 1.0) {
+                    const targetRegion = REGIONS.find(r => r.id === dot.targetRegionId);
+                    if (targetRegion) {
+                        if (targetRegion.owner === dot.owner) {
+                            targetRegion.troops += 1;
+                            playSound('hit');
+                        } else {
+                            targetRegion.troops -= 1;
+                            playSound('hit');
+                            if (targetRegion.troops <= 0) {
+                                targetRegion.owner = dot.owner;
+                                targetRegion.troops = 1;
+                                playSound('conquer');
+                                checkEndGame();
+                            }
+                        }
+                    }
+                    movingDots.splice(i, 1);
+                }
             }
-        });
 
-        canvas.addEventListener('wheel', e => {
-            e.preventDefault();
-            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-            viewport.zoom = Math.max(0.6, Math.min(2.5, viewport.zoom * zoomFactor));
-        });
+            // 3. AI Opponent Bot Decisions
+            aiTimer += dt;
+            if (aiTimer > 2.5) {
+                aiTimer = 0;
+                runAiLogic();
+            }
 
-        function deselectNode() {
-            selectedNodeId = null;
-            document.getElementById('selection-panel').classList.add('hidden');
+            updateUI();
         }
 
-        function updateSelectionPanel() {
-            if (!selectedNodeId) return;
-            const node = MAP_NODES.find(n => n.id === selectedNodeId);
-            if (!node) return;
+        function runAiLogic() {
+            const aiRegions = REGIONS.filter(r => r.owner.startsWith('ENEMY'));
+            if (aiRegions.length === 0) return;
 
-            const panel = document.getElementById('selection-panel');
-            panel.classList.remove('hidden');
+            const source = aiRegions[Math.floor(Math.random() * aiRegions.length)];
+            if (source.troops < 12) return;
 
-            document.getElementById('sel-node-name').innerText = node.name;
-            const owner = NATIONS[node.country] || NATIONS['NEU'];
-            document.getElementById('sel-node-owner').innerText = `Владелец: ${owner.name}`;
-            document.getElementById('sel-node-owner').className = `text-xs font-semibold ${owner.textClass}`;
-            document.getElementById('sel-node-troops').innerText = node.troops;
+            // Find closest neighbor or target
+            const targets = REGIONS.filter(r => r.id !== source.id && r.owner !== source.owner);
+            if (targets.length === 0) return;
 
-            const btn10 = document.getElementById('btn-recruit-10');
-            const btn50 = document.getElementById('btn-recruit-50');
-            const isOwner = node.country === playerNation;
-            
-            btn10.disabled = !isOwner;
-            btn50.disabled = !isOwner;
-            btn10.classList.toggle('opacity-50', !isOwner);
-            btn50.classList.toggle('opacity-50', !isOwner);
+            // Sort by distance
+            targets.sort((a, b) => {
+                const distA = Math.hypot(a.center.x - source.center.x, a.center.y - source.center.y);
+                const distB = Math.hypot(b.center.x - source.center.x, b.center.y - source.center.y);
+                return distA - distB;
+            });
+
+            sendTroopDots(source, targets[0]);
         }
 
-        function recruitTroops(amount) {
-            if (!selectedNodeId) return;
-            const node = MAP_NODES.find(n => n.id === selectedNodeId);
-            if (!node || node.country !== playerNation) return;
+        /* RENDERING ENGINE */
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            const cost = amount === 10 ? 100 : 450;
-            if (resources.gold >= cost && resources.manpower >= amount) {
-                resources.gold -= cost;
-                resources.manpower -= amount;
-                node.troops += amount;
-                playSound('select');
-                updateUIResources();
-                updateSelectionPanel();
-            } else {
-                logCombatEvent('Недостаточно ресурсов!');
+            // 1. Draw Territory Polygons & Borders
+            REGIONS.forEach(reg => {
+                const faction = FACTIONS[reg.owner] || FACTIONS.NEUTRAL;
+
+                ctx.beginPath();
+                reg.path.forEach((pt, idx) => {
+                    const pos = mapToCanvas(pt[0], pt[1]);
+                    if (idx === 0) ctx.moveTo(pos.x, pos.y);
+                    else ctx.lineTo(pos.x, pos.y);
+                });
+                ctx.closePath();
+
+                // Territory Fill
+                ctx.fillStyle = faction.fill;
+                ctx.fill();
+
+                // Territory Border Contour
+                ctx.lineWidth = reg.owner === 'PLAYER' ? 3 : 2;
+                ctx.strokeStyle = faction.border;
+                ctx.shadowColor = faction.color;
+                ctx.shadowBlur = reg.owner === 'PLAYER' ? 12 : 4;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            });
+
+            // 2. Draw Connections / Active Drag Line
+            if (activeDrag && activeDrag.fromRegion) {
+                const startPos = mapToCanvas(activeDrag.fromRegion.center.x, activeDrag.fromRegion.center.y);
+                ctx.beginPath();
+                ctx.moveTo(startPos.x, startPos.y);
+                ctx.lineTo(activeDrag.currentX, activeDrag.currentY);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#00f0ff';
+                ctx.setLineDash([8, 8]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 3. Draw Moving Troop Dots (War Stream)
+            movingDots.forEach(dot => {
+                if (dot.delay > 0) return;
+                const faction = FACTIONS[dot.owner] || FACTIONS.NEUTRAL;
+
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = faction.color;
+                ctx.shadowColor = faction.color;
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // 4. Draw Node Badges & Troop Counts
+            REGIONS.forEach(reg => {
+                const center = mapToCanvas(reg.center.x, reg.center.y);
+                const faction = FACTIONS[reg.owner] || FACTIONS.NEUTRAL;
+
+                // Center Circle Badge
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, 18, 0, Math.PI * 2);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = faction.border;
+                ctx.stroke();
+
+                // Troop Count Text
+                ctx.font = 'bold 13px Orbitron';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(reg.troops, center.x, center.y);
+
+                // Region Title
+                ctx.font = 'bold 11px Rajdhani';
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText(reg.name, center.x, center.y + 28);
+            });
+        }
+
+        function renderLoop(now) {
+            updateGame(now);
+            draw();
+            requestAnimationFrame(renderLoop);
+        }
+
+        /* USER INTERACTION (TOUCH & MOUSE) */
+        function getRegionAtCoords(mapX, mapY) {
+            return REGIONS.find(reg => {
+                const dist = Math.hypot(reg.center.x - mapX, reg.center.y - mapY);
+                return dist <= 45; // Hitbox radius around node center
+            });
+        }
+
+        function handlePointerDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const mapPos = canvasToMap(clientX - rect.left, clientY - rect.top);
+            const clickedRegion = getRegionAtCoords(mapPos.x, mapPos.y);
+
+            if (clickedRegion && clickedRegion.owner === 'PLAYER') {
+                activeDrag = {
+                    fromRegion: clickedRegion,
+                    currentX: clientX - rect.left,
+                    currentY: clientY - rect.top
+                };
             }
         }
 
-        /* TECH TREE AND UPGRADES */
-        function openTechTree() { document.getElementById('modal-tech-tree').classList.remove('hidden'); }
-        function closeTechTree() { document.getElementById('modal-tech-tree').classList.add('hidden'); }
+        function handlePointerMove(e) {
+            if (!activeDrag) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            activeDrag.currentX = clientX - rect.left;
+            activeDrag.currentY = clientY - rect.top;
+        }
+
+        function handlePointerUp(e) {
+            if (!activeDrag) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+            const mapPos = canvasToMap(clientX - rect.left, clientY - rect.top);
+            const targetRegion = getRegionAtCoords(mapPos.x, mapPos.y);
+
+            if (targetRegion && targetRegion.id !== activeDrag.fromRegion.id) {
+                sendTroopDots(activeDrag.fromRegion, targetRegion);
+            }
+
+            activeDrag = null;
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+
+        canvas.addEventListener('touchstart', handlePointerDown, { passive: true });
+        canvas.addEventListener('touchmove', handlePointerMove, { passive: true });
+        window.addEventListener('touchend', handlePointerUp);
+
+        /* UPGRADES & UI UPDATES */
+        function updateUI() {
+            document.getElementById('stat-nodes').innerText = REGIONS.filter(r => r.owner === 'PLAYER').length;
+            document.getElementById('stat-troops').innerText = REGIONS.filter(r => r.owner === 'PLAYER').reduce((acc, r) => acc + r.troops, 0);
+            document.getElementById('stat-gold').innerText = Math.floor(gold);
+            document.getElementById('stat-gold-rate').innerText = Math.floor(goldRate);
+
+            // Update Upgrade Buttons
+            ['prod', 'speed', 'start'].forEach(type => {
+                const upg = upgrades[type];
+                document.getElementById(`upg-${type}-lvl`).innerText = upg.level;
+                document.getElementById(`upg-${type}-cost`).innerText = upg.cost;
+                document.getElementById(`upg-${type}-btn`).disabled = gold < upg.cost;
+            });
+        }
 
         function buyUpgrade(type) {
             const upg = upgrades[type];
-            if (!upg) return;
-
-            if (resources.gold >= upg.cost) {
-                resources.gold -= upg.cost;
+            if (gold >= upg.cost) {
+                gold -= upg.cost;
                 upg.level += 1;
-                upg.cost = Math.round(upg.cost * 1.6);
-                upg.multiplier += 0.25;
+                upg.cost = Math.round(upg.cost * 1.7);
+
+                if (type === 'prod') upg.rate += 0.5;
+                if (type === 'speed') upg.speed += 0.4;
+                if (type === 'start') {
+                    REGIONS.filter(r => r.owner === 'PLAYER').forEach(r => r.troops += 10);
+                }
 
                 playSound('conquer');
-                updateUIResources();
-                updateTechTreeUI();
+                updateUI();
+            }
+        }
+
+        function checkEndGame() {
+            const playerOwned = REGIONS.filter(r => r.owner === 'PLAYER').length;
+            const enemyOwned = REGIONS.filter(r => r.owner.startsWith('ENEMY')).length;
+
+            if (playerOwned === REGIONS.length) {
+                showEndModal(true);
+            } else if (playerOwned === 0) {
+                showEndModal(false);
+            }
+        }
+
+        function showEndModal(isWin) {
+            const modal = document.getElementById('modal-end');
+            modal.classList.remove('hidden');
+
+            const title = document.getElementById('end-title');
+            const subtitle = document.getElementById('end-subtitle');
+            const icon = document.getElementById('end-icon');
+
+            if (isWin) {
+                title.innerText = 'ПОБЕДА!';
+                subtitle.innerText = 'Вы захватили все территории на карте!';
+                icon.innerHTML = '<i class="fa-solid fa-trophy text-amber-400"></i>';
             } else {
-                logCombatEvent('Не хватает золота на улучшение!');
+                title.innerText = 'ПОРАЖЕНИЕ!';
+                subtitle.innerText = 'Ваши войска были уничтожены.';
+                icon.innerHTML = '<i class="fa-solid fa-skull text-red-500"></i>';
             }
         }
 
-        function updateTechTreeUI() {
-            document.getElementById('upg-atk-lvl').innerText = upgrades.attack.level;
-            document.getElementById('upg-atk-cost').innerText = `$${upgrades.attack.cost}`;
-            document.getElementById('upg-def-lvl').innerText = upgrades.defense.level;
-            document.getElementById('upg-def-cost').innerText = `$${upgrades.defense.cost}`;
-            document.getElementById('upg-spd-lvl').innerText = upgrades.speed.level;
-            document.getElementById('upg-spd-cost').innerText = `$${upgrades.speed.cost}`;
-            document.getElementById('upg-eco-lvl').innerText = upgrades.economy.level;
-            document.getElementById('upg-eco-cost').innerText = `$${upgrades.economy.cost}`;
+        function restartGame() {
+            document.getElementById('modal-end').classList.add('hidden');
+            gold = 100;
+
+            upgrades = {
+                prod: { level: 1, cost: 50, rate: 1.0 },
+                speed: { level: 1, cost: 75, speed: 1.0 },
+                start: { level: 1, cost: 100, bonus: 0 }
+            };
+
+            // Reset Regions
+            REGIONS[0].owner = 'PLAYER'; REGIONS[0].troops = 30;
+            REGIONS[1].owner = 'PLAYER'; REGIONS[1].troops = 25;
+            REGIONS[2].owner = 'NEUTRAL'; REGIONS[2].troops = 15;
+            REGIONS[3].owner = 'NEUTRAL'; REGIONS[3].troops = 30;
+            REGIONS[4].owner = 'NEUTRAL'; REGIONS[4].troops = 12;
+            REGIONS[5].owner = 'NEUTRAL'; REGIONS[5].troops = 18;
+            REGIONS[6].owner = 'NEUTRAL'; REGIONS[6].troops = 15;
+            REGIONS[7].owner = 'ENEMY_YELLOW'; REGIONS[7].troops = 35;
+            REGIONS[8].owner = 'NEUTRAL'; REGIONS[8].troops = 20;
+            REGIONS[9].owner = 'ENEMY_RED'; REGIONS[9].troops = 40;
+            REGIONS[10].owner = 'ENEMY_RED'; REGIONS[10].troops = 30;
+            REGIONS[11].owner = 'NEUTRAL'; REGIONS[11].troops = 25;
+            REGIONS[12].owner = 'NEUTRAL'; REGIONS[12].troops = 20;
+            REGIONS[13].owner = 'NEUTRAL'; REGIONS[13].troops = 30;
+
+            movingDots = [];
+            activeDrag = null;
         }
 
-        function recalculateRates() {
-            const playerControlled = MAP_NODES.filter(n => n.country === playerNation).length;
-            resources.goldRate = 10 + (playerControlled * 4);
-            resources.manpowerRate = 5 + (playerControlled * 2);
-
-            document.getElementById('res-nodes-captured').innerText = playerControlled;
-            document.getElementById('res-nodes-total').innerText = MAP_NODES.length;
-        }
-
-        function updateUIResources() {
-            document.getElementById('res-gold').innerText = Math.floor(resources.gold).toLocaleString();
-            document.getElementById('res-gold-rate').innerText = `(+${Math.round(resources.goldRate * upgrades.economy.multiplier)}/с)`;
-            document.getElementById('res-manpower').innerText = Math.floor(resources.manpower).toLocaleString();
-            document.getElementById('res-manpower-rate').innerText = `(+${Math.round(resources.manpowerRate)}/с)`;
-        }
-
-        function setGameSpeed(speed) {
-            gameSpeed = speed;
-            ['btn-pause', 'btn-speed-1', 'btn-speed-2', 'btn-speed-5'].forEach(id => {
-                document.getElementById(id).className = 'px-3 py-1 rounded font-orbitron text-xs font-bold text-slate-400 hover:text-white transition';
-            });
-            let activeId = speed === 0 ? 'btn-pause' : (speed === 2 ? 'btn-speed-2' : (speed === 5 ? 'btn-speed-5' : 'btn-speed-1'));
-            document.getElementById(activeId).className = 'px-3 py-1 rounded font-orbitron text-xs font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-700/50 transition';
-        }
-
-        function logCombatEvent(msg) {
-            const container = document.getElementById('combat-log-container');
-            const toast = document.createElement('div');
-            toast.className = 'glass-panel px-3.5 py-2 rounded-xl border border-cyan-500/30 text-xs font-semibold text-cyan-200 shadow-lg transition-all duration-300 transform translate-x-4 opacity-0';
-            toast.innerHTML = `<i class="fa-solid fa-bell text-amber-400 mr-2"></i> ${msg}`;
-
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-x-4', 'opacity-0'), 10);
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        function checkWinCondition() {
-            const playerControlled = MAP_NODES.filter(n => n.country === playerNation).length;
-            if (playerControlled === MAP_NODES.length) {
-                setTimeout(() => {
-                    alert(`ПОБЕДА! Держава ${NATIONS[playerNation].name} полностью захватила мир!`);
-                    location.reload();
-                }, 500);
-            }
-        }
-
-        /* STARTUP MODAL SETUP */
-        function initCountrySelectionModal() {
-            const grid = document.getElementById('country-grid');
-            grid.innerHTML = '';
-
-            Object.values(NATIONS).filter(n => n.id !== 'NEU').forEach(nat => {
-                const card = document.createElement('div');
-                card.className = `glass-panel p-4 rounded-2xl border border-slate-800 hover:border-cyan-500/60 cursor-pointer transition flex flex-col justify-between space-y-3 country-card`;
-                card.onclick = () => selectNationCard(nat.id, card);
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="font-orbitron font-bold text-lg text-white">${nat.name}</span>
-                        <span class="px-2 py-0.5 rounded text-xs font-mono font-bold ${nat.bgClass} text-slate-950">${nat.tag}</span>
-                    </div>
-                    <div class="text-xs text-slate-400">Стартовых регионов: <span class="text-slate-200 font-semibold">${MAP_NODES.filter(n => n.country === nat.id).length}</span></div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        let selectedNationCandidate = null;
-
-        function selectNationCard(natId, cardEl) {
-            document.querySelectorAll('.country-card').forEach(c => c.classList.remove('border-cyan-400', 'bg-cyan-950/40'));
-            cardEl.classList.add('border-cyan-400', 'bg-cyan-950/40');
-            selectedNationCandidate = natId;
-
-            const startBtn = document.getElementById('btn-start-game');
-            startBtn.disabled = false;
-            startBtn.className = 'px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-orbitron font-black text-sm tracking-wider uppercase transition-all duration-300 shadow-lg shadow-cyan-500/30 cursor-pointer';
-        }
-
-        function startGame() {
-            if (!selectedNationCandidate) return;
-            playerNation = selectedNationCandidate;
-
-            document.getElementById('modal-country-select').classList.add('hidden');
-
-            const nat = NATIONS[playerNation];
-            document.getElementById('player-flag-badge').classList.remove('hidden');
-            document.getElementById('player-flag-badge').classList.add('flex');
-            document.getElementById('player-country-name').innerText = nat.name;
-            document.getElementById('player-country-tag').innerText = nat.tag;
-            document.getElementById('player-country-tag').className = `text-xs px-2 py-0.5 rounded font-mono font-bold ${nat.bgClass} text-slate-950`;
-
-            recalculateRates();
-            updateUIResources();
-            updateTechTreeUI();
-
-            requestAnimationFrame(renderMap);
-            requestAnimationFrame(gameLoop);
-        }
-
-        window.onload = function() {
-            initCountrySelectionModal();
-        };
+        // Start render loop
+        requestAnimationFrame(renderLoop);
     </script>
 </body>
 </html>
